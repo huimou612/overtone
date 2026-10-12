@@ -149,10 +149,10 @@ const defaultSetting: LX.AppSetting = {
   'openAPI.port': '23330',
   'openAPI.bindLan': false,
 
-  // 'theme.id': 'blue_plus',
-  'theme.id': 'green',
-  'theme.lightId': 'green',
-  'theme.darkId': 'black',
+  // 泛音默认使用品牌主题「余音绕梁」（靛紫，与图标同色系）
+  'theme.id': 'overtone',
+  'theme.lightId': 'overtone',
+  'theme.darkId': 'overtone_dark',
 
   'odc.isAutoClearSearchInput': false,
   'odc.isAutoClearSearchList': false,

@@ -1,10 +1,62 @@
-//! 更新默认主题配置后，需要执行 npm run build:theme 重新构建index.json
+//! 更新默认主题配置后，需要执行 npm run build:theme 重新构建 index.json
+//! 同时会把 defaultThemes[0]（默认主题）的颜色同步回
+//! src/renderer/assets/styles/index.less 的 :root 兜底色块（主题 JSON 加载前的首屏底色）
 
 const fs = require('fs')
 const path = require('path')
 const { createThemeColors } = require('./utils')
 
 const defaultThemes = [
+  {
+    // 泛音的品牌默认主题：取应用图标主色（靛紫 #4F46E5），与图标渐变保持一致
+    id: 'overtone',
+    name: '余音绕梁',
+    isDark: false,
+    isDarkFont: false,
+    config: {
+      primary: 'rgb(79, 70, 229)',
+      font: 'rgb(33, 33, 33)',
+      '--color-app-background': 'var(--color-primary-light-600-alpha-700)',
+      '--color-main-background': 'rgba(255, 255, 255, 1)',
+      '--color-nav-font': 'var(--color-primary)',
+      '--background-image': 'none',
+      '--background-image-position': 'center',
+      '--background-image-size': 'cover',
+
+      '--color-btn-hide': '#3bc2b2',
+      '--color-btn-min': '#85c43b',
+      '--color-btn-close': '#fab4a0',
+
+      '--color-badge-primary': 'var(--color-primary)',
+      '--color-badge-secondary': '#9333ea',
+      '--color-badge-tertiary': '#a78bfa',
+    },
+  },
+  {
+    id: 'overtone_dark',
+    name: '夜色泛音',
+    isDark: true,
+    isDarkFont: false,
+    config: {
+      // 深色下用更亮的靛蓝（#818CF8），保证在深底上有足够对比度
+      primary: 'rgb(129, 140, 248)',
+      font: 'rgb(229, 229, 229)',
+      '--color-app-background': 'rgba(0, 0, 0, 0)',
+      '--color-main-background': 'rgba(19, 19, 19, 0.9)',
+      '--color-nav-font': 'var(--color-primary)',
+      '--background-image': 'none',
+      '--background-image-position': 'center',
+      '--background-image-size': 'cover',
+
+      '--color-btn-hide': '#3bc2b2',
+      '--color-btn-min': '#85c43b',
+      '--color-btn-close': '#fab4a0',
+
+      '--color-badge-primary': 'var(--color-primary-dark-200)',
+      '--color-badge-secondary': 'var(--color-primary)',
+      '--color-badge-tertiary': 'var(--color-primary-dark-300)',
+    },
+  },
   {
     id: 'green',
     name: '绿意盎然',
@@ -381,4 +433,53 @@ const themes = defaultThemes.map(({ config: { primary, font, ...extInfo }, ...th
 })
 
 fs.writeFileSync(path.join(__dirname, 'index.json'), JSON.stringify(themes, null, 2))
+
+// index.less 的 :root 块是主题 JSON 异步加载完成前的首屏兜底色。
+// 它里面近 260 行由 --color-primary* / --color-theme / --color-000~1000 组成，
+// 正好等于 createThemeColors(默认主题) 的输出；这部分以前是手工维护的，
+// 换默认主题时极易漏改，导致启动瞬间闪一下旧主题的色。
+// 这里按变量名逐行替换值（保持原有行序与格式），使兜底色随默认主题自动跟进。
+const syncIndexLessFallback = () => {
+  const { primary, font } = defaultThemes[0].config
+  const { isDark, isDarkFont } = defaultThemes[0]
+  const colors = createThemeColors(primary, font, isDark, isDarkFont)
+
+  const lessPath = path.join(__dirname, '../../renderer/assets/styles/index.less')
+  const lines = fs.readFileSync(lessPath, 'utf-8').split('\n')
+
+  const start = lines.findIndex((line) => /^\s*:root\s*\{\s*$/.test(line))
+  if (start === -1) throw new Error('index.less 中未找到 :root 块')
+  let end = -1
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (/^\s*\}\s*$/.test(lines[i])) {
+      end = i
+      break
+    }
+  }
+  if (end === -1) throw new Error('index.less 中 :root 块缺少结束括号')
+
+  let changed = 0
+  for (let i = start + 1; i < end; i += 1) {
+    // 末位捕获 \r，保证 CRLF 文件被改写后行尾不退化（否则会写出混合行尾）
+    const match = /^(\s*)(--[\w-]+):[ \t]*(.+?);[ \t]*(\r?)$/.exec(lines[i])
+    if (!match) continue // 跳过注释行、选择器行
+    const [, indent, name, , cr] = match
+    const value = colors[name]
+    if (value == null) continue // 非主题派生变量（按钮色、结构变量等）保持原样
+    const next = `${indent}${name}: ${value};${cr}`
+    if (next !== lines[i]) {
+      lines[i] = next
+      changed += 1
+    }
+  }
+
+  if (changed > 0) {
+    fs.writeFileSync(lessPath, lines.join('\n'))
+    console.log(`index.less :root 兜底色已同步为「${defaultThemes[0].name}」（${changed} 处）`)
+  } else {
+    console.log(`index.less :root 兜底色已是最新（${defaultThemes[0].name}）`)
+  }
+}
+
+syncIndexLessFallback()
 

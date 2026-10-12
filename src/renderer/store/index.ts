@@ -159,7 +159,7 @@ export const setQualityList = (_qualityList: LX.QualityList) => {
   qualityList.value = _qualityList
 }
 
-export const themeId = ref('green')
+export const themeId = ref('overtone')
 export const themeInfo: LX.ThemeInfo = {
   themes: [],
   userThemes: [],
