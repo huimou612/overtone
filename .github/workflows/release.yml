@@ -8,10 +8,16 @@ on:
   workflow_dispatch:
 
 # 打包流程要用 GITHUB_TOKEN 创建 Release 并上传各平台安装包。
-# 本仓库由 API 创建，默认工作流权限为 read，缺少此项会在「Release package」步骤
+# 本仓库由 API 创建，默认工作流权限为 read，缺少此项会在「Release」步骤
 # 报 403 Resource not accessible by integration。显式声明可不受仓库默认设置影响。
 permissions:
   contents: write
+
+# 同一分支上后一次推送取消前一次未完成的构建，避免白烧 CI 时长。
+# 注意：Release 是流水线的最后一步，被取消的构建不会留下半成品草稿。
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   IS_CI: 'true'
@@ -41,17 +47,20 @@ jobs:
   #         restore-keys: |
   #           ${{ runner.os }}-build-
 
-  #     - name: Install Dependencies
-  #       run: |
-  #         npm ci
-
-  #     - name: Lint src code
-  #       run: npm run lint
+  # ─────────────────────────────────────────────────────────────────────────
+  # 各平台 job 只负责「编译 + 打包」，不再自行发布 Release。
+  #
+  # 为什么这么改：以前这里直接跑 publish:*（electron-builder publish=always），
+  # 4 个 job 并行去创建同一个 tag 的 draft release。draft 不占 git tag，各 job
+  # 互相查不到对方，于是每推一次代码就多出 2–4 份重复草稿（实测一次 1.5 GB）。
+  # 现在改为各平台上传 artifact，由末尾唯一的 Release job 汇总发布，彻底消除竞态。
+  #
+  # 对应的无发布脚本：publish:xxx → pack:xxx（build-pack.js 里 publish 默认为 'never'）
+  # ─────────────────────────────────────────────────────────────────────────
 
   Windows:
     name: Windows
     runs-on: windows-latest
-    # needs: CheckCode
     steps:
       - name: Check out git repository
         uses: actions/checkout@v6
@@ -73,26 +82,33 @@ jobs:
           git status --porcelain
           npm run build
 
-      - name: Release package
+      - name: Package (setup + green)
         run: |
-          npm run publish:win:7z:x64
-          npm run publish:win:7z:arm64
-          npm run publish:win:setup:arm64
-          npm run publish:win:setup:x64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BT_TOKEN: ${{ secrets.BT_TOKEN }}
+          npm run pack:win:setup:x64
+          npm run pack:win:setup:arm64
+          npm run pack:win:7z:x64
+          npm run pack:win:7z:arm64
 
       - name: Generate file MD5
+        shell: pwsh
         run: |
           cd build
           Get-FileHash *.exe,*.7z -Algorithm MD5 | Format-List
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-windows
+          if-no-files-found: error
+          path: |
+            build/*.exe
+            build/*.exe.blockmap
+            build/*.7z
+            build/latest.yml
 
   Windows_7:
     name: Windows_7
     runs-on: windows-latest
-    # needs: CheckCode
     steps:
       - name: Check out git repository
         uses: actions/checkout@v6
@@ -123,24 +139,31 @@ jobs:
           npm install electron@22 better-sqlite3@12
           pip.exe install setuptools
 
-      - name: Release win7 package
+      - name: Package win7 (setup + green)
         run: |
-          npm run publish:win7:setup:x64
-          npm run publish:win7:7z:x64
-          npm run publish:win7:7z:x86
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BT_TOKEN: ${{ secrets.BT_TOKEN }}
+          npm run pack:win7:setup:x64
+          npm run pack:win7:7z:x64
+          npm run pack:win7:7z:x86
 
       - name: Generate file MD5
+        shell: pwsh
         run: |
           cd build
           Get-FileHash *.exe,*.7z -Algorithm MD5 | Format-List
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-windows7
+          if-no-files-found: error
+          path: |
+            build/*.exe
+            build/*.exe.blockmap
+            build/*.7z
+
   Mac:
     name: Mac
     runs-on: macos-latest
-    # needs: CheckCode
     steps:
       - name: Check out git repository
         uses: actions/checkout@v6
@@ -154,6 +177,7 @@ jobs:
 
       - name: Show Env
         run: echo "${{ env.NPM_CACHE }}"
+
       - name: Setup Node Env
         env:
           NPM_CACHE: ${{ env.NPM_CACHE }}
@@ -164,23 +188,29 @@ jobs:
           git status --porcelain
           npm run build
 
-      - name: Release package
+      - name: Package (dmg x64 + arm64)
         run: |
-          npm run publish:mac:dmg
-          npm run publish:mac:dmg:arm64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BT_TOKEN: ${{ secrets.BT_TOKEN }}
+          npm run pack:mac:dmg
+          npm run pack:mac:dmg:arm64
 
       - name: Generate file MD5
         run: |
           cd build
           md5 *.dmg
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-macos
+          if-no-files-found: error
+          path: |
+            build/*.dmg
+            build/*.dmg.blockmap
+            build/latest-mac.yml
+
   Linux:
     name: Linux
     runs-on: ubuntu-latest
-    # needs: CheckCode
     steps:
       - name: Install package
         run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
@@ -194,6 +224,7 @@ jobs:
 
       - name: Show Env
         run: echo "${{ env.NPM_CACHE }}"
+
       - name: Setup Node Env
         env:
           NPM_CACHE: ${{ env.NPM_CACHE }}
@@ -204,19 +235,90 @@ jobs:
           git status --porcelain
           npm run build
 
-      - name: Release package
+      - name: Package (deb + appImage + rpm + pacman)
         run: |
-          npm run publish:linux:deb:amd64
-          npm run publish:linux:deb:arm64
-          npm run publish:linux:deb:armv7l
-          npm run publish:linux:appImage
-          npm run publish:linux:rpm
-          npm run publish:linux:pacman
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BT_TOKEN: ${{ secrets.BT_TOKEN }}
+          npm run pack:linux:deb:amd64
+          npm run pack:linux:deb:arm64
+          npm run pack:linux:deb:armv7l
+          npm run pack:linux:appImage
+          npm run pack:linux:rpm
+          npm run pack:linux:pacman
 
       - name: Generate file MD5
         run: |
           cd build
           md5sum *.deb *.rpm *.pacman *.AppImage
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-linux
+          if-no-files-found: error
+          path: |
+            build/*.deb
+            build/*.rpm
+            build/*.pacman
+            build/*.AppImage
+            build/latest-linux.yml
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 汇总发布：四个平台全部成功后才跑，只创建一个 draft release
+  # ─────────────────────────────────────────────────────────────────────────
+  Release:
+    name: Release
+    needs: [Windows, Windows_7, Mac, Linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List files to be published
+        run: ls -lh artifacts
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          REPO="${GITHUB_REPOSITORY}"
+          echo "::notice title=Release tag::${TAG}"
+
+          # 清掉同 tag 的历史草稿：早期版本的工作流会让 4 个平台 job 各建一个
+          # 同名草稿，草稿不占 git tag、互相看不见，留着只会白占仓库空间。
+          gh api "repos/${REPO}/releases?per_page=100" \
+            --jq ".[] | select(.draft and .tag_name == \"${TAG}\") | .id" \
+            | while read -r id; do
+                [ -n "$id" ] && gh api -X DELETE "repos/${REPO}/releases/${id}" \
+                  && echo "deleted stale draft release id=${id}"
+              done
+
+          # 同时清掉可能残留的 git tag，让本次构建的 tag 指向当次提交
+          gh api -X DELETE "repos/${REPO}/git/refs/tags/${TAG}" 2>/dev/null \
+            && echo "deleted stale tag ${TAG}" || true
+
+          {
+            echo "由 GitHub Actions 自动构建，提交 \`${GITHUB_SHA:0:8}\`。"
+            echo
+            echo "**这是草稿（draft），仅供内部验证，尚未对外发布。**"
+            echo
+            echo "包含平台：Windows / Windows 7 / macOS / Linux。"
+            echo "macOS 与 Linux 包未签名，安装时请自行放行。"
+          } > /tmp/release-notes.md
+
+          gh release create "${TAG}" \
+            --draft \
+            --target "${GITHUB_SHA}" \
+            --title "泛音 ${TAG}" \
+            --notes-file /tmp/release-notes.md \
+            artifacts/*
+
+          echo "::notice title=Draft release created::${TAG}"
