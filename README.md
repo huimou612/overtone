@@ -1,132 +1,202 @@
-<p align="center"><a href="https://github.com/lyswhut/lx-music-desktop"><img width="200" src="https://github.com/lyswhut/lx-music-desktop/blob/master/doc/images/icon.png" alt="lx-music logo"></a></p>
+<p align="center"><a href="https://github.com/huimou612/overtone"><img width="200" src="./doc/images/icon.png" alt="Overtone logo"></a></p>
 
-<h1 align="center">LX Music 桌面版</h1>
+<h1 align="center">泛音 · Overtone</h1>
 
 <p align="center">
-  <a href="https://github.com/lyswhut/lx-music-desktop/releases"><img src="https://img.shields.io/github/release/lyswhut/lx-music-desktop" alt="Release version"></a>
-  <a href="https://github.com/lyswhut/lx-music-desktop/actions/workflows/release.yml"><img src="https://github.com/lyswhut/lx-music-desktop/workflows/Build/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/lyswhut/lx-music-desktop/actions/workflows/beta-pack.yml"><img src="https://github.com/lyswhut/lx-music-desktop/workflows/Build%20Beta/badge.svg" alt="Build status"></a>
-  <a href="https://electronjs.org/releases/stable"><img src="https://img.shields.io/github/package-json/dependency-version/lyswhut/lx-music-desktop/dev/electron/master" alt="Electron version"></a>
-  <!-- <a href="https://github.com/lyswhut/lx-music-desktop/releases"><img src="https://img.shields.io/github/downloads/lyswhut/lx-music-desktop/latest/total" alt="Downloads"></a> -->
-  <a href="https://github.com/lyswhut/lx-music-desktop/tree/dev"><img src="https://img.shields.io/github/package-json/v/lyswhut/lx-music-desktop/dev" alt="Dev branch version"></a>
-  <!-- <a href="https://github.com/lyswhut/lx-music-desktop/blob/master/LICENSE"><img src="https://img.shields.io/github/license/lyswhut/lx-music-desktop" alt="License"></a> -->
+  <a href="https://github.com/huimou612/overtone/releases"><img src="https://img.shields.io/github/release/huimou612/overtone" alt="Release version"></a>
+  <a href="https://github.com/huimou612/overtone/blob/master/LICENSE"><img src="https://img.shields.io/github/license/huimou612/overtone" alt="License"></a>
+  <a href="https://electronjs.org/releases/stable"><img src="https://img.shields.io/github/package-json/dependency-version/huimou612/overtone/dev/electron/master" alt="Electron version"></a>
 </p>
 
-<!-- [![GitHub release][1]][2]
-[![Build status][3]][4]
-[![GitHub Releases Download][5]][6]
-[![dev branch][7]][8]
-[![GitHub license][9]][10] -->
-
-<!-- [1]: https://img.shields.io/github/release/lyswhut/lx-music-desktop
-[2]: https://github.com/lyswhut/lx-music-desktop/releases
-[3]: https://ci.appveyor.com/api/projects/status/flrsqd5ymp8fnte5?svg=true
-[4]: https://ci.appveyor.com/project/lyswhut/lx-music-desktop
-[5]: https://img.shields.io/github/downloads/lyswhut/lx-music-desktop/latest/total
-[5]: https://img.shields.io/github/downloads/lyswhut/lx-music-desktop/total
-[6]: https://github.com/lyswhut/lx-music-desktop/releases
-[7]: https://img.shields.io/github/package-json/v/lyswhut/lx-music-desktop/dev
-[8]: https://github.com/lyswhut/lx-music-desktop/tree/dev
-[9]: https://img.shields.io/github/license/lyswhut/lx-music-desktop
-[10]: https://github.com/lyswhut/lx-music-desktop/blob/master/LICENSE -->
-
-<p align="center">一个基于 Electron & Vue 开发的音乐软件</p>
-
-## 说明
-
-所用技术栈：
-
-- Electron 30+
-- Vue 3
-
-已支持的平台：
-
-- Linux
-- macOS
-- Windows 7 及以上
-
-*移动版项目地址：https://github.com/lyswhut/lx-music-mobile*
-
-> [!NOTE]
-> 目前新项目 [Any Listen](https://github.com/any-listen/any-listen) 的桌面版、Web 版已实现 LX Music 的大部分功能，并额外支持 WebDAV 歌曲播放、WebDAV 数据同步、独立播放列表等功能。
-> 我们以后的开发精力将主要集中在新项目上，之前大家在 LX Music 提的功能我们也会考虑在新项目中添加。
-> 对于日常使用 LX Music 的人可以试试迁移到 Any Listen，若遇到任何问题可以发 issue 反馈。
->
-> 关于我们开发新项目的原因，可以参考：[LX Music 项目发展调整与新项目计划](https://github.com/lyswhut/lx-music-desktop/issues/1912)。
-
-软件变化请查看[更新日志](https://github.com/lyswhut/lx-music-desktop/blob/master/CHANGELOG.md)。
-
-软件下载请查看 [GitHub Releases](https://github.com/lyswhut/lx-music-desktop/releases)。
-
-使用常见问题请参阅[桌面版常见问题](https://lyswhut.github.io/lx-music-doc/desktop/faq)。
-
-目前本项目的原始发布地址只有 [**GitHub**](https://github.com/lyswhut/lx-music-desktop/releases)，其他渠道均为第三方转载发布，与本项目无关！
-
-为了提高使用门槛，本软件内的默认设置、UI 操作不以新手友好为目标，所以使用前建议先根据你的喜好浏览调整一遍软件设置，阅读一遍[音乐播放列表机制](https://lyswhut.github.io/lx-music-doc/desktop/faq/playlist)及[可用的鼠标、键盘快捷操作](https://lyswhut.github.io/lx-music-doc/desktop/faq/hotkey)。
-
-### Scheme URL 支持
-
-从 v1.17.0 起支持 Scheme URL，可以使用此功能在浏览器等场景下调用 LX Music，我们开发了一个[油猴脚本](https://github.com/lyswhut/lx-music-script#readme)配套使用。
-
-脚本安装地址：[LX Music 辅助脚本](https://greasyfork.org/zh-CN/scripts/438148)。
-
-若你想自己调用 LX Music，可以参考文档「[Scheme URL 支持](https://lyswhut.github.io/lx-music-doc/desktop/scheme-url)」部分。
-
-### 数据同步服务
-
-从 v2.2.0 起，我们发布了一个独立的[数据同步服务](https://github.com/lyswhut/lx-music-sync-server#readme)。如果你有服务器，可以将其部署到服务器上作为私人多端同步服务使用，详情看该项目说明。
-
-### 开放 API 支持
-
-从 v2.7.0 起支持开放 API 服务。启用该功能后，将会在本地启动一个 HTTP 服务，提供播放器相关的接口供第三方软件调用，详情看文档「[开放 API 服务](https://lyswhut.github.io/lx-music-doc/desktop/open-api)」部分。
-
-### 数据存储目录
-
-默认情况下，软件的数据存储在：
-
-- Linux：`$XDG_CONFIG_HOME/lx-music-desktop` 或 `~/.config/lx-music-desktop`
-- macOS：`~/Library/Application Support/lx-music-desktop`
-- Windows：`%APPDATA%/lx-music-desktop`
-
-在 Windows 平台上，若程序文件夹中存在 `portable` 文件夹，则自动使用此文件夹作为数据存储文件夹（适用于 v1.17.0 及以上版本）。
-
-## 用户界面
-
-<p><img width="100%" src="./doc/images/app.png" alt="lx-music desktop UI"></p>
-
-## 贡献代码
-
-本项目欢迎 PR，但为了 PR 能顺利合并，需要注意以下几点：
-
-- 对于添加新功能的 PR，建议在提交 PR 前先创建 Issue 进行说明，以确认该功能是否确实需要。
-- 对于修复 bug 的 PR，请提供修复前后的说明及重现方式。
-- 对于其他类型的 PR，则适当附上说明。
-
-贡献代码步骤：
-
-1. 参照[源码使用方法](https://lyswhut.github.io/lx-music-doc/desktop/use-source-code)设置开发环境；
-2. 克隆本仓库代码并切换至 `dev` 分支进行开发；
-3. 提交 PR 至 `dev` 分支。
-
-## 源码使用方法
-
-请参阅：<https://lyswhut.github.io/lx-music-doc/desktop/use-source-code>
-
-## 项目协议
-
-本项目基于 [Apache License 2.0](https://github.com/lyswhut/lx-music-desktop/blob/master/LICENSE) 许可证发行，以下协议是对于 Apache License 2.0 的补充，如有冲突，以以下协议为准。
+<p align="center">一个以 <b>LX Music</b> 为外壳、以 <b>Folia</b> 的 AI 能力为内核的本地音乐播放器</p>
 
 ---
 
-*词语约定：本协议中的“本项目”指 LX Music（洛雪音乐助手）桌面版项目；“使用者”指签署本协议的使用者；“官方音乐平台”指对本项目内置的包括酷我、酷狗、咪咕等音乐源的官方平台统称；“版权数据”指包括但不限于图像、音频、名字等在内的他人拥有所属版权的数据。*
+## 这是什么
+
+泛音（Overtone）是一个**二次开发作品**。它把两个项目的长处缝在一起：
+
+| 来源 | 贡献的部分 |
+| --- | --- |
+| [LX Music](https://github.com/lyswhut/lx-music-desktop)（Apache-2.0） | 桌面端外壳：Electron + Vue 3 框架、播放器内核、播放列表、音源（自定义源）加载、桌面歌词窗口、数据同步、开放 API、主题系统 |
+| [Folia](https://github.com/chthollyphile/folia-major)（AGPL-3.0） | AI 能力：AI 歌词分词（逐词边界）、AI 凭据安全存储、音源分离（HTDemucs） |
+
+也就是说：**操作习惯与 LX Music 一致，但多了「听懂歌词」和「拆开音轨」这两件事。**
+
+> 为什么是这两个许可证能合到一起？因为 Apache-2.0 允许并入 AGPL-3.0（反向不行）。
+> 详细说明见 [NOTICE](./NOTICE)。
+
+---
+
+## 功能
+
+### 继承自 LX Music（已完成）
+
+- 多平台音源搜索与播放（走「自定义源」机制，本仓库不含任何平台接口实现）
+- 播放列表、收藏、临时列表、列表同步
+- 桌面歌词窗口（横/竖排、逐字歌词）
+- 数据同步服务客户端
+- 开放 API（本地 HTTP 服务，供第三方调用）
+- 主题系统、托盘、全局快捷键
+- Windows / macOS / Linux 三平台打包
+
+### 来自 Folia 的 AI 能力（开发路线）
+
+- [ ] **AI 歌词分词** —— 用大模型把整行歌词切成词，为逐词高亮动画提供边界
+- [ ] **AI 凭据管理** —— 用 Electron `safeStorage`（Windows DPAPI / macOS Keychain / Linux libsecret）加密存储 API Key
+- [ ] **音源分离** —— HTDemucs，把一首歌拆成人声 / 鼓 / 贝斯 / 其他四轨
+
+---
+
+## 开发环境与运行
+
+### 技术栈
+
+- Electron 42+
+- Vue 3 + TypeScript
+- Webpack 多入口构建（`main` / `renderer` / `renderer-lyric` / `renderer-scripts`）
+
+### 环境要求
+
+- Node.js 18+
+- Python 3.8+（编译原生模块用）
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+> **坑：** 从国内镜像装 `electron` 时，包的 `scripts` 字段可能丢失，导致 Electron 二进制不会自动下载，
+> `node_modules/electron/dist` 不存在。补一句即可：
+>
+> ```bash
+> cd node_modules/electron
+> ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/" node install.js
+> cd ../..
+> ```
+
+### 启动开发模式
+
+```bash
+npm run dev
+```
+
+> **坑（Windows）：** 如果所在终端环境注入了 `ELECTRON_RUN_AS_NODE=1`，
+> Electron 会以纯 Node 模式启动，报
+> `TypeError: Not running in an Electron environment!`。
+> 启动前去掉这个变量即可：
+>
+> ```bash
+> env -u ELECTRON_RUN_AS_NODE npm run dev
+> ```
+
+开发模式会同时编译四个入口，**四个都编译成功才会拉起 Electron 窗口**。
+脚本在 `build-config/runner-dev.js`。
+
+### 构建
+
+```bash
+# Windows 安装包
+npm run pack:win:setup
+
+# 其他目标见 package.json 的 scripts
+```
+
+---
+
+## 数据存储目录
+
+- Linux：`$XDG_CONFIG_HOME/overtone` 或 `~/.config/overtone`
+- macOS：`~/Library/Application Support/overtone`
+- Windows：`%APPDATA%/overtone`
+
+实际的库文件与设置在 `<userData>/OvertoneData/` 下：
+`overtone.data.db`（SQLite）、各 `*.json`（设置、列表、自定义源）。
+
+> Windows 上若程序目录存在 `portable` 文件夹，则自动改用该文件夹作为数据目录。
+
+---
+
+## 目录结构
+
+```
+.
+├── src/
+│   ├── common/            # 主进程与渲染进程共享的代码（常量、IPC 契约名、工具）
+│   │   ├── ipcNames.ts    # IPC 契约的唯一来源，命名规则 `${模块名}_${事件名}`
+│   │   ├── mainIpc.ts     # 主进程侧 IPC 封装
+│   │   └── rendererIpc.ts # 渲染进程侧 IPC 封装
+│   ├── main/              # Electron 主进程
+│   │   ├── modules/       # 各功能模块（winMain / winLyric / sync / userApi / tray ...）
+│   │   └── worker/        # 数据库等重活
+│   ├── renderer/          # 主窗口（Vue 3，906 个组件）
+│   ├── renderer-lyric/    # 桌面歌词窗口
+│   └── renderer-scripts/  # 自定义源的沙箱运行环境
+├── build-config/          # 构建脚本（dev runner / electron-builder 配置）
+├── publish/               # 发版脚本与版本信息
+├── licenses/              # 安装程序与 AppImage 内嵌的许可协议
+└── doc/                   # 文档与截图
+```
+
+### 加一个新能力的标准三步
+
+这个项目的 IPC 是**契约驱动**的，加功能只需三步：
+
+1. **声明契约** —— 在 `src/common/ipcNames.ts` 里给模块加事件名：
+
+   ```ts
+   const modules = {
+     // ...
+     ai: {
+       segment_lyric: '',
+       get_ai_config: '',
+     },
+   }
+   ```
+
+2. **主进程实现** —— 在 `src/main/modules/` 下新建目录并在 `index.ts` 注册：
+
+   ```ts
+   import { mainHandle } from '@common/mainIpc'
+   import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
+
+   mainHandle(WIN_MAIN_RENDERER_EVENT_NAME.get_ai_config, async() => {
+     return getStore(STORE_NAMES.AI).get('config')
+   })
+   ```
+
+3. **渲染进程调用** —— 在页面里：
+
+   ```ts
+   import { rendererInvoke } from '@common/rendererIpc'
+   const result = await rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.segment_lyric, payload)
+   ```
+
+---
+
+## 贡献
+
+欢迎 PR。但请注意：**不要提交任何音乐平台的接口实现、加密算法或逆向代码**，
+这类 PR 会被直接关闭（见下方「红线」）。
+
+---
+
+## 许可证
+
+本项目基于 [GNU Affero General Public License v3.0](./LICENSE) 发行。
+
+以下协议是对于 GNU AGPL v3.0 的补充，如有冲突，以以下协议为准。
+
+*词语约定：本协议中的「本项目」指 泛音（Overtone）桌面版项目，它基于 LX Music（洛雪音乐助手）与 Folia 二次开发而成；「使用者」指签署本协议的使用者；「官方音乐平台」指对本项目内置的包括酷我、酷狗、咪咕等音乐源的官方平台统称；「版权数据」指包括但不限于图像、音频、名字等在内的他人拥有所属版权的数据。*
 
 ### 一、数据来源
 
 1.1 本项目的各官方平台在线数据来源原理是从其公开服务器中拉取数据（与未登录状态在官方平台 APP 获取的数据相同），经过对数据简单地筛选与合并后进行展示，因此本项目不对数据的合法性、准确性负责。
 
-1.2 本项目本身没有获取某个音频数据的能力，本项目使用的在线音频数据来源来自软件设置内“自定义源”设置所选择的“源”返回的在线链接。例如播放某首歌，本项目所做的只是将希望播放的歌曲名、艺术家等信息传递给“源”，若“源”返回了一个链接，则本项目将认为这就是该歌曲的音频数据而进行使用，至于这是不是正确的音频数据本项目无法校验其准确性，所以使用本项目的过程中可能会出现希望播放的音频与实际播放的音频不对应或者无法播放的问题。
+1.2 本项目本身没有获取某个音频数据的能力，本项目使用的在线音频数据来源来自软件设置内「自定义源」设置所选择的「源」返回的在线链接。例如播放某首歌，本项目所做的只是将希望播放的歌曲名、艺术家等信息传递给「源」，若「源」返回了一个链接，则本项目将认为这就是该歌曲的音频数据而进行使用，至于这是不是正确的音频数据本项目无法校验其准确性，所以使用本项目的过程中可能会出现希望播放的音频与实际播放的音频不对应或者无法播放的问题。
 
-1.3 本项目的非官方平台数据（例如“我的列表”内列表）来自使用者本地系统或者使用者连接的同步服务，本项目不对这些数据的合法性、准确性负责。
+1.3 本项目的非官方平台数据（例如「我的列表」内列表）来自使用者本地系统或者使用者连接的同步服务，本项目不对这些数据的合法性、准确性负责。
 
 ### 二、版权数据
 
@@ -158,10 +228,34 @@
 
 8.1 本项目仅用于对技术可行性的探索及研究，不接受任何商业（包括但不限于广告等）合作及捐赠。
 
-### 九、接受协议
+### 九、开源与二次开发
 
-9.1 若你使用了本项目，即代表你接受本协议。
+9.1 本项目基于 LX Music（Apache-2.0）与 Folia（AGPL-3.0）二次开发，整体以 GNU AGPL v3.0 发行。依据 AGPL v3.0 第 13 条，若你以网络服务形式提供本项目的修改版本，必须向所有通过网络与之交互的使用者提供对应完整源代码。
+
+9.2 你必须保留本项目的版权声明与来源声明，不得移除或篡改对 LX Music、Folia 及本项目上游贡献者的署名。
+
+### 十、接受协议
+
+10.1 若你使用了本项目，即代表你接受本协议。
 
 ---
 
-若对此有疑问请 mail to: lyswhut+qq.com (请将 `+` 替换为 `@`)
+## 红线（写给所有参与者）
+
+以下内容**永远不进入本仓库**：
+
+1. 任何音乐平台（netease / qq / kugou / migu / kuwo / bodian 等）的接口逆向实现、
+   加密算法、签名逻辑、私有协议代码。
+2. 任何音频文件、歌词数据、专辑封面等版权素材。
+3. 任何绕过平台版权保护或付费墙的技术方案。
+
+在线播放能力只通过「自定义源」机制对外开放，源由使用者自行提供。
+
+---
+
+## 致谢
+
+- [LX Music](https://github.com/lyswhut/lx-music-desktop) —— 落雪无痕 (lyswhut) 及所有贡献者
+- [Folia](https://github.com/chthollyphile/folia-major) —— 冬霧 (chthollyphile) 及所有贡献者
+
+没有这两个项目，就没有泛音。

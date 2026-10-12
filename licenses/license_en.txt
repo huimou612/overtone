@@ -1,8 +1,8 @@
-This project is issued based on the Apache License 2.0 license. The following agreements are supplemental to the Apache License 2.0. In the event of a conflict, the following agreements shall prevail.
+This project is issued based on the GNU Affero General Public License v3.0 (GNU AGPL v3.0). The following agreements are supplemental to the GNU AGPL v3.0. In the event of a conflict, the following agreements shall prevail.
 
 DEFINITIONS:
 
-"This Project" refers to the LX Music Desktop Edition (aka lx-music-desktop) project. "User" refers to the user who signed this agreement. "Official Music Streaming Service" refers to collectively the official streaming service corresponding to the music source. "Copyrighted Data" refers to data including, but not limited to, pictures, audio, names, etc., for which others own the copyright.
+"This Project" refers to the Overtone Desktop Edition project, which is a derivative work built upon LX Music (Luo Xue Music Assistant) and Folia. "User" refers to the user who signed this agreement. "Official Music Streaming Service" refers to collectively the official streaming service corresponding to the music source. "Copyrighted Data" refers to data including, but not limited to, pictures, audio, names, etc., for which others own the copyright.
 
 1. Data Source
 
@@ -14,39 +14,44 @@ DEFINITIONS:
 
 2. Copyrighted Data
 
-2.1 During the process of using this project, copyrighted data may be generated. For this copyrighted data, this project does not have their ownership. In order to avoid infringement, users must remove copyrighted data generated during the process of using this project ** within  24 hours **.
+2.1 During the process of using this project, copyrighted data may be generated. For this copyrighted data, this project does not have their ownership. In order to avoid infringement, users must remove copyrighted data generated during the process of using this project ** within 24 hours **.
 
 3. Alias of Music Streaming Service
 
-3.1 The official music streaming service alias within this project is a term used within this project to refer to the official music streaming service and does not contain malicious intent. If the operator of the official music streaming service feels it is inappropriate, you can contact this project to request changes or removals.
+3.1 The official music streaming service alias within this project is a term used within this project to refer to the official music streaming service and does not contain malice. If the official music streaming service feels inappropriate, it can contact this project to change or remove it.
 
 4. Use of Resources
 
-4.1 The parts used in this project include, but are not limited to, fonts, pictures, and other resources from the Internet. If infringement occurs, you can contact this project.
+4.1 Some of the resources used in this project, including but not limited to fonts and pictures, come from the Internet. If there is any infringement, you can contact this project to remove it.
 
 5. Disclaimer
 
-5.1 The use of this project includes any direct, indirect, special, accidental, or result damage due to any nature caused by this agreement or use or inability to use this item (including but not limited to the loss of goodwill, stop work, computer, computer Damage compensation caused by faults or any or all other commercial damage or losses) is the responsibility of users.
+5.1 Any and all direct, indirect, special, incidental or consequential damages of any kind arising from the use of this project, including but not limited to damages for loss of goodwill, work stoppage, computer failure or malfunction, or any and all other commercial damages or losses, shall be the responsibility of the user.
 
-6. Use Restrictions
+6. Restrictions on Use
 
-6.1 This project is completely free and open source and is published on GitHub for the learning exchanges of technology for people all over the world. This project does not guarantee that the technology in this project may violate local laws and regulations.
+6.1 This project is completely free and open source on GitHub for people all over the world to use for technical learning and exchange. This project does not guarantee that the technologies within the project may not violate local laws and regulations.
 
-6.2 ** This project is prohibited in violation of local laws and regulations. ** The user is solely responsible for any violation of law caused by the use of this project that the user knows or does not know is not permitted by local law and regulations.
+6.2 **It is prohibited to use this project in violation of local laws and regulations.** Any illegal or non-compliant act caused by the user's use of this project with or without knowledge that local laws and regulations do not allow it shall be borne by the user, and this project shall not bear any direct, indirect, special, incidental or consequential liability arising therefrom.
 
 7. Copyright Protection
 
-7.1 The operation of a music streaming service is not an easy task. Please respect copyrights and support the genuine.
+7.1 Music platforms are not easy. Please respect copyright and support the genuine.
 
 8. Non-commercial Nature
 
-8.1 This project is only used for exploring and research on technical feasibility and does not accept any business (including but not limited to advertising, etc.) cooperation and donations.
+8.1 This project is only for the exploration and research of technical feasibility, and does not accept any commercial (including but not limited to advertising) cooperation or donations.
 
-9. Accepting Agreement
+9. Open Source and Derivative Works
 
-9.1 If you use this project, it will represent you accept this agreement.
+9.1 This project is a derivative work built upon LX Music (Apache-2.0) and Folia (AGPL-3.0), and is distributed as a whole under the GNU AGPL v3.0. Pursuant to Section 13 of the AGPL v3.0, if you provide a modified version of this project as a network service, you must offer all users interacting with it remotely through a computer network the corresponding complete source code.
 
-* If the agreement is updated, you will not be notified separately. You can check it out by visiting the project address.
-* The content of this agreement is translated from the Chinese version of the agreement.
+9.2 You must retain the copyright and origin notices of this project, and must not remove or alter the attribution to LX Music, Folia, and the upstream contributors of this project.
 
-By: lyswhut
+10. Acceptance of Agreement
+
+10.1 If you use this project, it means you accept this agreement.
+
+* If the agreement is updated, no further notice will be given. You can check it at the open source address.
+
+By: The Overtone Project

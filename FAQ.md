@@ -1,8 +1,17 @@
-# lx-music-desktop 常见问题
+# 泛音（Overtone）常见问题
 
-本文档已迁移至：<https://lyswhut.github.io/lx-music-doc/desktop/faq>
+本文件保留自上游 LX Music 的常见问题文档，正文已整体注释掉，仅作**功能说明类参考资料**。
+
+其中提到的软件名、链接、群号等均属于上游项目，与泛音无关。泛音自身的常见问题请见
+[项目说明](https://github.com/huimou612/overtone#readme)，上游原始文档见
+<https://lyswhut.github.io/lx-music-doc/desktop/faq>。
+
+由于泛音完整继承了 LX Music 的外壳与操作方式，本文档中关于**播放列表机制、快捷键、
+音源配置、主题设置**等功能的描述对泛音同样适用，可作为使用参考。
 
 <!--
+原始内容（上游 LX Music 常见问题）保留如下，仅作参考：
+
 在阅读本常见问题后，仍然无法解决你的问题，请提交issue或者加企鹅群`830125506`反馈（无事勿加，入群先看群公告），反馈时请**注明**已阅读常见问题！
 
 ## ~~软件为什么没有桌面歌词与自定义列表功能~~
@@ -181,7 +190,7 @@
 
 ### Windows 10、11界面异常、界面无法显示
 
-尝试添加运行参数 `--disable-gpu-sandbox` 启动，例如：`.\lx-music-desktop.exe --disable-gpu-sandbox`，添加方法可自行百度“给快捷方式加参数”。
+尝试添加运行参数 `--disable-gpu-sandbox` 启动，例如：`.\overtone.exe --disable-gpu-sandbox`，添加方法可自行百度“给快捷方式加参数”。
 
 若以上方法无效，则尝试将 `--disable-gpu-sandbox` 逐个换成以下参数启动，直到恢复正常为止：
 
@@ -202,7 +211,7 @@
 > 在 windows 操作系统上, 当 DWM 被禁用时, 透明窗口将无法工作。
 
 因此，当 win7 没有使用**Aero**主题时界面将会显示异常，开启AERO的方法请自行百度：`win7开启Aero效果`（开启后可看到任务栏变透明）。<br>
-从`0.14.0`版本起不再强制要求开启透明效果，若你实在不想开启（若非电脑配置太低，墙裂建议开启！），可通过添加运行参数`-dt`来运行程序即可，例如：`.\lx-music-desktop.exe -dt`，添加方法可自行百度“给快捷方式加参数”，该参数的作用是用来控制程序是否使用非透明窗口运行。
+从`0.14.0`版本起不再强制要求开启透明效果，若你实在不想开启（若非电脑配置太低，墙裂建议开启！），可通过添加运行参数`-dt`来运行程序即可，例如：`.\overtone.exe -dt`，添加方法可自行百度“给快捷方式加参数”，该参数的作用是用来控制程序是否使用非透明窗口运行。
 
 注：启用**Aero**主题后，若软件出现黑边框，则重启软件即可恢复正常。
 
@@ -211,7 +220,7 @@
 ### Linux 下界面异常
 
 根据Electron里issue的[解决方案](https://github.com/electron/electron/issues/2170#issuecomment-736223269)，<br>
-若你遇到透明问题可尝试添加启动参数 `-dha` 来禁用硬件加速，例如：`.\lx-music-desktop.exe -dha`。
+若你遇到透明问题可尝试添加启动参数 `-dha` 来禁用硬件加速，例如：`.\overtone.exe -dha`。
 
 注：v1.6.0及之后的版本才支持`-dha`参数
 
@@ -315,10 +324,10 @@ Windows 7 未开启 Aero 效果时桌面歌词会有问题，详情看上面的 
 - 以管理员权限打开`cmd`，输入`sfc /scannow`回车等待检查完成重启电脑
 - 若上面的方法**修复、重启**电脑后仍然不行，就自行百度弹出的**错误信息**看下别人是怎么解决的
 
-## MAC OS无法启动软件，提示 lx-music-desktop 已损坏
+## MAC OS无法启动软件，提示 overtone 已损坏
 
 这是因为软件没有签名，被系统阻止运行，<br>
-在终端里输入 `sudo xattr -rd com.apple.quarantine /Applications/lx-music-desktop.app`，然后输入你的电脑密码即可
+在终端里输入 `sudo xattr -rd com.apple.quarantine /Applications/overtone.app`，然后输入你的电脑密码即可
 
 还可以参考：
 
@@ -329,9 +338,9 @@ Windows 7 未开启 Aero 效果时桌面歌词会有问题，详情看上面的 
 
 默认情况下，软件的数据存储在：
 
-- Windows：`%APPDATA%/lx-music-desktop`
-- Linux：`$XDG_CONFIG_HOME/lx-music-desktop` 或 `~/.config/lx-music-desktop`
-- macOS：`~/Library/Application/lx-music-desktop`
+- Windows：`%APPDATA%/overtone`
+- Linux：`$XDG_CONFIG_HOME/overtone` 或 `~/.config/overtone`
+- macOS：`~/Library/Application Support/overtone`
 
 在Windows平台下，若程序目录下存在`portable`目录，则自动使用此目录作为数据存储目录（v1.17.0新增）。
 
@@ -364,22 +373,22 @@ Windows 7 未开启 Aero 效果时桌面歌词会有问题，详情看上面的 
 
 ## Scheme URL支持
 
-从v1.17.0起支持 Scheme URL，可以使用此功能从浏览器等场景下调用LX Music，我们开发了一个[油猴脚本](https://github.com/lyswhut/lx-music-script#readme)配套使用<br>
+从v1.17.0起支持 Scheme URL，可以使用此功能从浏览器等场景下调用泛音，我们开发了一个（上游 LX Music 的油猴脚本）配套使用<br>
 脚本安装地址：<https://greasyfork.org/zh-CN/scripts/438148><br>
 以下是目前可用的Scheme URL调用方式：
 
-- URL统一以`lxmusic://`开头
+- URL统一以`overtone://`开头
 - 若无特别说明，源的可用值为：`kw/kg/tx/wy/mg`
 - 若无特别说明，音质的可用值为：`128k/320k/flac/flac24bit`
 
 目前支持两种传参方式：
 
-- 通过`data`传参，以经过URL编码的JSON数据传参，例：`lxmusic://music/play?data=xxxx`，其中`xxxx`为经过URL编码后的JSON数据，支持复杂的参数调用
-- 通过`URL`传参，适用于简单传参的调用，不需要转成JSON格式，例：`lxmusic://music/search/xxxx`，但仍然需要对数据进行URL编码，只适应于简单参数调用（v1.18.0新增）
+- 通过`data`传参，以经过URL编码的JSON数据传参，例：`overtone://music/play?data=xxxx`，其中`xxxx`为经过URL编码后的JSON数据，支持复杂的参数调用
+- 通过`URL`传参，适用于简单传参的调用，不需要转成JSON格式，例：`overtone://music/search/xxxx`，但仍然需要对数据进行URL编码，只适应于简单参数调用（v1.18.0新增）
 
 ### `data`方式传参
 
-以经过URL编码的JSON数据传参，例：`lxmusic://music/play?data=xxxx`，其中`xxxx`为经过URL编码后的JSON数据，JSON数据内容取决于下表的参数部分
+以经过URL编码的JSON数据传参，例：`overtone://music/play?data=xxxx`，其中`xxxx`为经过URL编码后的JSON数据，JSON数据内容取决于下表的参数部分
 
 | 描述 | URL | 参数
 | --- | --- | ---
