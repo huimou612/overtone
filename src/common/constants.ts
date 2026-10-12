@@ -15,6 +15,8 @@ export const STORE_NAMES = {
   LRC_EDITED: 'lyrics_edited',
   THEME: 'theme',
   SOUND_EFFECT: 'sound_effect',
+  // 泛音新增：AI 歌词处理的配置与加密后的 API Key（ai.json）
+  AI: 'ai',
 } as const
 
 export const APP_EVENT_NAMES = {

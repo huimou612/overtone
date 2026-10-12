@@ -169,6 +169,20 @@ const modules = {
     status: 'status',
     set_config: 'set_config',
   },
+  // 泛音新增：AI 歌词处理。
+  // 事件名会被下面的循环改写成 `ai_xxx`，所以这里的值只是占位。
+  ai: {
+    get_status: 'get_status',
+    set_setting: 'set_setting',
+    set_credential: 'set_credential',
+    test_connection: 'test_connection',
+    get_lyric_lines: 'get_lyric_lines',
+    segment_lyric: 'segment_lyric',
+    segment_progress: 'segment_progress',
+    get_manual_prompt: 'get_manual_prompt',
+    parse_manual_result: 'parse_manual_result',
+    apply_lxlrc: 'apply_lxlrc',
+  },
 }
 
 
@@ -193,3 +207,4 @@ export const DISLIKE_EVENT_NAME = modules.dislike
 export const WIN_MAIN_RENDERER_EVENT_NAME = modules.winMain
 export const WIN_LYRIC_RENDERER_EVENT_NAME = modules.winLyric
 export const HOTKEY_RENDERER_EVENT_NAME = modules.hotKey
+export const AI_EVENT_NAME = modules.ai
