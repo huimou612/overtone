@@ -9,14 +9,14 @@ const afterPack = require('./build-after-pack')
 * @see https://www.electron.build/configuration/configuration
 */
 const options = {
-  appId: 'cn.toside.music.desktop',
-  productName: 'lx-music-desktop',
+  appId: 'asia.cunchu.overtone',
+  productName: 'overtone',
   beforePack,
   afterPack,
   protocols: {
-    name: 'lx-music-protocol',
+    name: 'overtone-protocol',
     schemes: [
-      'lxmusic',
+      'overtone',
     ],
   },
   directories: {
@@ -46,8 +46,8 @@ const options = {
   publish: [
     {
       provider: 'github',
-      owner: 'lyswhut',
-      repo: 'lx-music-desktop',
+      owner: 'huimou612',
+      repo: 'overtone',
     },
   ],
 }
@@ -58,7 +58,7 @@ const options = {
 const winOptions = {
   win: {
     icon: './resources/icons/icon.ico',
-    legalTrademarks: 'lyswhut',
+    legalTrademarks: 'overtone',
     // artifactName: '${productName}-v${version}-${env.ARCH}-${env.TARGET}.${ext}',
   },
   nsis: {
@@ -67,7 +67,7 @@ const winOptions = {
     allowToChangeInstallationDirectory: true,
     // differentialPackage: true,
     license: './licenses/license.rtf',
-    shortcutName: 'LX Music',
+    shortcutName: '泛音',
   },
 }
 /**
@@ -76,7 +76,7 @@ const winOptions = {
  */
 const linuxOptions = {
   linux: {
-    maintainer: 'lyswhut <lyswhut@qq.com>',
+    maintainer: 'huimou612',
     // artifactName: '${productName}-${version}.${env.ARCH}.${ext}',
     icon: './resources/icons',
     category: 'Utility;AudioVideo;Audio;Player;Music;',
@@ -86,11 +86,11 @@ const linuxOptions = {
       // https://specifications.freedesktop.org/desktop-entry-spec/latest/example.html
       // https://developer.gnome.org/documentation/guidelines/maintainer/integrating.html#desktop-files
       entry: {
-        Name: 'LX Music',
-        'Name[zh_CN]': 'LX Music',
-        'Name[zh_TW]': 'LX Music',
+        Name: '泛音',
+        'Name[zh_CN]': '泛音',
+        'Name[zh_TW]': '泛音',
         Encoding: 'UTF-8',
-        MimeType: 'x-scheme-handler/lxmusic',
+        MimeType: 'x-scheme-handler/overtone',
         StartupNotify: 'false',
       },
     },
@@ -127,7 +127,7 @@ const macOptions = {
         path: '/Applications',
       },
     ],
-    title: 'LX Music v${version}',
+    title: '泛音 v${version}',
   },
 }
 

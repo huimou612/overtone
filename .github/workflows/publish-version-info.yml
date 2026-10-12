@@ -1,16 +1,26 @@
 name: Publish NPM Version Info
 
+# 已停用（parked）。
+#
+# 原工作流会把发版事件 dispatch 给上游的版本信息仓库
+# （lyswhut/lx-music-desktop-version-info），由那边发布 npm 包
+# lx-music-desktop-version-info 供客户端检查更新。
+#
+# 泛音（Overtone）不使用这条链路：
+#   - src/renderer/utils/update.js 已移除 npm 版本源与上游 gitee 镜像源，
+#     只读取本仓库 master 分支的 publish/version.json；
+#   - 因此发版时只需提交 publish/version.json 即可，无需第三方仓库中转。
+#
+# 保留此文件仅为记录，避免日后重新引入上游依赖时无据可查。
+# 如需重新启用，请先把 repository 指向自己的版本信息仓库，并配置 PAT secret。
+
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 jobs:
   dispatch:
     runs-on: ubuntu-latest
+    if: false
     steps:
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ secrets.PAT }}
-          repository: lyswhut/lx-music-desktop-version-info
-          event-type: npm-release
+      - name: Parked
+        run: echo "This workflow is intentionally disabled. See comments in the file."

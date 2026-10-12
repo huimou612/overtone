@@ -2,7 +2,7 @@
   <div :class="$style.player">
     <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
       <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="imgError">
-      <div v-else :class="$style.emptyPic">L<span>X</span></div>
+      <div v-else :class="$style.emptyPic">泛<span>音</span></div>
     </div>
     <div :class="$style.infoContent">
       <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
@@ -221,7 +221,7 @@ export default {
     color: var(--color-primary-light-400-alpha-200);
     user-select: none;
     font-size: 20px;
-    font-family: Consolas, "Courier New", monospace;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
 
     span {
       padding-left: 3px;

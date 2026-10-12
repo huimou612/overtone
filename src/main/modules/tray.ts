@@ -168,7 +168,7 @@ export const createTray = () => {
   // 托盘
   tray = new Tray(nativeImage.createFromPath(getIconPath(global.lx.appSetting['tray.themeId'])))
 
-  // tray.setToolTip('LX Music')
+  // tray.setToolTip('泛音')
   // createMenu()
   tray.setIgnoreDoubleClickEvents(true)
   if (!isMac) {
@@ -327,7 +327,7 @@ const setLyric = (lyricLineText?: string) => {
   }
 }
 
-const defaultTip = 'LX Music'
+const defaultTip = '泛音'
 const setTip = () => {
   if (!tray) return
 

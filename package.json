@@ -1,7 +1,7 @@
 {
-  "name": "lx-music-desktop",
-  "version": "2.12.6",
-  "description": "一个免费的音乐查找助手",
+  "name": "overtone",
+  "version": "0.1.0",
+  "description": "泛音 —— 带 AI 音源分离与智能歌词处理的本地音乐播放器",
   "main": "./dist/main.js",
   "scripts": {
     "pack": "node build-config/pack.js && npm run pack:win:setup:x64",
@@ -76,36 +76,37 @@
   },
   "macLanguagesInfoPlistStrings": {
     "en": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "泛音",
+      "CFBundleName": "泛音"
     },
     "zh_CN": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "泛音",
+      "CFBundleName": "泛音"
     },
     "zh_TW": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "泛音",
+      "CFBundleName": "泛音"
     }
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lyswhut/lx-music-desktop.git"
+    "url": "git+https://github.com/huimou612/overtone.git"
   },
   "keywords": [
     "music-player",
     "electron-app",
-    "vuejs3"
+    "vuejs3",
+    "ai",
+    "vocal-separation"
   ],
   "author": {
-    "name": "lyswhut",
-    "email": "lyswhut@qq.com"
+    "name": "huimou612"
   },
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/lyswhut/lx-music-desktop/issues"
+    "url": "https://github.com/huimou612/overtone/issues"
   },
-  "homepage": "https://github.com/lyswhut/lx-music-desktop#readme",
+  "homepage": "https://github.com/huimou612/overtone#readme",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.13",
     "@types/better-sqlite3": "^7.6.13",

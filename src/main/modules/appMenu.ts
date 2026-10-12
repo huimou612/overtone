@@ -8,7 +8,7 @@ export default () => {
       {
         label: app.getName(),
         submenu: [
-          { label: '关于洛雪音乐', role: 'about' },
+          { label: '关于泛音', role: 'about' },
           { type: 'separator' },
           { label: '隐藏', role: 'hide' },
           { type: 'separator' },
