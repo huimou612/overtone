@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - master
+  # 支持在 Actions 页面手动触发一次完整打包，便于不打标签也能验证构建
+  workflow_dispatch:
+
+# 打包流程要用 GITHUB_TOKEN 创建 Release 并上传各平台安装包。
+# 本仓库由 API 创建，默认工作流权限为 read，缺少此项会在「Release package」步骤
+# 报 403 Resource not accessible by integration。显式声明可不受仓库默认设置影响。
+permissions:
+  contents: write
 
 env:
   IS_CI: 'true'
