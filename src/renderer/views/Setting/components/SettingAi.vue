@@ -77,9 +77,10 @@
             :class="$style.grow"
             type="number"
             :model-value="form.OPENAI_API_TEMPERATURE"
-            :placeholder="$t('setting__ai_temperature_tip')"
             @update:model-value="updateField('OPENAI_API_TEMPERATURE', $event)"
           />
+          <!-- 这句当 placeholder 会被输入框宽度截断，放下面当提示才读得全 -->
+          <div class="p small">{{ $t('setting__ai_temperature_tip') }}</div>
         </div>
 
         <div class="p gap-top">
@@ -304,10 +305,13 @@ export default {
 .providerBtn {
   min-width: 120px;
 }
-// 两个类一起用，优先级高于 Btn 组件内部的单类样式
+// 选中态用主题自带的这一对变量：浅色底 + 深色主色字。
+// 注意不要用 background-color: var(--color-primary) 配 --color-button-font-selected ——
+// 后者在浅色主题下本身就是主色系（primary-dark-100-alpha-100），绿底绿字会看不见。
 .providerBtn.active {
-  background-color: var(--color-primary);
+  background-color: var(--color-button-background-selected);
   color: var(--color-button-font-selected);
+  cursor: default;
 }
 
 .row {

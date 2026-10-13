@@ -172,7 +172,22 @@ const createAiService = ({ store, safeStorage, platform, logger = console, fetch
   /** 传给 textClient 的只读视图：它用 store.get 取配置，密钥在这里被透明解密。 */
   const settingsView = credentials.settingsView
 
-  const getProvider = () => (store.get('AI_PROVIDER') === 'openai' ? 'openai' : 'gemini')
+  /**
+   * 默认提供方。
+   *
+   * 上游 Folia 默认 gemini（`textClient.cjs` 里 `store.get('AI_PROVIDER') || 'gemini'`，
+   * 逐字移植、保持同构，不动它），但对国内用户来说 OpenAI 兼容接口才是主流
+   * （中转站、DeepSeek、Kimi、本地 Ollama / One API 全走这条），所以这里选 openai。
+   *
+   * 关键：默认值必须**落到 store 里**，不能只在读取时兜底 —— 否则 textClient
+   * 自己读不到值会又兜底成 gemini，两边看到的值就不一样了。
+   */
+  const DEFAULT_PROVIDER = 'openai'
+  if (store.get('AI_PROVIDER') !== 'openai' && store.get('AI_PROVIDER') !== 'gemini') {
+    store.set('AI_PROVIDER', DEFAULT_PROVIDER)
+  }
+
+  const getProvider = () => (store.get('AI_PROVIDER') === 'gemini' ? 'gemini' : DEFAULT_PROVIDER)
 
   /** 给渲染层的状态：只有「配没配」，永远没有密钥明文。 */
   const getStatus = () => {

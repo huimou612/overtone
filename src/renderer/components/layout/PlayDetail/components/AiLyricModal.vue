@@ -1,5 +1,10 @@
 <template>
-  <material-modal :show="modelValue" teleport="#view" width="80%" height="80%" @close="close">
+  <!--
+    teleport 必须是 #root 而不是 #view。
+    这个对话框是由歌词菜单（LyricMenu，自身 teleport 到 #root）打开的，
+    而播放详情层盖在 #view 之上 —— 挂到 #view 会被整个盖住，DOM 里有、屏幕上没有。
+  -->
+  <material-modal :show="modelValue" teleport="#root" width="80%" height="80%" @close="close">
     <main :class="$style.main">
       <h2>{{ $t('ai_lyric__title') }}</h2>
 
@@ -404,9 +409,13 @@ h2 {
 .modeBtn {
   min-width: 0;
 }
+// 选中态用主题自带的一对变量（浅底 + 深色主色字）。
+// 别用 background-color: var(--color-primary) 配 --color-button-font-selected：
+// 后者在浅色主题下就是主色系，绿底绿字等于文字消失。
 .modeBtn.modeActive {
-  background-color: var(--color-primary);
+  background-color: var(--color-button-background-selected);
   color: var(--color-button-font-selected);
+  cursor: default;
 }
 
 .hint {
