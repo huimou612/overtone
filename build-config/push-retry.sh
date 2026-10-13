@@ -102,13 +102,18 @@ while [ "$attempt" -le "$max" ]; do
   echo "=== push attempt $attempt/$max  $(date '+%H:%M:%S') ==="
   # credential.helper= 是空值：清空 system/global/local 累积出来的整个 helper 列表，
   # 这样 git 不会去调 helper-selector，直接用 URL 里的凭据。
-  if git -c credential.helper= push "$PUSH_URL" master:master 2>&1 | sed -e "s/${GH_TOKEN:-__none__}/***/g"; then
+  #
+  # 输出必须先接进变量、再判断退出码：写成 `if git ... | sed ...` 时，退出码取的是 sed 的，
+  # 于是**推送失败也会走成功分支**。本机实测踩到过：脚本报 PUSH_OK，远端却还是旧提交。
+  if output=$(git -c credential.helper= push "$PUSH_URL" master:master 2>&1); then
+    printf '%s\n' "$output" | sed -e "s/${GH_TOKEN:-__none__}/***/g"
     ok=1
     break
   fi
+  printf '%s\n' "$output" | sed -e "s/${GH_TOKEN:-__none__}/***/g"
   echo "=== attempt $attempt failed ==="
   attempt=$((attempt + 1))
-  [ "$attempt" -le "$max" ] && sleep "$sleep_s"
+  if [ "$attempt" -le "$max" ]; then sleep "$sleep_s"; fi
 done
 
 if [ "$ok" -ne 1 ]; then
@@ -121,5 +126,19 @@ fi
 if [ -n "$GH_TOKEN" ]; then
   git -c credential.helper= fetch "$PUSH_URL" master:refs/remotes/origin/master >/dev/null 2>&1 || true
 fi
+
+# 推送「没报错」不等于远端真的变了 —— 本机实测踩过一次「脚本报成功、远端还是旧提交」。
+# 所以最后直接问远端要 master 的 SHA，与本地比对，对不上就当失败。
+LOCAL_SHA=$(git rev-parse master)
+REMOTE_SHA=$(git -c credential.helper= ls-remote "$PUSH_URL" master 2>/dev/null | sed -e 's/[[:space:]].*//')
+if [ -z "$REMOTE_SHA" ]; then
+  echo "PUSH_UNVERIFIED  取不到远端 SHA（本地 $LOCAL_SHA）"
+  exit 1
+fi
+if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
+  echo "PUSH_UNVERIFIED  本地 $LOCAL_SHA ≠ 远端 $REMOTE_SHA"
+  exit 1
+fi
+echo "远端已确认 master = $REMOTE_SHA"
 
 echo "PUSH_OK"
