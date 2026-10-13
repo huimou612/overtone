@@ -7,6 +7,8 @@ import registerWinLyric from './winLyric'
 import registerCommonRenderers from './commonRenderers'
 // 泛音新增：AI 歌词处理（移植自 Folia 的 AI 分词能力）
 import registerAi from './ai'
+// 泛音新增：音源分离（移植自 Folia 的 htdemucs sidecar）
+import registerAnalysis from './analysis'
 
 let isRegistered = false
 export default () => {
@@ -19,5 +21,6 @@ export default () => {
   registerAppMenu()
   registerWinLyric()
   registerAi()
+  registerAnalysis()
   isRegistered = true
 }

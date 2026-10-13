@@ -35,11 +35,18 @@ const options = {
     'node_modules/node-gyp-build',
     'node_modules/bufferutil',
     'node_modules/utf-8-validate',
+    // 音源分离的模型下载器用它解压运行时 zip（纯 JS，无 native）
+    'node_modules/fflate',
     'dist/**/*',
   ],
   asar: {
     smartUnpack: false,
   },
+  // stems_runner.py 要交给外部的 python.exe 执行，而它读不了 asar。把 .py 解到
+  // app.asar.unpacked 下，sidecar.cjs 会把路径里的 app.asar 改成 app.asar.unpacked。
+  asarUnpack: [
+    'dist/*.py',
+  ],
   extraResources: [
     './licenses',
   ],

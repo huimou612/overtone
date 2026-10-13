@@ -1,0 +1,74 @@
+{
+  "_comment": [
+    "音源分离（htdemucs）需要的两个下载项：模型权重与跑它的 Python 运行时。",
+    "",
+    "这个文件是移植自 Folia 的 shared/modelManifest.json，但只保留了 htdemucs 需要的两条。",
+    "上游还有 beat_this（83MB，用于自动混音的节拍网格），那个服务于我们不做的功能，所以没有搬。",
+    "字段含义与上游一致，以便日后与上游 diff。",
+    "",
+    "哈希是这里的重点，不是 URL。'下载成功' 和 '能用' 是两件事：一个被截断或被替换的 ONNX",
+    "不会大声失败，它会正常加载然后自信地给出错误的音频。所以无论走哪条路进来（镜像 / 网盘），",
+    "落盘前都要过同一个 sha256。"
+  ],
+  "_manualComment": [
+    "所有镜像都失败时才会展示。国内网络下 hf-mirror 通常可用，但网盘是最后一条退路。",
+    "上游的两个链接直接沿用，文件是同一批，哈希一致。"
+  ],
+  "mirrors": [
+    "https://hf-mirror.com/HUAI4236/folia-models/resolve/main/{file}",
+    "https://huggingface.co/HUAI4236/folia-models/resolve/main/{file}",
+    "https://github.com/AZURE-HUAI/folia-models/releases/download/weights-v1/{file}"
+  ],
+  "manual": {
+    "links": [
+      {
+        "label": "百度网盘",
+        "url": "https://pan.baidu.com/s/19TRe8VtDs3ENiv9J93JfqQ",
+        "code": "f86x"
+      },
+      {
+        "label": "夸克网盘",
+        "url": "https://pan.quark.cn/s/aed84d726374",
+        "code": "qWGi"
+      }
+    ],
+    "note": ""
+  },
+  "models": [
+    {
+      "name": "htdemucs",
+      "file": "htdemucs.onnx",
+      "bytes": 108644650,
+      "sha256": "099b5be76c1f6922124d07f850250f39d1f33f254a0b8cc90f4ec0dfd0912329",
+      "enables": "stems",
+      "license": "MIT",
+      "upstream": "https://huggingface.co/itamiArika/htdemucs-int8-memory",
+      "note": "htdemucs（Meta Research）单文件四轨变体，fp16 权重，上游仓库的 transparent 重导出。"
+    },
+    {
+      "name": "runtime",
+      "unpack": "runtime",
+      "enables": "stems",
+      "license": "PSF-2.0 (CPython), MIT (onnxruntime), BSD-3-Clause (numpy)",
+      "upstream": "https://github.com/astral-sh/python-build-standalone",
+      "note": "CPython 3.11.16 + onnxruntime 1.29.0 + numpy 2.4.6。分离跑在这里而不是 Electron 自带的 Node 里，原因见 stems_runner.py 顶部。",
+      "platforms": {
+        "win32-x64": {
+          "file": "folia-runtime-win32-x64.zip",
+          "bytes": 35633855,
+          "sha256": "50a5829ac928071ab2eecaf2667e5dab9c3af2b4b44fb5bb4b7acfb9863cdacd"
+        },
+        "darwin-arm64": {
+          "file": "folia-runtime-darwin-arm64.zip",
+          "bytes": 44380755,
+          "sha256": "f8313150254d699396b4ff4c9289bdd2864ba3268bd137e5aeb17963be318cde"
+        },
+        "linux-x64": {
+          "file": "folia-runtime-linux-x64.zip",
+          "bytes": 60509680,
+          "sha256": "cf1347f5621fed74f8b2dea243ea1365824ac77ab52ddc2183ca8a77180b60da"
+        }
+      }
+    }
+  ]
+}

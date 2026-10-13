@@ -32,6 +32,12 @@ module.exports = merge(baseConfig, {
           from: path.join(__dirname, '../../src/common/theme/images/*').replace(/\\/g, '/'),
           to: path.join(__dirname, '../../dist/theme_images/[name][ext]'),
         },
+        {
+          // htdemucs 的 runner。webpack 不跟踪它（sidecar.cjs 是按运行时路径拼的，
+          // 不是 require），所以得显式拷到 dist/ —— sidecar 就是按 `__dirname` 找它的。
+          from: path.join(__dirname, '../../src/main/modules/analysis/stems_runner.py'),
+          to: path.join(__dirname, '../../dist/stems_runner.py'),
+        },
       ],
     }),
     new webpack.DefinePlugin({

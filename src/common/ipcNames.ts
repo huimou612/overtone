@@ -183,6 +183,19 @@ const modules = {
     parse_manual_result: 'parse_manual_result',
     apply_lxlrc: 'apply_lxlrc',
   },
+  analysis: {
+    // 模型（htdemucs 权重 + Python 运行时）
+    get_status: 'get_status',
+    download_model: 'download_model',
+    cancel_download: 'cancel_download',
+    remove_models: 'remove_models',
+    download_progress: 'download_progress',
+    // 分离作业
+    begin_job: 'begin_job',
+    run_job: 'run_job',
+    abort_job: 'abort_job',
+    job_progress: 'job_progress',
+  },
 }
 
 
@@ -208,3 +221,4 @@ export const WIN_MAIN_RENDERER_EVENT_NAME = modules.winMain
 export const WIN_LYRIC_RENDERER_EVENT_NAME = modules.winLyric
 export const HOTKEY_RENDERER_EVENT_NAME = modules.hotKey
 export const AI_EVENT_NAME = modules.ai
+export const ANALYSIS_EVENT_NAME = modules.analysis
