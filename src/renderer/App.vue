@@ -1,4 +1,8 @@
 <template>
+  <!-- 壁纸图层要挂在 #root 下、#container 之前：
+       #root 自己在画 --background-image，而 #container 有 --color-app-background 会被它盖住，
+       所以图层既不能在 #container 里面，也不能在它之后。 -->
+  <layout-app-background />
   <div id="container" class="view-container">
     <layout-aside id="left" />
     <div id="right">

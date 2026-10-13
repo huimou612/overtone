@@ -274,6 +274,13 @@ declare namespace LX {
         '--background-image-position': string
         '--background-image-size': string
 
+        // 动态壁纸（阶段 7.2）。与 --background-image 互斥：
+        // --background-video 有值时壁纸是视频，图片那边会被置成 'none'。
+        // 这两个数值项在主题编辑器里是滑块，存的是不带单位的整数字符串。
+        '--background-video': string
+        '--background-blur': string
+        '--background-mask': string
+
         // 关闭按钮颜色
         '--color-btn-hide': string
         '--color-btn-min': string

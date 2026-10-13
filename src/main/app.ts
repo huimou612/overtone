@@ -117,6 +117,11 @@ export const applyElectronEnvParams = () => {
 
   app.commandLine.appendSwitch('--disable-gpu-sandbox')
 
+  // 动态壁纸（阶段 7.2）：壁纸视频走 file:// 协议，Chromium 默认把 file:// 当跨源上下文，
+  // 静音 autoplay 也会被拦（表现为「挂出了 <video> 但一直 paused」）。
+  // 显式放开到「无需用户手势」，配合视频元素的 muted + autoplay 即可自动循环播放。
+  app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+
   // proxy
   if (global.envParams.cmdParams['proxy-server']) {
     app.commandLine.appendSwitch('proxy-server', global.envParams.cmdParams['proxy-server'])

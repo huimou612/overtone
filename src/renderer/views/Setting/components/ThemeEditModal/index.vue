@@ -25,9 +25,20 @@
               <div ref="main_bg_color_ref" :class="$style.color" />
               <div :class="$style.label">{{ $t('theme_edit_modal__main_bg') }}</div>
             </div>
+          </div>
+        </div>
+        <!-- 阶段 7.2 动态壁纸：独立成组。原来「壁纸」只是基本组里的一个缩略图，
+             现在多了模糊与遮罩两个可调项，混在颜色块里已经放不下了。 -->
+        <div :class="[$style.group, $style.wallpaper]">
+          <div :class="$style.groupTitle">
+            <span :class="$style.title">{{ $t('theme_edit_modal__bg_image') }}</span>
+            <span :class="$style.hint">{{ $t('theme_edit_modal__wallpaper_hint') }}</span>
+          </div>
+          <div :class="$style.groupContent">
             <div :class="[$style.item, $style.bg]">
-              <div :class="[$style.bgImg, {[$style.hasBg]: !!bgImg}]" @click="selectBgImg">
-                <img v-if="bgImg" loading="lazy" decoding="async" :class="$style.img" :src="bgImg" alt="Background Image">
+              <div :class="[$style.bgImg, {[$style.hasBg]: !!bgMedia}]" @click="selectBgImg">
+                <video v-if="bgMediaKind === 'video'" :class="$style.img" :src="bgMedia" autoplay loop muted playsinline />
+                <img v-else-if="bgMedia" loading="lazy" decoding="async" :class="$style.img" :src="bgMedia" alt="Wallpaper">
                 <svg-icon v-else :class="$style.icon" name="plus" />
                 <button :class="$style.removeBtn" type="button" @click.stop="removeBgImg">
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 212.982 212.982" space="preserve">
@@ -36,6 +47,30 @@
                 </button>
               </div>
               <div :class="$style.label">{{ $t('theme_edit_modal__bg_image') }}</div>
+            </div>
+            <div :class="[$style.item, $style.rangeItem]">
+              <input
+                v-model.number="bgBlur"
+                :class="$style.range"
+                type="range" min="0" max="40" step="1"
+                @input="handleWallpaperChange"
+              >
+              <div :class="$style.label">
+                {{ $t('theme_edit_modal__wallpaper_blur') }}
+                <span :class="$style.value">{{ bgBlur }}</span>
+              </div>
+            </div>
+            <div :class="[$style.item, $style.rangeItem]">
+              <input
+                v-model.number="bgMask"
+                :class="$style.range"
+                type="range" min="0" max="90" step="1"
+                @input="handleWallpaperChange"
+              >
+              <div :class="$style.label">
+                {{ $t('theme_edit_modal__wallpaper_mask') }}
+                <span :class="$style.value">{{ bgMask }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -165,8 +200,12 @@ export default {
     const isDark = ref(false)
     const isDarkFont = ref(false)
     const preview = ref(false)
-    const bgImg = ref('')
-    let bgImgRaw = ''
+    // 当前壁纸。图片与视频互斥，只有一边有值（图片走 --background-image，视频走 --background-video）。
+    const bgMedia = ref('')
+    const bgMediaKind = ref('none')
+    const bgBlur = ref(0)
+    const bgMask = ref(0)
+    let bgMediaRaw = ''
     let originBgName = ''
     let currentBgPath = ''
 
@@ -178,27 +217,77 @@ export default {
         : color
     }
 
+    // 视频壁纸能吃的容器格式。GIF 不在这里 —— 它继续走 --background-image，
+    // 由 CSS 自己播，不用多开一个 <video>。
+    const isVideoFile = (name) => /\.(mp4|m4v|webm|ogv|mov|mkv)$/i.test(name)
+
+    const clampInt = (value, min, max) => {
+      const parsed = Number.parseInt(value, 10)
+      if (!Number.isFinite(parsed)) return min
+      return parsed < min ? min : (parsed > max ? max : parsed)
+    }
+
+    /** 把 extInfo 里已有的壁纸状态同步到界面（图片 / 视频 / 无）。 */
+    const syncBgFromExtInfo = () => {
+      const extInfo = theme.config.extInfo
+      // 老主题没有这几个键，补上默认值再读，省得每个使用点都判空
+      if (extInfo['--background-video'] == null) extInfo['--background-video'] = ''
+      if (extInfo['--background-blur'] == null) extInfo['--background-blur'] = '0'
+      if (extInfo['--background-mask'] == null) extInfo['--background-mask'] = '0'
+      bgBlur.value = clampInt(extInfo['--background-blur'], 0, 40)
+      bgMask.value = clampInt(extInfo['--background-mask'], 0, 90)
+
+      const video = extInfo['--background-video']
+      const image = extInfo['--background-image']
+      let name = ''
+      let kind = 'none'
+      if (video && video != 'none') {
+        name = video
+        kind = 'video'
+      } else if (image && image != 'none') {
+        name = image
+        kind = 'image'
+      }
+
+      if (kind == 'none') {
+        bgMediaKind.value = 'none'
+        bgMedia.value = ''
+        bgMediaRaw = ''
+        originBgName = ''
+        return
+      }
+      bgMediaKind.value = kind
+      bgMediaRaw = isUrl(name) ? name : joinPath(themeInfo.dataPath, name)
+      bgMedia.value = encodePath(bgMediaRaw)
+      originBgName = name
+    }
+
+    /** 取当前生效的壁纸名（视频优先），用于和 originBgName 比对、决定要不要删旧文件。 */
+    const currentBgName = () => theme.config.extInfo['--background-video'] || theme.config.extInfo['--background-image']
+
+    /** 把壁纸名写回 extInfo，按扩展名自动落到图片键或视频键，并清掉另一边。 */
+    const applyBgName = (name) => {
+      const extInfo = theme.config.extInfo
+      if (isVideoFile(name)) {
+        extInfo['--background-video'] = name
+        extInfo['--background-image'] = 'none'
+      } else {
+        extInfo['--background-image'] = name
+        extInfo['--background-video'] = ''
+      }
+    }
+
+    const handleWallpaperChange = () => {
+      theme.config.extInfo['--background-blur'] = String(bgBlur.value)
+      theme.config.extInfo['--background-mask'] = String(bgMask.value)
+      createPreview()
+    }
+
     const createPreview = () => {
       if (!preview.value) return
       window.setTheme(buildThemeColors(theme, themeInfo.dataPath))
     }
 
-    // '--color-app-background': string
-    // '--color-main-background': string
-    // '--color-nav-font': string
-    // '--background-image': string
-    // '--background-image-position': string
-    // '--background-image-size': string
-
-    // // 关闭按钮颜色
-    // '--color-btn-hide': string
-    // '--color-btn-min': string
-    // '--color-btn-close': string
-
-    // // 徽章颜色
-    // '--color-badge-primary': string
-    // '--color-badge-secondary': string
-    // '--color-badge-tertiary': string
     const { primary_color_ref, initMainColor, destroyMainColor } = useMainColor()
     const { font_color_ref, initFontColor, destroyFontColor } = useFontColor()
     const { app_bg_color_ref, initAppBgColor, destroyAppBgColor, setAppBgColor } = useAppBgColor()
@@ -252,17 +341,7 @@ export default {
       isDark.value = theme.isDark
       isDarkFont.value = theme.isDarkFont ?? false
       currentBgPath = ''
-      if (theme.config.extInfo['--background-image'] == 'none') {
-        bgImg.value = ''
-        bgImgRaw = ''
-        originBgName = ''
-      } else {
-        bgImgRaw = isUrl(theme.config.extInfo['--background-image'])
-          ? theme.config.extInfo['--background-image']
-          : joinPath(themeInfo.dataPath, theme.config.extInfo['--background-image'])
-        bgImg.value = encodePath(bgImgRaw)
-        originBgName = theme.config.extInfo['--background-image']
-      }
+      syncBgFromExtInfo()
       appBgColorOrigin = theme.config.extInfo['--color-app-background']
       appBgColor = getColor(appBgColorOrigin, theme)
       asideFontColorOrigin = theme.config.extInfo['--color-nav-font']
@@ -373,11 +452,15 @@ export default {
         properties: ['openFile'],
         filters: [
           {
-            name: 'Image File',
+            name: 'Wallpaper File',
             extensions: [
+              // 图片
               'jpg', 'jpeg', 'jfif', 'pjpeg',
               'pjp', 'png', 'apng', 'avif', 'gif', 'svg',
-              'webp', 'bmp'],
+              'webp', 'bmp',
+              // 视频（阶段 7.2 动态壁纸）
+              'mp4', 'm4v', 'webm', 'ogv', 'mov', 'mkv',
+            ],
           },
         ],
       })
@@ -388,9 +471,14 @@ export default {
       const bgPath = joinPath(tempDir, fileName)
       if (!await checkPath(tempDir)) await createDir(tempDir)
       await copyFile(path, bgPath)
-      currentBgPath = bgImgRaw = bgPath
-      bgImg.value = encodePath(bgImgRaw)
-      theme.config.extInfo['--background-image'] = 'temp/' + fileName
+      // 反复换壁纸时把上一份临时文件删掉，否则 temp/ 会一直涨
+      if (currentBgPath && currentBgPath != bgPath) void removeFile(currentBgPath).catch(_ => _)
+      currentBgPath = bgMediaRaw = bgPath
+      bgMedia.value = encodePath(bgMediaRaw)
+      bgMediaKind.value = isVideoFile(bgPath) ? 'video' : 'image'
+      // 图片与视频互斥：写一边、清另一边。写的是 temp/ 里的相对名，
+      // 保存时（handleSubmit / handleSaveNew）才搬到正式目录。
+      applyBgName('temp/' + fileName)
 
       createPreview()
     }
@@ -399,9 +487,11 @@ export default {
         void removeFile(currentBgPath)
         currentBgPath = ''
       }
-      bgImg.value = ''
-      bgImgRaw = ''
+      bgMedia.value = ''
+      bgMediaRaw = ''
+      bgMediaKind.value = 'none'
       theme.config.extInfo['--background-image'] = 'none'
+      theme.config.extInfo['--background-video'] = ''
       createPreview()
     }
     const handleDark = (val) => {
@@ -431,16 +521,16 @@ export default {
     const handleSubmit = async() => {
       if (!themeName.value) return
       theme.name = themeName.value.substring(0, 20)
-      // 保存新背景
+      // 保存新壁纸（图片/视频同路，只是按扩展名写回不同的键）
       if (currentBgPath && !isUrl(currentBgPath)) {
         const name = basename(currentBgPath)
         await moveFile(currentBgPath, joinPath(themeInfo.dataPath, name))
-        theme.config.extInfo['--background-image'] = name
+        applyBgName(name)
       }
-      // 移除旧背景
-      if (originBgName &&
-        theme.config.extInfo['--background-image'] != originBgName &&
-        !isUrl(theme.config.extInfo['--background-image'])) void removeFile(joinPath(themeInfo.dataPath, originBgName))
+      // 移除旧壁纸：只有当「当前生效的那份」和打开时的那份不是同一个文件才删
+      if (originBgName && currentBgName() != originBgName && !isUrl(originBgName)) {
+        void removeFile(joinPath(themeInfo.dataPath, originBgName))
+      }
       if (props.themeId) {
         const index = themeInfo.userThemes.findIndex(t => t.id == theme.id)
         if (index > -1) themeInfo.userThemes.splice(index, 1, theme)
@@ -490,16 +580,16 @@ export default {
       if (!themeName.value) return
       theme.name = themeName.value.substring(0, 20)
       theme.id = 'user_theme_' + Date.now()
-      // 保存新背景
+      // 保存新壁纸
       if (!isUrl(currentBgPath)) {
         if (currentBgPath) {
           const name = basename(currentBgPath)
           await moveFile(currentBgPath, joinPath(themeInfo.dataPath, name))
-          theme.config.extInfo['--background-image'] = name
-        } else if (bgImgRaw) {
-          const fileName = `${theme.id}_${Date.now()}${extname(bgImgRaw)}`
-          await copyFile(bgImgRaw, joinPath(themeInfo.dataPath, fileName))
-          theme.config.extInfo['--background-image'] = fileName
+          applyBgName(name)
+        } else if (bgMediaRaw) {
+          const fileName = `${theme.id}_${Date.now()}${extname(bgMediaRaw)}`
+          await copyFile(bgMediaRaw, joinPath(themeInfo.dataPath, fileName))
+          applyBgName(fileName)
         }
       }
       themeInfo.userThemes.push(theme)
@@ -511,7 +601,10 @@ export default {
 
     return {
       themeName,
-      bgImg,
+      bgMedia,
+      bgMediaKind,
+      bgBlur,
+      bgMask,
       isDark,
       handleDark,
       isDarkFont,
@@ -524,6 +617,7 @@ export default {
       handleSaveNew,
       selectBgImg,
       removeBgImg,
+      handleWallpaperChange,
 
       primary_color_ref,
       font_color_ref,
@@ -697,6 +791,55 @@ export default {
     width: auto;
     height: 66%;
   }
+}
+
+.wallpaper {
+  .hint {
+    font-size: 12px;
+    opacity: .6;
+    line-height: 1.4;
+  }
+}
+
+// 滑块比色块宽：色块是方的没关系，滑块太窄就没法调了
+.rangeItem {
+  width: 150px;
+}
+.range {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  &:focus {
+    outline: none;
+  }
+  // 轨道
+  &::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--color-primary-alpha-700);
+  }
+  // 滑块。margin-top 是 (轨道高 4 - 滑块高 14) / 2 —— Chromium 的滑块默认对齐在轨道顶部，
+  // 不减这一下会明显偏上。
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background-color: var(--color-theme);
+    box-shadow: 0 0 3px rgba(0, 0, 0, .35);
+  }
+}
+.value {
+  margin-left: 4px;
+  opacity: .6;
+  font-variant-numeric: tabular-nums;
 }
 
 @control-btn-width: @height-toolbar * .26;

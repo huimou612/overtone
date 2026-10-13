@@ -7,7 +7,11 @@ import defaultHotKey from '@common/defaultHotKey'
 import { migrateDataJson, migrateHotKey, migrateUserApi, parseDataFile } from './migrate'
 import { nativeTheme, powerSaveBlocker } from 'electron'
 import { joinPath } from '@common/utils/nodejs'
-import themes from '@common/theme/index.json'
+import themesJson from '@common/theme/index.json'
+// index.json 是构建期生成的产物，TS 会按 JSON 字面量推断类型（新加的
+// 背景视频/模糊/蒙版键会被推成 ''/'0' 字面量甚至 undefined），与 LX.Theme
+// 的 string 声明不一致。这里统一断言成 LX.Theme[]，避免下游赋值报 TS2322。
+const themes = themesJson as LX.Theme[]
 
 export const parseEnvParams = (argv = process.argv): { cmdParams: LX.CmdParams, deeplink: string | null } => {
   const cmdParams: LX.CmdParams = {}
@@ -258,16 +262,19 @@ export const getTheme = () => {
     userThemes = getStore(STORE_NAMES.THEME).get('themes') as LX.Theme[] | null ?? []
     theme = userThemes.find(theme => theme.id == themeId)
     if (theme) {
-      if (theme.config.extInfo['--background-image'] != 'none') {
+      const image = theme.config.extInfo['--background-image']
+      const video = theme.config.extInfo['--background-video']
+      const toUrl = (value: string) => isUrl(value)
+        ? `url(${value})`
+        : `url(${encodePath(joinPath(global.lxDataPath, 'theme_images', value))})`
+      if ((image && image != 'none') || video) {
         theme = copyTheme(theme)
-        theme.config.extInfo['--background-image'] =
-          isUrl(theme.config.extInfo['--background-image'])
-            ? `url(${theme.config.extInfo['--background-image']})`
-            : `url(${encodePath(joinPath(global.lxDataPath, 'theme_images', theme.config.extInfo['--background-image']))})`
+        if (image && image != 'none') theme.config.extInfo['--background-image'] = toUrl(image)
+        if (video) theme.config.extInfo['--background-video'] = toUrl(video)
       }
     } else {
       themeId = global.lx.appSetting['theme.id'] == 'auto' && shouldUseDarkColors ? 'overtone_dark' : 'overtone'
-      theme = themes.find(theme => theme.id == themeId) as LX.Theme
+      theme = themes.find(theme => theme.id == themeId)!
     }
   }
 

@@ -34,9 +34,18 @@ export const getThemes = (callback: (themeInfo: LX.ThemeInfo) => void) => {
   })
 }
 export const buildThemeColors = (theme: LX.Theme, dataPath: string) => {
-  if (theme.isCustom && theme.config.extInfo['--background-image'] != 'none') {
-    theme = copyTheme(theme)
-    theme.config.extInfo['--background-image'] = buildBgUrl(theme.config.extInfo['--background-image'], dataPath)
+  if (theme.isCustom) {
+    const image = theme.config.extInfo['--background-image']
+    const video = theme.config.extInfo['--background-video']
+    // 注意这里比原来多了一道真值判断：原来只判 `!= 'none'`，
+    // 空字符串会走进 buildBgUrl 拼出一个 `url(<dataPath>)` 的坏地址。
+    if ((image && image != 'none') || video) {
+      theme = copyTheme(theme)
+      if (image && image != 'none') theme.config.extInfo['--background-image'] = buildBgUrl(image, dataPath)
+      // 视频同样按 url(...) 产出，剥壳交给 AppBackground —— 两条路径形状保持一致，
+      // 以后再加壁纸来源时只要沿用这个约定。
+      if (video) theme.config.extInfo['--background-video'] = buildBgUrl(video, dataPath)
+    }
   }
   const colors: Record<string, string> = {
     ...theme.config.themeColors,

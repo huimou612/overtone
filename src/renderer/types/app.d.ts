@@ -45,6 +45,14 @@ declare global {
 
     setTheme: (colors: Record<string, string>) => void
     setLang: (lang?: string) => void
+
+    /**
+     * 承载全部主题变量的 <style> 元素（在 index.html 的内联脚本里创建）。
+     * setTheme 的做法是把这个元素的 innerText 整段重写成 `:root {…}`，
+     * 所以「这个元素发生变动」等价于「主题变量被重写了」——无论来自启动兜底、
+     * 切换主题，还是主题编辑器里的预览。AppBackground 用它来感知主题变化。
+     */
+    dom_style: HTMLStyleElement
   }
 
   module NodeJS {

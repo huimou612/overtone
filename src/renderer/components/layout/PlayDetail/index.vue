@@ -2,6 +2,9 @@
 transition(enter-active-class="animated slideInRight" leave-active-class="animated slideOutDown" @after-enter="handleAfterEnter" @after-leave="handleAfterLeave")
   div(v-if="isShowPlayerDetail" :class="[$style.container, { fullscreen: isFullscreen }]" @contextmenu="handleContextMenu")
     div(:class="$style.bg")
+      //- 传 behind：.bg 自己就是堆叠上下文，图层要落在「元素自身背景」那一层，
+      //- 才会排在 ::before / ::after 两块蒙版下面，和原来的 CSS 背景图位置一致
+      layout-app-background(behind)
     //- div(:class="$style.bg" :style="bgStyle")
     //- div(:class="$style.bg2")
     ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'")

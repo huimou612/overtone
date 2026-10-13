@@ -20,6 +20,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -45,6 +48,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(19, 19, 19, 0.9)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -69,6 +75,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -93,6 +102,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -117,6 +129,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -141,6 +156,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -165,6 +183,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -189,6 +210,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -213,6 +237,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -237,6 +264,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -261,6 +291,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -285,6 +318,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 1)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -309,6 +345,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(19, 19, 19, 0.9)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'url(./theme_images/landingMoon.png)',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -333,6 +372,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 0.9)',
       '--color-nav-font': 'var(--color-primary-light-600)',
       '--background-image': 'url(./theme_images/jqbg.jpg)',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -358,6 +400,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 0.8)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'url(./theme_images/myzcbg.jpg)',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -382,6 +427,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 0.8)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'url(./theme_images/china_ink.jpg)',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
@@ -407,6 +455,9 @@ const defaultThemes = [
       '--color-main-background': 'rgba(255, 255, 255, 0.8)',
       '--color-nav-font': 'var(--color-primary)',
       '--background-image': 'url(./theme_images/xnkl.png)',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
       '--background-image-position': 'center',
       '--background-image-size': 'cover',
 
