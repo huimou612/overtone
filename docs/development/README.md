@@ -9,6 +9,7 @@
 | [01-缝合方案与执行路线.md](./01-缝合方案与执行路线.md) | 为什么这样做、许可证边界、架构怎么缝、分阶段计划、红线清单 | 想搞清「整体思路」和「能不能这么做」 |
 | [02-执行手册-命令与代码.md](./02-执行手册-命令与代码.md) | 每一步的具体命令、加新能力的标准动作、构建排错表、推 GitHub 流程 | 要动手敲命令时 |
 | [03-AI歌词功能原理拆解.md](./03-AI歌词功能原理拆解.md) | Folia 的 AI 歌词链路 7 步拆解、`realignSegmentsToText` 精解、移植适配点与代码骨架 | 做阶段 3 时 |
+| [04-音源分离功能原理拆解.md](./04-音源分离功能原理拆解.md) | HTDemucs 分离链路四段拆解、内存开关为什么决定架构（必须 Python）、双桶累加的等价性、断点续传为什么必需、移植踩的坑与实测数据 | 做阶段 4 时 |
 
 ## 这个项目是什么
 
@@ -43,6 +44,8 @@
 | `notes/probe_mirrors.py` | GitHub 镜像可达性探测 |
 | `notes/validate_theme_fallback.js` | 校验主题派生变量与 `index.less` 的 `:root` 是否一致 |
 | `notes/preview/overtone-clean.png` | 品牌化改造后的实机首屏截图（验收证据） |
+| `notes/preview/ai-ui/*.png` | AI 逐字歌词的界面留档（阶段 3 验收） |
+| `notes/preview/stems/*.png` | 音源分离的界面留档：`01-stem-ready`（模型已装、待开始）、`02-stem-done`（两条 WAV 已导出） |
 
 ## 许可证
 
