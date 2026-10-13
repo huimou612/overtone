@@ -15,7 +15,10 @@ const { MAX_SEGMENTATION_LINES, createAiService, parseManualSegmentation } = req
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { buildLxlrc, isLxlrc, parseLyricLines } = require('./lxlrc.cjs')
 
-type LyricLine = { startTime: number, text: string }
+interface LyricLine {
+  startTime: number
+  text: string
+}
 
 /**
  * 取一首歌的歌词行（带行起始时间）。
@@ -26,7 +29,7 @@ type LyricLine = { startTime: number, text: string }
  *
  * 注意 dbService 是 worker RPC，所有方法都是异步的。
  */
-const readLyricLines = async (musicId: string): Promise<{ lines: LyricLine[], source: 'lxlrc' | 'lrc' | 'none' }> => {
+const readLyricLines = async(musicId: string): Promise<{ lines: LyricLine[], source: 'lxlrc' | 'lrc' | 'none' }> => {
   const lyricInfo = await global.lx.worker.dbService.getPlayerLyric(musicId)
   const candidates: Array<{ source: 'lxlrc' | 'lrc', text?: string | null }> = [
     { source: 'lxlrc', text: lyricInfo?.lxlyric },
@@ -132,10 +135,12 @@ export default () => {
       lxlyric: lxlrc,
     })
 
-    const message = `逐字歌词已保存：${stats.lines} 行 / ${stats.totalSegments} 段`
-      + `（AI 命中 ${stats.fromAi} 行，兜底切分 ${stats.fromFallback} 行）`
+    const message = `逐字歌词已保存：${stats.lines} 行 / ${stats.totalSegments} 段` +
+      `（AI 命中 ${stats.fromAi} 行，兜底切分 ${stats.fromFallback} 行）`
     log.info(`[ai] ${message}`)
 
-    return { ok: true, stats, usedFallback, message }
+    // 把 lxlrc 本身也带回去：渲染层拿到后 emit 给播放器，界面立刻能看到逐字效果，
+    // 不必等下一次从数据库读回来
+    return { ok: true, stats, usedFallback, message, lxlrc }
   })
 }

@@ -9,6 +9,9 @@
       </div>
     </div> -->
       <div :class="$style.group">
+        <button :class="$style.btn" ignore-tip :aria-label="$t('ai_lyric__menu')" @click="openAiLyric">{{ $t('ai_lyric__menu') }}</button>
+      </div>
+      <div :class="$style.group">
         <div :class="$style.subGroup">
           <div :class="$style.title">{{ $t('lyric_menu__lrc_size', { size: appSetting['playDetail.style.fontSize'] }) }}</div>
           <button :class="[$style.btn, $style.titleBtn]" :disabled="appSetting['playDetail.style.fontSize'] == 100" ignore-tip :aria-label="$t('lyric_menu__size_reset')" @click="fontSizeReset">{{ $t('lyric_menu__size_reset') }}</button>
@@ -41,6 +44,7 @@
         </div>
       </div>
     </div>
+    <AiLyricModal v-model="aiVisible" :music-info="musicInfo" @update-lyric="handleAiLyricSaved" />
   </teleport>
 </template>
 
@@ -50,6 +54,7 @@ import useMenuLocation from '@renderer/utils/compositions/useMenuLocation'
 import { debounce } from '@common/utils/common'
 import { saveLyricEdited, removeLyricEdited } from '@renderer/utils/ipc'
 import { appSetting, setPlayDetailLyricFont, setPlayDetailLyricAlign } from '@renderer/store/setting'
+import AiLyricModal from './AiLyricModal.vue'
 
 const offsetTagRxp = /(?:^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/
 const offsetTagAllRxp = /(^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/g
@@ -72,6 +77,9 @@ const getOffset = lrc => {
 
 export default {
   name: 'LyricMenu',
+  components: {
+    AiLyricModal,
+  },
   props: {
     modelValue: Boolean,
     xy: {
@@ -172,6 +180,36 @@ export default {
       offsetDisabled.value = !props.lyricInfo.lyric
     }
 
+    // ==================== AI 逐字歌词 ====================
+
+    const aiVisible = ref(false)
+
+    // musicInfo 有时是 player 的 progress 包装（带 metadata），有时是裸的列表项
+    const musicInfo = computed(() => {
+      const info = props.lyricInfo.musicInfo
+      if (!info) return null
+      const raw = 'progress' in info ? info.metadata?.musicInfo : info
+      return raw?.id ? raw : null
+    })
+
+    const openAiLyric = () => {
+      // 菜单先收起，免得压在新开的对话框上
+      onHide()
+      aiVisible.value = true
+    }
+
+    // 对话框写完库后把新生成的 lxlrc 交回来，播放器立刻就能出逐字效果
+    const handleAiLyricSaved = ({ lxlrc }) => {
+      const info = props.lyricInfo
+      emit('updateLyric', {
+        lyric: info.lyric,
+        tlyric: info.tlyric,
+        rlyric: info.rlyric,
+        lxlyric: lxlrc,
+        offset: getOffset(info.lyric),
+      })
+    }
+
 
     const { dom_menu, menuStyles } = useMenuLocation({
       visible,
@@ -201,6 +239,10 @@ export default {
       offsetReset,
       setFontAlign,
       offsetDisabled,
+      aiVisible,
+      musicInfo,
+      openAiLyric,
+      handleAiLyricSaved,
     }
   },
 }

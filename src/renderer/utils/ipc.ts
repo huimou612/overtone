@@ -1,5 +1,5 @@
 import { rendererSend, rendererInvoke, rendererOn, rendererOff } from '@common/rendererIpc'
-import { HOTKEY_RENDERER_EVENT_NAME, WIN_MAIN_RENDERER_EVENT_NAME, CMMON_EVENT_NAME } from '@common/ipcNames'
+import { HOTKEY_RENDERER_EVENT_NAME, WIN_MAIN_RENDERER_EVENT_NAME, CMMON_EVENT_NAME, AI_EVENT_NAME } from '@common/ipcNames'
 import { type ProgressInfo, type UpdateDownloadedEvent, type UpdateInfo } from 'electron-updater'
 import { markRaw } from '@common/utils/vueTools'
 import * as hotKeys from '@common/hotKey'
@@ -293,6 +293,79 @@ export const saveViewPrevState = (state: typeof DEFAULT_SETTING['viewPrevState']
 }
 export const getViewPrevState = async() => {
   return (await rendererInvoke<string, typeof DEFAULT_SETTING['viewPrevState']>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.viewPrevState)) ?? { ...DEFAULT_SETTING.viewPrevState }
+}
+
+
+// ============================ AI 歌词分词 ============================
+//
+// 契约在主进程 src/main/modules/ai/index.ts。三条铁律：
+//
+//   1. 密钥只能进、不能出。setAiCredential 传明文进去，回来的只有「配没配」；
+//      getAiStatus 拿到的 credentials 也是布尔量。界面永远拿不到明文。
+//   2. 分词是「行数很多、进度很长」的操作，必须订阅 onAiSegmentProgress 才有
+//      像样的反馈，否则用户只能盯着卡住的按钮。
+//   3. applyAiLxlrc 只替换 lxlyric，不动 lyric / tlyric / rlyric。
+
+/** 读取 AI 配置状态。返回的 settings 里没有密钥，credentials 只是布尔量。 */
+export const getAiStatus = async() => {
+  return rendererInvoke<LX.Ai.Status>(AI_EVENT_NAME.get_status)
+}
+
+/** 写入非密钥设置（provider / base url / 模型 / 温度 / 流式开关）。 */
+export const setAiSetting = async(key: LX.Ai.WritableSettingKey, value: string | number | boolean) => {
+  return rendererInvoke<{ key: string, value: unknown }, LX.Ai.Settings>(AI_EVENT_NAME.set_setting, { key, value })
+}
+
+/**
+ * 写入 API Key。value 传空串表示清除。
+ * 明文只在这一次调用里存在，落盘时由主进程用 safeStorage 加密。
+ */
+export const setAiCredential = async(key: LX.Ai.CredentialKey, value: string) => {
+  return rendererInvoke<{ key: string, value: string }, Record<LX.Ai.CredentialKey, boolean>>(AI_EVENT_NAME.set_credential, { key, value })
+}
+
+/**
+ * 用「表单里当前这组值」测试连接，而不是已保存的 —— 这样测试通过才真的意味着
+ * 接下来能跑通。apiKey 留空时复用已保存的那把（仅当 url 未变）。
+ */
+export const testAiConnection = async(input: LX.Ai.TestConnectionInput) => {
+  return rendererInvoke<LX.Ai.TestConnectionInput, LX.Ai.TestConnectionResult>(AI_EVENT_NAME.test_connection, input)
+}
+
+/** 取一首歌的歌词行（带行首时间）。分词只吃 lines[].text，时间用于后面构造 lxlrc。 */
+export const getAiLyricLines = async(musicId: string) => {
+  return rendererInvoke<{ musicId: string }, LX.Ai.LyricLinesResult>(AI_EVENT_NAME.get_lyric_lines, { musicId })
+}
+
+/** 把歌词行交给模型分词。长歌会被主进程自动分批，进度从 onAiSegmentProgress 拿。 */
+export const segmentAiLyric = async(lines: string[]) => {
+  return rendererInvoke<{ lines: string[] }, LX.Ai.SegmentResult>(AI_EVENT_NAME.segment_lyric, { lines })
+}
+
+/** 订阅分词进度。返回取消订阅函数。 */
+export const onAiSegmentProgress = (listener: LX.IpcRendererEventListenerParams<LX.Ai.SegmentProgress>): RemoveListener => {
+  rendererOn(AI_EVENT_NAME.segment_progress, listener)
+  return () => {
+    rendererOff(AI_EVENT_NAME.segment_progress, listener)
+  }
+}
+
+/** 手动模式：拿一份可直接贴到任意模型网页的提示词（没有 API Key 的用户走这条）。 */
+export const getAiManualPrompt = async(lines: string[]) => {
+  return rendererInvoke<{ lines: string[] }, string>(AI_EVENT_NAME.get_manual_prompt, { lines })
+}
+
+/** 手动模式：把模型答回来的纯文本解析成 boundaries。行数对不上会抛错。 */
+export const parseAiManualResult = async(lines: string[], raw: string) => {
+  return rendererInvoke<{ lines: string[], raw: string }, LX.Ai.ManualParseResult>(AI_EVENT_NAME.parse_manual_result, { lines, raw })
+}
+
+/**
+ * 把分词结果构造成 lxlrc 并写回该曲目的逐字歌词。
+ * 只会覆盖 lxlyric 字段，原文与翻译原样保留。
+ */
+export const applyAiLxlrc = async(input: LX.Ai.ApplyLxlrcInput) => {
+  return rendererInvoke<LX.Ai.ApplyLxlrcInput, LX.Ai.ApplyLxlrcResult>(AI_EVENT_NAME.apply_lxlrc, input)
 }
 
 
