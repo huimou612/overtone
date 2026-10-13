@@ -151,6 +151,14 @@ watch(isFullscreen, isFullscreen => {
   window.lx.rootOffset = window.dt || isFullscreen ? 0 : 8
 }, { immediate: true })
 
+/**
+ * 是否处于「个性模式」（沉浸形态）
+ *
+ * 同一套界面的两种形态，不是两套界面：个性模式下侧栏收起（左边缘悬停浮出）、
+ * 视图切换带过渡动画、启动时若有当前歌曲则直接进播放详情页。
+ */
+export const isPersonalMode = computed(() => appSetting['common.appMode'] == 'personal')
+
 export const themeShouldUseDarkColors = ref(window.shouldUseDarkColors)
 
 

@@ -3,7 +3,13 @@
        #root 自己在画 --background-image，而 #container 有 --color-app-background 会被它盖住，
        所以图层既不能在 #container 里面，也不能在它之后。 -->
   <layout-app-background />
-  <div id="container" class="view-container">
+  <div
+    id="container"
+    class="view-container"
+    :class="{ 'mode-personal': isPersonalMode }"
+  >
+    <!-- 个性模式下侧栏收起，左侧留一条细热区用来把它唤出来 -->
+    <div v-if="isPersonalMode" id="aside-hotzone" aria-hidden="true"></div>
     <layout-aside id="left" />
     <div id="right">
       <layout-toolbar id="toolbar" />
@@ -24,6 +30,7 @@
 import { onMounted } from '@common/utils/vueTools'
 // import BubbleCursor from '@common/utils/effects/cursor-effects/bubbleCursor'
 // import '@common/utils/effects/snow.min'
+import { isPersonalMode } from '@renderer/store'
 import useApp from '@renderer/core/useApp'
 
 useApp()
@@ -139,6 +146,53 @@ body {
   flex: none;
   width: @width-app-left;
 }
+
+/* ── 个性模式（沉浸形态） ──────────────────────────────────────
+   同一套界面的另一种形态：侧栏收起成浮层，鼠标移到窗口左边缘再唤出。
+   用绝对定位让 #left 脱离 flex 流，收起时 #right 自然铺满整个宽度。 */
+#container.mode-personal {
+  #aside-hotzone {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    // 17/18 要给侧栏本身：热区在底下时，侧栏展开后左边缘那 8px 才不会被热区吃掉点击。
+    // 收起时 #left 整个在视口外，鼠标下最顶层的仍然是热区，所以唤出照样生效。
+    z-index: 19;
+  }
+
+  #left {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+    transform: translateX(-100%);
+    transition: transform @transition-normal, box-shadow @transition-normal;
+    // 浮层是覆盖式的，底色必须用内容区面板色（不透明）而不是最外层的 app 背景色：
+    // 后者常常带 alpha，会让下面的播放条封面糊成一块脏斑 —— 浮层先要能看清，再谈透出壁纸。
+    // backdrop-filter 留作兜底：万一某个主题把面板色也设成半透明，下层至少是糊的而不是清楚的。
+    background-color: var(--color-main-background);
+    backdrop-filter: blur(18px);
+    box-shadow: none;
+  }
+
+  // 唤出：热区被 hover，或者鼠标已经移到侧栏自己身上了（收起时它在视口外，:hover 不会误触发）
+  &:has(#aside-hotzone:hover) #left,
+  #left:hover {
+    transform: none;
+    box-shadow: 2px 0 14px rgba(0, 0, 0, .22);
+  }
+
+  // 内容区铺满，去掉原来给侧栏让位用的左侧圆角与阴影
+  #right {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    box-shadow: none;
+  }
+}
+
 #right {
   flex: auto;
   display: flex;

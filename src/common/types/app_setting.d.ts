@@ -101,6 +101,17 @@ declare global {
       'common.splashTitle': string
 
       /**
+       * 外观模式
+       *
+       * - `classic`：LX 原样，管理为主，侧栏常驻
+       * - `personal`：沉浸形态 —— 侧栏收起（左边缘悬停浮出）、视图切换带过渡动画、
+       *   启动时若有当前歌曲则直接进入播放详情页
+       *
+       * 注意这是**同一套界面的两种形态**，不是两套界面。功能一个不少。
+       */
+      'common.appMode': 'classic' | 'personal'
+
+      /**
        * 尝试自动更新
        */
       'common.tryAutoUpdate': boolean

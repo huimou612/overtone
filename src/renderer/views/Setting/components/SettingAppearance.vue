@@ -2,6 +2,23 @@
   <dt id="appearance">{{ $t('setting__appearance') }}</dt>
   <dd class="gap-top">
     <div>
+      <h3 id="appearance_mode">{{ $t('setting__appearance_mode') }}</h3>
+
+      <div class="p gap-top">{{ $t('setting__appearance_mode_desc') }}</div>
+
+      <div class="p gap-top">
+        <base-selection
+          :list="modeList"
+          :model-value="appSetting['common.appMode']"
+          item-key="id"
+          item-name="label"
+          @update:model-value="updateSetting({ 'common.appMode': $event })"
+        />
+        <div class="p small">{{ modeTip }}</div>
+      </div>
+    </div>
+
+    <div>
       <h3 id="appearance_splash">{{ $t('setting__appearance_splash') }}</h3>
 
       <div class="p gap-top">{{ $t('setting__appearance_splash_desc') }}</div>
@@ -83,6 +100,19 @@ export default {
       { id: 3000, label: t('setting__appearance_splash_sec', { n: '3' }) },
     ])
 
+    const modeList = computed(() => [
+      { id: 'classic', label: t('setting__appearance_mode_classic') },
+      { id: 'personal', label: t('setting__appearance_mode_personal') },
+    ])
+
+    // 提示跟着当前选择走：这两档的差别不在功能上，只在形态上，必须写清楚，
+    // 否则用户切过去发现「界面变了但功能没少」会以为出了 bug
+    const modeTip = computed(() => (
+      appSetting['common.appMode'] == 'personal'
+        ? t('setting__appearance_mode_tip_personal')
+        : t('setting__appearance_mode_tip_classic')
+    ))
+
     const handlePickImage = async() => {
       const result = await showSelectDialog({
         title: t('setting__appearance_splash_image_pick'),
@@ -113,6 +143,8 @@ export default {
       titleInput,
       imageLabel,
       durationList,
+      modeList,
+      modeTip,
       handlePickImage,
       handleClearImage,
       handleTitleInput,

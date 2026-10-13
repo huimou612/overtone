@@ -5,6 +5,7 @@ import { appSetting } from '@renderer/store/setting'
 
 import useSync from './useSync'
 import useOpenAPI from './useOpenAPI'
+import usePersonalMode from './usePersonalMode'
 import useStatusbarLyric from './useStatusbarLyric'
 import useUpdate from './useUpdate'
 import useDataInit from './useDataInit'
@@ -30,6 +31,7 @@ export default () => {
   const initOpenAPI = useOpenAPI()
   const initStatusbarLyric = useStatusbarLyric()
   useEventListener()
+  usePersonalMode()
   const initPlayer = usePlayer()
   const handleEnvParams = useHandleEnvParams()
   const initData = useDataInit()

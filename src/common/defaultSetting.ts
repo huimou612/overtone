@@ -24,6 +24,7 @@ const defaultSetting: LX.AppSetting = {
   'common.splashMinMs': 1400,
   'common.splashImage': '',
   'common.splashTitle': '',
+  'common.appMode': 'classic',
   'common.tryAutoUpdate': true,
   'common.showChangeLog': true,
 
