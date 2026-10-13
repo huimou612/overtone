@@ -38,6 +38,12 @@ module.exports = merge(baseConfig, {
           from: path.join(__dirname, '../../src/main/modules/analysis/stems_runner.py'),
           to: path.join(__dirname, '../../dist/stems_runner.py'),
         },
+        {
+          // 入场动画页面。与上面的 runner 同理：它不是被 require 的模块，
+          // 而是 winSplash/main.ts 按 `__dirname` 拼路径 loadFile 的。
+          from: path.join(__dirname, '../../src/main/modules/winSplash/splash.html'),
+          to: path.join(__dirname, '../../dist/splash.html'),
+        },
       ],
     }),
     new webpack.DefinePlugin({

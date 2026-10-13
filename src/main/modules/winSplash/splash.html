@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src file: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Overtone</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: transparent; }
+
+  body {
+    --card-bg: rgba(250, 250, 249, 0.99);
+    --text: #18181b;
+    --muted: #77776f;
+    --line: rgba(24, 24, 27, 0.09);
+    --accent: #1d9e75;
+    /* 主进程会把它改成配置里的最短显示时长，进度线据此走满 */
+    --min-ms: 1400ms;
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Helvetica Neue", system-ui, sans-serif;
+    opacity: 1;
+    transition: opacity 340ms ease;
+    user-select: none;
+    cursor: default;
+  }
+  body.dark {
+    --card-bg: rgba(24, 24, 27, 0.99);
+    --text: #ededec;
+    --muted: #8b8b86;
+    --line: rgba(237, 237, 236, 0.11);
+  }
+  /* 主进程淡出时加这个类。时长必须与 winSplash/main.ts 的 FADE_OUT_MS 一致 */
+  body.is-hiding { opacity: 0; }
+
+  .card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: var(--card-bg);
+    color: var(--text);
+    /* 只让顶部可拖动，卡片其余部分要留出来响应「点击跳过」 */
+    -webkit-app-region: no-drag;
+  }
+  .drag-strip {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 36px;
+    -webkit-app-region: drag;
+  }
+
+  .mark { display: flex; align-items: center; justify-content: center; height: 44px; }
+  /*
+   * 关键：基础状态是「可见」，动画只负责把它从 from 淡入。
+   * 反过来写（基础 opacity: 0 + animation forwards）在动画不推进时会得到一个纯黑卡片
+   * —— 窗口隐藏时不参与合成，CSS 动画可能一帧都不走。入场动画最差也该是「静态好看」。
+   */
+  .mark-wave { color: var(--accent); animation: rise 520ms cubic-bezier(.22,.61,.36,1) 60ms backwards; }
+  .mark-img {
+    max-width: 180px;
+    max-height: 44px;
+    border-radius: 8px;
+    -webkit-user-drag: none;
+    animation: rise 520ms cubic-bezier(.22,.61,.36,1) 60ms backwards;
+  }
+
+  .title {
+    margin-top: 20px;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-indent: 0.14em;
+    animation: rise 520ms cubic-bezier(.22,.61,.36,1) 160ms backwards;
+  }
+  .hint {
+    position: absolute;
+    bottom: 22px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    animation: fade 400ms ease 700ms backwards;
+  }
+
+  .bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: var(--line);
+    border-radius: 0 0 18px 18px;
+    overflow: hidden;
+  }
+  .bar > i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    animation: fill var(--min-ms) cubic-bezier(.33,.12,.25,1) backwards;
+  }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fill { from { width: 0; } to { width: 100%; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mark-wave, .mark-img, .title, .hint { animation: none; }
+    .bar > i { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="drag-strip"></div>
+
+    <div class="mark">
+      <svg class="mark-wave" viewBox="0 0 56 40" width="56" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+        <path d="M4 20v0.01"/>
+        <path d="M12 14v12"/>
+        <path d="M20 8v24"/>
+        <path d="M28 3v34"/>
+        <path d="M36 10v20"/>
+        <path d="M44 15v10"/>
+        <path d="M52 18v4"/>
+      </svg>
+      <img class="mark-img" alt="" hidden>
+    </div>
+
+    <div class="title">泛音</div>
+    <div class="hint">点击任意位置跳过</div>
+    <div class="bar"><i></i></div>
+  </div>
+
+<script>
+  (function () {
+    var body = document.body;
+    var titleEl = document.querySelector('.title');
+    var waveEl = document.querySelector('.mark-wave');
+    var imgEl = document.querySelector('.mark-img');
+
+    function apply(cfg) {
+      if (!cfg) return;
+      body.classList.toggle('dark', String(cfg.dark) === '1');
+      if (cfg.min) body.style.setProperty('--min-ms', cfg.min + 'ms');
+      if (cfg.title && titleEl) {
+        titleEl.textContent = cfg.title;
+        document.title = cfg.title;
+      }
+      if (cfg.image && imgEl) {
+        imgEl.src = cfg.image;
+        imgEl.hidden = false;
+        if (waveEl) waveEl.hidden = true;
+      }
+    }
+
+    window.__overtoneSplashApply = apply;
+    window.__overtoneSplashHide = function () { body.classList.add('is-hiding'); };
+
+    // 首帧参数走 URL（window 创建时设置还没读出来，只能先给默认值）
+    var params = {};
+    new URLSearchParams(location.search).forEach(function (v, k) { params[k] = v; });
+    apply(params);
+
+    // 点击/回车/空格跳过。顶部 drag-strip 是拖动区，不会走到这里
+    document.addEventListener('click', function () { window.close(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') window.close();
+    });
+  })();
+</script>
+</body>
+</html>

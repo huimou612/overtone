@@ -22,6 +22,12 @@ module.exports = merge(baseConfig, {
           from: path.join(__dirname, '../../src/main/modules/analysis/stems_runner.py'),
           to: path.join(__dirname, '../../dist/stems_runner.py'),
         },
+        {
+          // 与上面同理，dev 也要拷：dev 下 `__dirname` 就是 dist/，
+          // 只让 prod 拷贝会让 dev 里永远报「找不到 splash.html」。
+          from: path.join(__dirname, '../../src/main/modules/winSplash/splash.html'),
+          to: path.join(__dirname, '../../dist/splash.html'),
+        },
       ],
     }),
     new webpack.DefinePlugin({

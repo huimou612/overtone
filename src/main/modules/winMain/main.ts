@@ -6,6 +6,7 @@ import { getProxy, openDevTools as handleOpenDevTools } from '@main/utils'
 import { mainSend } from '@common/mainIpc'
 import { sendFocus, sendTaskbarButtonClick } from './rendererEvent'
 import { encodePath } from '@common/utils/electron'
+import { requestClose as requestSplashClose } from '@main/modules/winSplash/main'
 
 let browserWindow: Electron.BrowserWindow | null = null
 
@@ -59,6 +60,8 @@ const winEvent = () => {
       showWindow()
       setThumbarButtons()
     }
+    // 主窗口已经渲染好了，把入场动画淡出（不足最短时长时它会等满再淡出）
+    requestSplashClose()
     global.lx.event_app.main_window_ready_to_show()
   })
 

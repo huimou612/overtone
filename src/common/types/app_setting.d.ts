@@ -74,6 +74,33 @@ declare global {
       'common.transparentWindow': boolean
 
       /**
+       * 是否显示入场动画（启动画面）
+       *
+       * 主窗口要等渲染进程就绪才会显示（show: false + ready-to-show），
+       * 而设置要等数据库初始化完才能读，这两段加起来是一段真实的空窗期。
+       * 入场动画就是用来填这段空窗的。
+       */
+      'common.splashEnable': boolean
+
+      /**
+       * 入场动画最短显示时长（毫秒）
+       *
+       * 主窗口就绪早于这个时长时会等待，否则启动快的机器上入场动画一闪而过，
+       * 观感比没有更差。
+       */
+      'common.splashMinMs': number
+
+      /**
+       * 入场动画自定义图片路径，空则使用内置标识
+       */
+      'common.splashImage': string
+
+      /**
+       * 入场动画标题文字，空则使用应用名
+       */
+      'common.splashTitle': string
+
+      /**
        * 尝试自动更新
        */
       'common.tryAutoUpdate': boolean
