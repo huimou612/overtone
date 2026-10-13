@@ -1,5 +1,5 @@
 import { rendererSend, rendererInvoke, rendererOn, rendererOff } from '@common/rendererIpc'
-import { HOTKEY_RENDERER_EVENT_NAME, WIN_MAIN_RENDERER_EVENT_NAME, CMMON_EVENT_NAME, AI_EVENT_NAME } from '@common/ipcNames'
+import { HOTKEY_RENDERER_EVENT_NAME, WIN_MAIN_RENDERER_EVENT_NAME, CMMON_EVENT_NAME, AI_EVENT_NAME, ANALYSIS_EVENT_NAME } from '@common/ipcNames'
 import { type ProgressInfo, type UpdateDownloadedEvent, type UpdateInfo } from 'electron-updater'
 import { markRaw } from '@common/utils/vueTools'
 import * as hotKeys from '@common/hotKey'
@@ -366,6 +366,72 @@ export const parseAiManualResult = async(lines: string[], raw: string) => {
  */
 export const applyAiLxlrc = async(input: LX.Ai.ApplyLxlrcInput) => {
   return rendererInvoke<LX.Ai.ApplyLxlrcInput, LX.Ai.ApplyLxlrcResult>(AI_EVENT_NAME.apply_lxlrc, input)
+}
+
+
+// ============================ 音源分离（analysis） ============================
+//
+// 链路是「渲染层解码 → 主进程推理 → 主进程落盘」，所以这里的接口比它看起来的分量小：
+// 解码（Web Audio）和写 mix.in 都在渲染层自己做，见 @renderer/core/analysis/stems.ts。
+// 主进程只接受「样本总数」和文件名，不接受 PCM —— 一首四分钟的歌是 85MB，
+// 走 IPC 只是白搬一趟，而渲染层本来就跑在 nodeIntegration 里。
+
+/** 读模型状态：装没装、能不能跑、导出到哪。对话框每次打开都读一次。 */
+export const getAnalysisStatus = async() => {
+  return rendererInvoke<LX.Analysis.Status>(ANALYSIS_EVENT_NAME.get_status)
+}
+
+/** 下载一个模型/运行时。进度从 onAnalysisDownloadProgress 拿，可能要几分钟。 */
+export const downloadAnalysisModel = async(name: LX.Analysis.ModelName) => {
+  return rendererInvoke<{ name: LX.Analysis.ModelName }, LX.Analysis.DownloadResult>(
+    ANALYSIS_EVENT_NAME.download_model, { name })
+}
+
+export const cancelAnalysisDownload = async(name: LX.Analysis.ModelName) => {
+  return rendererInvoke<{ name: LX.Analysis.ModelName }, boolean>(ANALYSIS_EVENT_NAME.cancel_download, { name })
+}
+
+/** 订阅下载进度（含字节数，用于画进度条）。返回取消订阅函数。 */
+export const onAnalysisDownloadProgress = (listener: LX.IpcRendererEventListenerParams<LX.Analysis.DownloadProgress>): RemoveListener => {
+  rendererOn(ANALYSIS_EVENT_NAME.download_progress, listener)
+  return () => {
+    rendererOff(ANALYSIS_EVENT_NAME.download_progress, listener)
+  }
+}
+
+export const removeAnalysisModels = async() => {
+  return rendererInvoke<{ ok: boolean, removed: string[], freed: number }>(ANALYSIS_EVENT_NAME.remove_models)
+}
+
+/**
+ * 开一个分离作业，拿到放 `mix.in` 的工作目录。
+ *
+ * 工作目录由主进程全权管理（临时目录 + 随机 token），渲染层只往里写一个文件；
+ * 作业结束或中止时主进程会把它整个删掉。
+ */
+export const beginAnalysisJob = async() => {
+  return rendererInvoke<{ jobId: string, inputPath: string }>(ANALYSIS_EVENT_NAME.begin_job)
+}
+
+/**
+ * 跑分离。total 是**每声道**的采样数，主进程会用文件大小核对它，
+ * 对不上说明 mix.in 没写完。
+ */
+export const runAnalysisJob = async(input: { jobId: string, total: number, name?: string }) => {
+  return rendererInvoke<{ jobId: string, total: number, name?: string }, LX.Analysis.JobResult>(
+    ANALYSIS_EVENT_NAME.run_job, input)
+}
+
+export const abortAnalysisJob = async(jobId: string) => {
+  return rendererInvoke<{ jobId: string }, boolean>(ANALYSIS_EVENT_NAME.abort_job, { jobId })
+}
+
+/** 订阅分离进度（htdemucs 是分块推理的，每块一次）。返回取消订阅函数。 */
+export const onAnalysisJobProgress = (listener: LX.IpcRendererEventListenerParams<LX.Analysis.JobProgress>): RemoveListener => {
+  rendererOn(ANALYSIS_EVENT_NAME.job_progress, listener)
+  return () => {
+    rendererOff(ANALYSIS_EVENT_NAME.job_progress, listener)
+  }
 }
 
 

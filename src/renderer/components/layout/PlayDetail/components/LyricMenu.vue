@@ -9,7 +9,10 @@
       </div>
     </div> -->
       <div :class="$style.group">
-        <button :class="$style.btn" ignore-tip :aria-label="$t('ai_lyric__menu')" @click="openAiLyric">{{ $t('ai_lyric__menu') }}</button>
+        <div :class="$style.subGroup">
+          <button :class="$style.btn" ignore-tip :aria-label="$t('ai_lyric__menu')" @click="openAiLyric">{{ $t('ai_lyric__menu') }}</button>
+          <button :class="$style.btn" ignore-tip :aria-label="$t('stem__menu')" @click="openStems">{{ $t('stem__menu') }}</button>
+        </div>
       </div>
       <div :class="$style.group">
         <div :class="$style.subGroup">
@@ -45,6 +48,7 @@
       </div>
     </div>
     <AiLyricModal v-model="aiVisible" :music-info="musicInfo" @update-lyric="handleAiLyricSaved" />
+    <StemModal v-model="stemVisible" />
   </teleport>
 </template>
 
@@ -55,6 +59,7 @@ import { debounce } from '@common/utils/common'
 import { saveLyricEdited, removeLyricEdited } from '@renderer/utils/ipc'
 import { appSetting, setPlayDetailLyricFont, setPlayDetailLyricAlign } from '@renderer/store/setting'
 import AiLyricModal from './AiLyricModal.vue'
+import StemModal from './StemModal.vue'
 
 const offsetTagRxp = /(?:^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/
 const offsetTagAllRxp = /(^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/g
@@ -79,6 +84,7 @@ export default {
   name: 'LyricMenu',
   components: {
     AiLyricModal,
+    StemModal,
   },
   props: {
     modelValue: Boolean,
@@ -198,6 +204,15 @@ export default {
       aiVisible.value = true
     }
 
+    // ==================== 音源分离 ====================
+
+    const stemVisible = ref(false)
+
+    const openStems = () => {
+      onHide()
+      stemVisible.value = true
+    }
+
     // 对话框写完库后把新生成的 lxlrc 交回来，播放器立刻就能出逐字效果
     const handleAiLyricSaved = ({ lxlrc }) => {
       const info = props.lyricInfo
@@ -243,6 +258,8 @@ export default {
       musicInfo,
       openAiLyric,
       handleAiLyricSaved,
+      stemVisible,
+      openStems,
     }
   },
 }
