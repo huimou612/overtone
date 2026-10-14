@@ -45,6 +45,14 @@ declare namespace LX {
     [key: string]: boolean | number | string
   }
 
+  /**
+   * 内置平台源的 id。
+   *
+   * ⚠️ 泛音**不含**任何平台接口实现（见 `src/renderer/utils/musicSdk/index.js`
+   * 顶部说明）。这里保留这几个字面量，唯一原因是**历史数据兼容**：用户已收藏 /
+   * 已下载 / 已导入的歌单里，歌曲的 `source` 字段就是这些值 —— 类型得能表示它们，
+   * 界面也要靠它显示来源名。它**不代表**应用内置了对应平台的音源。
+   */
   type OnlineSource = 'kw' | 'kg' | 'tx' | 'wy' | 'mg'
   type Source = OnlineSource | 'local'
   type Quality = '128k' | '320k' | 'flac' | 'flac24bit' | '192k' | 'ape' | 'wav'

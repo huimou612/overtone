@@ -143,7 +143,10 @@ export default {
       let url
       if (/board__/.test(sourceListId)) {
         const id = sourceListId.replace(/board__/, '')
-        url = musicSdk[source].leaderboard.getDetailPageUrl(id)
+        // 内置平台源已移除（见 utils/musicSdk/index.js），musicSdk[source] 现在
+        // 对任何已存的平台歌单都是 undefined。这里原来没写 `?.`，会抛未捕获
+        // 异常（handleOpenSourceDetailPage 是 async，没人接这个 rejection）。
+        url = musicSdk[source]?.leaderboard?.getDetailPageUrl(id)
       } else if (musicSdk[source]?.songList?.getDetailPageUrl) {
         url = await musicSdk[source].songList.getDetailPageUrl(sourceListId)
       }

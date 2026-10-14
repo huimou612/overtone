@@ -67,7 +67,11 @@ export const getList = async(source: Source): Promise<string[]> => {
       setList(source, [])
       return Promise.resolve([])
     }
-    return music[source]?.hotSearch.getList().then(data => setList(source, data.list))
+    // 参数要显式标注：内置源删除后 `music[source]` 的类型是 any（见
+    // utils/musicSdk/index.d.ts），在 any 上调用 .then 时参数拿不到上下文类型，
+    // 会触发 noImplicitAny。运行上这行其实走不到 —— 上面第 66 行已经挡掉了
+    // 「没有 hotSearch 的 source」，而泛音里所有 source 都没有实现。
+    return music[source]?.hotSearch.getList().then((data: { list: string[] }) => setList(source, data.list))
   }
 }
 

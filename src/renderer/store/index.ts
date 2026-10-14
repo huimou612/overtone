@@ -89,14 +89,22 @@ export const getSourceI18nPrefix = () => {
 
 export const sourceNames = computed(() => {
   const prefix = getSourceI18nPrefix()
+  // 内置平台源已全部移除（见 utils/musicSdk/index.js 顶部的说明），但下面这张
+  // 映射要保留：历史数据里可能有 source 为 kw / tx / … 的歌曲（已收藏、已下载、
+  // 已导入的歌单），界面要靠它显示「来源」。
+  //
+  // 原来这几个 key 写的是占位字面量（kw: 'kw'），因为紧接着的循环一定会用
+  // i18n 名称覆盖掉。现在循环不再有内容，占位就得改成真正的名称。
   const sourceNames: Record<LX.OnlineSource | 'all', string> = {
-    kw: 'kw',
-    tx: 'tx',
-    kg: 'kg',
-    mg: 'mg',
-    wy: 'wy',
+    kw: window.i18n.t(prefix + 'kw' as any),
+    tx: window.i18n.t(prefix + 'tx' as any),
+    kg: window.i18n.t(prefix + 'kg' as any),
+    mg: window.i18n.t(prefix + 'mg' as any),
+    wy: window.i18n.t(prefix + 'wy' as any),
     all: window.i18n.t(prefix + 'all' as any),
   }
+  // 目前 music.sources 是空的（没有内置源）。保留这个循环是为了让「将来把
+  // 自定义源登记进 music.sources」时不必回来改这里。
   for (const { id } of music.sources) {
     sourceNames[id as LX.OnlineSource] = window.i18n.t(prefix + id as any)
   }

@@ -24,7 +24,9 @@ import BlankView from './components/BlankView.vue'
 import { computed, ref } from '@common/utils/vueTools'
 import { sourceNames } from '@renderer/store'
 
-const source = ref('kw')
+// 内置源已全部移除（见 utils/musicSdk/index.js），可选的搜索源只剩聚合视图 'all'。
+// 原来这里写的是 'kw' —— 那是"至少有个平台可用"时代的默认值。
+const source = ref('all')
 const searchType = ref(null)
 const page = ref(1)
 
@@ -44,6 +46,19 @@ const verifyQueryParams = async(to, from, next) => {
     })
     return
   }
+  // 内置源删除后，持久化设置（getSearchSetting）与旧链接里存的 source
+  // （kw / kg / tx / wy / mg，自定义源也不例外 —— 它只提供播放，不提供搜索）
+  // 都没有对应的 listInfo 了，页面会在模板里对 undefined 取 .page 而抛错。
+  // 这里统一回落到聚合视图 'all'（它始终存在）。
+  if (!_sources.includes(_source)) {
+    void setSearchSetting({ source: 'all', type: _type })
+    next({
+      path: to.path,
+      query: { ...to.query, source: 'all', page: 1 },
+    })
+    return
+  }
+
   source.value = _source
   searchType.value = _type
 

@@ -49,20 +49,37 @@ export const DATA_KEYS = {
   lastStartInfo: 'lastStartInfo',
 } as const
 
+/**
+ * 默认设置。
+ *
+ * ⚠️ 与 source 相关的默认值一律是**空串**，不是平台 id。
+ *
+ * 上游这里写的是 `'kw'` / `'kw__16'` / `'new'`（酷我的默认榜单与排序），因为
+ * 那时内置源总是存在的。泛音删掉了全部内置平台接口（红线，见
+ * `utils/musicSdk/index.js`），这些默认值就变成了**指向不存在的源**：新建一个
+ * profile 打开应用，URL 会是 `?source=kw` —— 看起来像这个源还在，而且
+ * `TagList` 会把空结果写进 `tags['kw']` 缓存。
+ *
+ * 归到空串之后，各页面自然走「没有可用源」分支：`TagList` 的 `if (!source) return`
+ * 不再发请求、源下拉框（sourceList）为空、列表区显示「暂无内容」。
+ * 存量用户盘上已落着的 `'kw'` 由 `renderer/utils/data.ts` 的 `clearInvalidSource` 兜住。
+ *
+ * 例外：`search.source` 保持 `'all'` —— 那是聚合视图，不是某个平台，删源后依然存在。
+ */
 export const DEFAULT_SETTING = {
   leaderboard: {
-    source: 'kw',
-    boardId: 'kw__16',
+    source: '',
+    boardId: '',
   },
 
   songList: {
-    source: 'kw',
-    sortId: 'new',
+    source: '',
+    sortId: '',
     tagId: '',
   },
 
   search: {
-    temp_source: 'kw',
+    temp_source: '',
     source: 'all',
     type: 'music',
   },

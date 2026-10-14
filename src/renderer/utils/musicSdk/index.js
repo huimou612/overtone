@@ -1,62 +1,154 @@
-import kw from './kw/index'
-import kg from './kg/index'
-import tx from './tx/index'
-import wy from './wy/index'
-import mg from './mg/index'
-import bd from './bd/index'
-import xm from './xm'
 import { supportQuality } from './api-source'
 import { versionChars } from './versionChars'
 
-
+/**
+ * 内置平台接口已全部移除 —— 泛音的红线：**不内置任何平台音源接口**。
+ *
+ * 上游 LX Music 在这里 import 并导出 kw / kg / tx / wy / mg / bd / xm 七个平台的
+ * 接口实现（搜索、榜单、歌单、歌词、封面、热词……），其中还有酷狗那套签名算法
+ * （kg/vendors/infSign.min.js）。那些代码即使不被调用，也会被整包打进产物，
+ * 等于把平台接口"内置"进了应用 —— 所以连同目录一起删除，只留下这个分发框架。
+ *
+ * 现在 `sources.sources` 是空的，于是：
+ *   - 下面几处 `for (const source of sources.sources)` 自然不执行；
+ *   - 渲染层的 store（search / songList / leaderboard / hotSearch）本来就写了
+ *     `if (!music[source.id]?.xxx) continue` 守卫，那些平台的 tab 不会出现；
+ *   - 所有取 URL / 封面 / 歌词的调用点要么包在 try 里、要么用了 `?.`，
+ *     取不到实现就落进原有的「换源失败」降级分支，不会抛未捕获异常。
+ *
+ * 取 URL / 歌词 / 封面这条链路与这里无关：它走 `apis()`（./api-source），
+ * 在 apiSource 为 `user_api*` 时返回 `userApi.apis[source]`，完全由用户导入的
+ * 自定义源提供，也顺带承担本地音乐（source 为 `local`）的文件读取。
+ *
+ * searchMusic / findMusic 保留：它们是**通用骨架**（并发搜同名歌 + 按
+ * 歌名/歌手/专辑/时长/版本字符排序），不含任何平台相关逻辑。现在顶层没有
+ * 内置源可遍历，返回空数组；将来自定义源协议若支持 musicSearch，这里直接就能用。
+ */
 const sources = {
-  sources: [
-    {
-      name: '酷我音乐',
-      id: 'kw',
-    },
-    {
-      name: '酷狗音乐',
-      id: 'kg',
-    },
-    {
-      name: 'QQ音乐',
-      id: 'tx',
-    },
-    {
-      name: '网易音乐',
-      id: 'wy',
-    },
-    {
-      name: '咪咕音乐',
-      id: 'mg',
-    },
-    {
-      name: '虾米音乐',
-      id: 'xm',
-    },
-    // {
-    //   name: '百度音乐',
-    //   id: 'bd',
-    // },
-  ],
-  kw,
-  kg,
-  tx,
-  wy,
-  mg,
-  bd,
-  xm,
+  sources: [],
 }
-export default {
+
+/**
+ * 空壳：所有 `musicSdk[source].xxx` 的取值都落到它身上。
+ *
+ * 为什么需要它 —— 调用点的写法是 `musicSdk[source].getMusicUrl(...)`、
+ * `musicSdk[source]?.leaderboard.getList(...)` 这类，它们**默认拿到的一定是对象**。
+ * 删除内置源后 `musicSdk['kw']` 变成 `undefined`，于是：
+ *   - 有的地方 `.then` 直接挂在 undefined 上（`Object.defineProperty called on non-object`）
+ *   - 有的地方把 `undefined` 当成查询结果传下去（`Cannot read properties of undefined (reading 'list')`）
+ * 这些是**未捕获的 rejection**，不会让页面崩，但会在控制台刷错误，也会让
+ * 「没有源」这个正常状态看起来像坏了。
+ *
+ * 返回策略按语义分两类：
+ *   - **取音频 / 歌词 / 封面**：语义上就应该失败 → 返回必然 reject 的 promise，
+ *     调用点接住后走它们本来就有的「换源失败」降级分支；
+ *   - **查列表 / 歌单 / 榜单 / 热词 / 评论**：返回**结构对齐的空结果** →
+ *     页面显示「暂无内容」，比报错合理。
+ *
+ * ⚠️ 它**不会**让界面冒出平台入口：渲染层那几处 store 遍历的是
+ * `musicSdk.sources` 这个**数组**（现在是空的），而不是 musicSdk 上的 key。
+ *
+ * ── 空壳契约表（改这里之前先照着右列去核对消费点）────────────────────────
+ * 下面每一条的「形状」都是从**消费点实际读的字段**反推的，不是照抄平台旧实现。
+ * 删源之前上游从没跑过「零源」，所以这些形状没有文档可依 —— 踩过的坑：
+ * 把 `tipSearch.search` 写成 `{ list: [] }`（实际要裸数组）、把评论写成
+ * `{ list }`（实际要 `comments`）、把标签写成 `[]`（实际要 `{ tags, hotTag }`），
+ * 三处都会让 `v-for` 拿到 undefined 而抛未捕获异常。
+ *
+ * | 空壳方法                       | 消费点                                        | 消费点读的字段                |
+ * |--------------------------------|-----------------------------------------------|-------------------------------|
+ * | getMusicUrl / getLyric         | core/music/utils.ts（try/catch 兜住）         | `.promise`                    |
+ * | getPic                         | core/music/utils.ts（try/catch 兜住）         | 直接 await                    |
+ * | tipSearch.search               | components/layout/Toolbar/SearchInput.vue     | 裸数组（不是 {list}）         |
+ * | musicSearch.search             | store/search/music/action.ts                  | list/total/limit/allPage/source |
+ * | songList.search                | store/search/songlist/action.ts               | 同上                          |
+ * | songList.getTags               | views/songList/List/components/TagList.vue    | tags / hotTag（不是数组）     |
+ * | songList.getList               | store/songList/action.ts                      | list/total/limit/source       |
+ * | songList.getListDetail         | store/songList/action.ts                      | 上述 + info                   |
+ * | songList.sortList              | store/songList/state.ts                       | 数组（字段名不是 sortId）     |
+ * | songList.getDetailPageUrl      | views/List/MyList/index.vue                   | await → 字符串                |
+ * | leaderboard.getBoards          | store/leaderboard/action.ts                   | list / source                 |
+ * | leaderboard.getList            | store/leaderboard/action.ts                   | list/total/limit/source       |
+ * | leaderboard.getDetailPageUrl   | views/List/MyList/index.vue                   | 不 await → 字符串             |
+ * | hotSearch.getList              | store/hotSearch.ts                            | list                          |
+ * | comment.getComment / getHot…   | PlayDetail/…/MusicComment/index.vue           | total / maxPage / comments    |
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+
+/** 搜索结果（musicSearch.search / songList.search）。allPage 必须给，setList 会读。 */
+const emptySearchResult = () => ({
+  list: [],
+  total: 0,
+  limit: 30,
+  allPage: 0,
+  source: null,
+})
+
+/** 歌单 / 榜单列表（getList / getListDetail）。setList 会读 info，setListDetail 会读 desc。 */
+const emptyListInfo = () => ({
+  list: [],
+  total: 0,
+  page: 1,
+  maxPage: 0,
+  limit: 30,
+  key: null,
+  id: '',
+  desc: null,
+  source: null,
+  info: {},
+  noItemLabel: '',
+})
+
+/** 评论：消费点读的是 `comments`，**不是** `list`。 */
+const emptyComments = () => ({ total: 0, maxPage: 0, comments: [] })
+
+const noSourceImpl = () => Promise.reject(new Error('no source implementation'))
+
+const noSource = {
+  // ── 取音频 / 歌词 / 封面：必然失败 ──────────────────────────
+  getMusicUrl: () => ({ promise: noSourceImpl() }),
+  getLyric: () => ({ promise: noSourceImpl() }),
+  getPic: noSourceImpl,
+  // 平台 index.js 的标准接口之一，当前仓内无调用点，保留是为了维持形状
+  getMusicInfo: noSourceImpl,
+  getMusicDetailPageUrl: () => '',
+
+  // ── 查列表类：返回形状对齐的空结果 ──────────────────────────
+  tipSearch: {
+    search: () => Promise.resolve([]),
+    cancelTipSearch: () => {},
+  },
+  musicSearch: {
+    search: () => Promise.resolve(emptySearchResult()),
+  },
+  songList: {
+    tagInfo: {},
+    sortList: [],
+    source: null,
+    getTags: () => Promise.resolve({ tags: [], hotTag: [], source: null }),
+    search: () => Promise.resolve(emptySearchResult()),
+    getList: () => Promise.resolve(emptyListInfo()),
+    getListDetail: () => Promise.resolve(emptyListInfo()),
+    getDetailPageUrl: () => Promise.resolve(''),
+  },
+  leaderboard: {
+    getBoards: () => Promise.resolve({ list: [], source: null }),
+    getList: () => Promise.resolve(emptyListInfo()),
+    getDetailPageUrl: () => '',
+  },
+  hotSearch: {
+    getList: () => Promise.resolve({ list: [] }),
+  },
+  comment: {
+    getComment: () => Promise.resolve(emptyComments()),
+    getHotComment: () => Promise.resolve(emptyComments()),
+  },
+}
+
+const musicSdk = {
   ...sources,
   init() {
-    const tasks = []
-    for (let source of sources.sources) {
-      let sm = sources[source.id]
-      sm && sm.init && tasks.push(sm.init())
-    }
-    return Promise.all(tasks)
+    return Promise.resolve([])
   },
   supportQuality,
 
@@ -64,9 +156,9 @@ export default {
     const trimStr = str => typeof str == 'string' ? str.trim() : str
     const musicName = trimStr(name)
     const tasks = []
-    const excludeSource = ['xm']
+    const excludeSource = []
     for (const source of sources.sources) {
-      if (!sources[source.id].musicSearch || source.id == s || excludeSource.includes(source.id)) continue
+      if (!sources[source.id]?.musicSearch || source.id == s || excludeSource.includes(source.id)) continue
       tasks.push(sources[source.id].musicSearch.search(`${musicName} ${singer || ''}`.trim(), 1, limit).catch(_ => null))
     }
     return (await Promise.all(tasks)).filter(s => s)
@@ -74,8 +166,6 @@ export default {
 
   async findMusic({ name, singer, albumName, interval, source: s }) {
     const lists = await this.searchMusic({ name, singer, source: s, limit: 25 })
-    // console.log(lists)
-    // console.log({ name, singer, albumName, interval, source: s })
 
     const singersRxp = /、|&|;|；|\/|,|，|\|/
     const sortSingle = singer => singersRxp.test(singer)
@@ -134,7 +224,6 @@ export default {
         item.fMusicName = filterStr(String(item.name ?? '').toLowerCase())
         item.fAlbumName = filterStr(String(item.albumName ?? '').toLowerCase())
         item.fInterval = getIntv(item.interval)
-        // console.log(fMusicName, item.fMusicName, item.source)
         if (!isEqualsInterval(item.fInterval)) {
           item.name = null
           continue
@@ -170,7 +259,33 @@ export default {
       }
       newResult.push(...result)
     }
-    // console.log(newResult)
     return newResult
   },
 }
+
+/**
+ * 某个 source 当前是否有可用实现。
+ *
+ * 删掉内置源之后恒为 false（`sources.sources` 是空数组）。界面据此把
+ * **持久化设置里存着的失效 source** 归一化掉 —— 存量用户的盘上还留着
+ * `source: 'kw'`（`DEFAULT_SETTING` 过去也把默认值写死成 `'kw'`），
+ * 读取处见 `renderer/utils/data.ts` 的 `clearInvalidSource`。
+ */
+export const isValidSource = source => sources.sources.some(item => item.id === source)
+
+/**
+ * 用 Proxy 兜住「取不到的源」。
+ *
+ * 之所以不在 `musicSdk` 上写死 kw / kg / … 这些 key（哪怕指向空壳），是因为
+ * 那会让 `'kw' in musicSdk` 为真、让读者以为这些源还在；而 `sources.sources`
+ * 是空的，界面本来就不该出现它们。Proxy 只在**真的去取**的时候才兜底。
+ */
+export default new Proxy(musicSdk, {
+  get(target, key) {
+    if (key in target) return target[key]
+    // Symbol（toStringTag / iterator 之类）如实返回 undefined，
+    // 否则会被当成一个"源"塞进某些遍历逻辑里
+    if (typeof key != 'string') return undefined
+    return noSource
+  },
+})

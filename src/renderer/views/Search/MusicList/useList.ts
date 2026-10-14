@@ -24,7 +24,9 @@ export default () => {
   })
 
   const search = (text: string, source: SearchSource, page: number) => {
-    listInfo.value = listInfos[source] as ListInfo
+    // 兜底：source 指向一个没有 state 的源时（内置源已删除，见 utils/musicSdk/index.js），
+    // 直接赋值会给模板一个 undefined，造成 `listInfo.page` 抛 TypeError。
+    listInfo.value = listInfos[source] ?? listInfos.all
     if (text.length) void addHistoryWord(text)
     void searchMusic(text, page, source).then((list: LX.Music.MusicInfo[]) => {
       if (list.length) {

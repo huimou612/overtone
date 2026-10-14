@@ -24,7 +24,9 @@ export default () => {
 
   const search = (text: string, source: SearchSource, page: number) => {
     // console.log(text, source, page)
-    listInfo.value = listInfos[source] as SearchListInfo
+    // 兜底：同 MusicList —— source 没有对应 state 时（内置源已删除）不能把
+    // undefined 交给模板
+    listInfo.value = listInfos[source] ?? listInfos.all
     if (text.length) void addHistoryWord(text)
     void searchSongList(text, page, source).then((list: ListInfoItem[]) => {
       // console.log(list)
