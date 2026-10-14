@@ -58,8 +58,57 @@ jobs:
   # 对应的无发布脚本：publish:xxx → pack:xxx（build-pack.js 里 publish 默认为 'never'）
   # ─────────────────────────────────────────────────────────────────────────
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # 发布守卫：绝不去动「已发布」版本的 tag。
+  #
+  # 背景：本工作流由 push 到 master 触发，而 tag 名是用 package.json 的 version
+  # 拼出来的。一旦某个版本已经 Publish（不再是 draft），再推一个同版本号的提交，
+  # Release job 就会去删 refs/tags/v$VERSION —— 而那个 tag 是已发布 release 的
+  # 锚点：删掉它会让 release 变成孤儿，Release job 自己也会失败，四平台全部白跑
+  # （实测 v0.1.0 发布后就是这个状态）。
+  #
+  # 所以这里先用 ~10 秒查一次：版本号对应的 release 若已是已发布状态，整个工作流
+  # 直接跳过，只留一条 notice 提示「要发新版请先改 package.json 的 version」。
+  # 顺带的好处：纯文档提交不会触发四平台打包（若仓库为私有，这一步省下的是真金
+  # 白银的 CI 额度 —— 私有仓库四平台打包一次约 100~137 计费分钟）。
+  # ─────────────────────────────────────────────────────────────────────────
+  Guard:
+    name: Guard
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v6
+
+      - name: Check whether this version is already published
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+
+          # 取不到（404）说明这个 tag 还没有 release，可以建；
+          # 取到 true 说明只是草稿，也可以覆盖；取到 false 就是已发布 —— 必须让路。
+          DRAFT=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+            --jq '.draft' 2>/dev/null || echo none)
+
+          if [ "$DRAFT" = "false" ]; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=跳过四平台打包::${TAG} 已是「已发布」状态（不是草稿）。要发布新版本，请先修改 package.json 的 version 再推送。"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "package.json 版本 = ${VERSION}，同 tag release 的 draft 状态 = ${DRAFT}"
+
   Windows:
     name: Windows
+    needs: Guard
+    if: needs.Guard.outputs.should_release == 'true'
     runs-on: windows-latest
     steps:
       - name: Check out git repository
@@ -108,6 +157,8 @@ jobs:
 
   Windows_7:
     name: Windows_7
+    needs: Guard
+    if: needs.Guard.outputs.should_release == 'true'
     runs-on: windows-latest
     steps:
       - name: Check out git repository
@@ -163,6 +214,8 @@ jobs:
 
   Mac:
     name: Mac
+    needs: Guard
+    if: needs.Guard.outputs.should_release == 'true'
     runs-on: macos-latest
     steps:
       - name: Check out git repository
@@ -210,6 +263,8 @@ jobs:
 
   Linux:
     name: Linux
+    needs: Guard
+    if: needs.Guard.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Install package
@@ -301,9 +356,16 @@ jobs:
                   && echo "deleted stale draft release id=${id}"
               done
 
-          # 同时清掉可能残留的 git tag，让本次构建的 tag 指向当次提交
-          gh api -X DELETE "repos/${REPO}/git/refs/tags/${TAG}" 2>/dev/null \
-            && echo "deleted stale tag ${TAG}" || true
+          # 同时清掉可能残留的 git tag，让本次构建的 tag 指向当次提交。
+          # ⚠️ 只能在「这个 tag 没有已发布 release」时删 —— 否则会把已发布 release 的
+          # 锚点删掉，让它变成孤儿。Guard job 已经把这种情况挡在前面了，这里是第二道保险。
+          PUB=$(gh api "repos/${REPO}/releases/tags/${TAG}" --jq '.draft' 2>/dev/null || echo none)
+          if [ "$PUB" = "false" ]; then
+            echo "::warning title=保留 tag::${TAG} 有已发布的 release，不删 tag，也不新建草稿"
+          else
+            gh api -X DELETE "repos/${REPO}/git/refs/tags/${TAG}" 2>/dev/null \
+              && echo "deleted stale tag ${TAG}" || true
+          fi
 
           {
             echo "由 GitHub Actions 自动构建，提交 \`${GITHUB_SHA:0:8}\`。"
