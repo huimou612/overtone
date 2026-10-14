@@ -112,6 +112,17 @@ declare global {
       'common.appMode': 'classic' | 'personal'
 
       /**
+       * 跟随封面取色
+       *
+       * 开启后从当前歌曲的封面提取主色，写成全局变量 `--cover-color`，背景层用它
+       * 染色、并把壁纸遮罩的颜色从「主题的底色」换成「这首歌的颜色」。
+       *
+       * 默认关闭：取色会带来明显的视觉变化，且它依赖主题的背景是半透明的才看得出来，
+       * 更适合让用户主动开，而不是升级后一睁眼界面就变了个样。
+       */
+      'common.coverColor': boolean
+
+      /**
        * 尝试自动更新
        */
       'common.tryAutoUpdate': boolean

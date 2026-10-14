@@ -25,6 +25,7 @@ const defaultSetting: LX.AppSetting = {
   'common.splashImage': '',
   'common.splashTitle': '',
   'common.appMode': 'classic',
+  'common.coverColor': false,
   'common.tryAutoUpdate': true,
   'common.showChangeLog': true,
 

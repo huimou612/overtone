@@ -1,6 +1,10 @@
 <template>
+  <!-- data-layer 是给验证脚本用的稳定锚点：CSS module 会把类名编译成哈希，
+       `[class*="wall"]` 这种写法既撞得上别处的 .wallpaper，又随构建变化。
+       和 PlayDetail 的 data-view 同款做法。 -->
   <div
     v-if="active"
+    data-layer="wall"
     :class="[$style.wall, { [$style.behind]: behind }]"
     :style="wallStyle"
     aria-hidden="true"
@@ -20,8 +24,11 @@
       disablepictureinpicture
       preload="auto"
     />
-    <img v-else :class="$style.media" :src="state.source" alt="">
-    <div :class="$style.mask" />
+    <img v-else-if="state.kind === 'image'" :class="$style.media" :src="state.source" alt="">
+    <!-- 跟随封面取色：主色染色层。压在壁纸之上、遮罩之下，
+         没设壁纸时它就是这一层唯一的内容（此时等于给界面铺了一层歌的颜色）。 -->
+    <div v-if="state.tint" data-layer="cover-tint" :class="$style.tint" />
+    <div data-layer="wall-mask" :class="$style.mask" />
   </div>
 </template>
 
@@ -38,12 +45,20 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from '@com
  *   2. 单独模糊背景而不牵连内容（filter 会作用到整棵子树）
  * 所以这里用真实元素重画一遍壁纸，模糊/遮罩都加在这一层上，内容层完全不受影响。
  *
- * 兼容性：只有当「是视频」或「模糊/遮罩大于 0」时才挂载（active）。
- * 18 套内置主题这三项全是默认值，因此它们一帧都不会多画。
+ * 兼容性：只有当「是视频」「模糊/遮罩大于 0」「开启了跟随封面取色」三者之一成立时才挂载（active）。
+ * 内置主题这几项全是默认值，因此它们一帧都不会多画。
+ *
+ * 阶段 7.4 起这一层还多了一件事：跟随封面取色的染色层与遮罩取色（见 .tint / .mask）。
+ * 它同时挂在 App.vue 与 PlayDetail 两处，所以这两处的氛围是同一份实现。
  */
 
 // 收视频扩展名。图片那条路不动，GIF 继续用 CSS 的 background-image 播。
 const VIDEO_EXT = /\.(mp4|m4v|webm|ogv|mov|mkv)$/i
+
+// `--cover-color` 是「跟随封面取色」开启时由 useCoverColor 写下的十六进制主色。
+// 这里只认这个格式：写进来的必须是完整颜色，不能是 var() 之类的间接引用，
+// 否则下面的 v-if 判断和 color-mix 都会失去意义。
+const COVER_COLOR_RE = /^#[0-9a-f]{6}$/i
 
 const clamp = (value, min, max) => value < min ? min : (value > max ? max : value)
 
@@ -87,6 +102,7 @@ export default {
       blur: 0, // px
       mask: 0, // 0-90，遮罩不透明度百分比
       position: 'center',
+      tint: false, // 是否存在封面主色（即「跟随封面取色」是否生效）
     })
     const dom_media = ref(null)
 
@@ -100,6 +116,10 @@ export default {
       state.blur = clamp(toNumber(raw('--background-blur')), 0, 40)
       state.mask = clamp(toNumber(raw('--background-mask')), 0, 90)
       state.position = raw('--background-image-position') || 'center'
+
+      // `--cover-color` 只在「跟随封面取色」开启时存在（关闭时是 removeProperty，
+      // 而不是写一个兜底色），所以它的有无本身就是功能开关，组件不必再去读配置。
+      state.tint = COVER_COLOR_RE.test(raw('--cover-color'))
 
       if (video && video !== 'none') {
         state.kind = 'video'
@@ -117,7 +137,12 @@ export default {
       state.source = ''
     }
 
-    const active = computed(() => state.kind !== 'none' && (state.kind === 'video' || state.blur > 0 || state.mask > 0))
+    const active = computed(() => {
+      // 没有壁纸时，只有封面染色层可画：这层让「没设壁纸」的用户也能用上取色
+      if (state.kind === 'none') return state.tint
+      if (state.kind === 'video') return true
+      return state.blur > 0 || state.mask > 0 || state.tint
+    })
 
     const wallStyle = computed(() => ({
       '--wall-blur': `${state.blur}px`,
@@ -152,6 +177,10 @@ export default {
       if (window.dom_style) {
         observer = new MutationObserver(read)
         observer.observe(window.dom_style, { childList: true, characterData: true, subtree: true })
+        // `--cover-color` 走的是另一条路：useCoverColor 把它写在 documentElement 的
+        // inline style 上（不能写进 dom_style，那个元素每次切主题都会被整段重写冲掉）。
+        // 所以这里要额外盯一眼 <html> 的 style 属性变化，否则切歌时这一层不会重读。
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
       }
 
       // 主题变了以后 video 可能是刚插进来的，等 DOM 更新再补一次静音 + 播放
@@ -218,15 +247,37 @@ export default {
   transform-origin: center;
 }
 
+// 跟随封面取色的染色层。
+//
+// 用 color-mix 而不是让 JS 灌一个 rgba 进来：颜色的不透明度在这里是**渐变**的
+// （越往上越浓、越往下越淡），把它做成一个变量反而会把「渐变」这件事压缩成一个数。
+// 万一 --cover-color 缺失（v-if 已挡掉，这里是兜底），第一个参数会退化成 transparent，
+// 整层变成不透明渐变到透明 —— 也就是「什么都没画」，不会出现黑块。
+.tint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cover-color, transparent) 26%, transparent) 0%,
+    color-mix(in srgb, var(--cover-color, transparent) 12%, transparent) 46%,
+    color-mix(in srgb, var(--cover-color, transparent) 4%, transparent) 100%
+  );
+}
+
 .mask {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  // 遮罩色取 --color-000 —— 调色板里「背景那一端」：浅色主题是白、深色主题是深灰。
+  // 遮罩色默认取 --color-000 —— 调色板里「背景那一端」：浅色主题是白、深色主题是深灰。
   // 这样一档遮罩在两个方向上都是「把壁纸压下去、把文字抬上来」，不用跟着主题切换换颜色。
-  background-color: var(--color-000, #000);
+  // 开启跟随封面取色时改进 --cover-color：同一个不透明度，压下去的从「主题底色」变成
+  //「这首歌的颜色」，这就是「跟随封面取色」最直接的那一步。
+  background-color: var(--cover-color, var(--color-000, #000));
   opacity: var(--wall-mask-alpha, 0);
 }
 </style>

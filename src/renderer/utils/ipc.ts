@@ -1,5 +1,5 @@
 import { rendererSend, rendererInvoke, rendererOn, rendererOff } from '@common/rendererIpc'
-import { HOTKEY_RENDERER_EVENT_NAME, WIN_MAIN_RENDERER_EVENT_NAME, CMMON_EVENT_NAME, AI_EVENT_NAME, ANALYSIS_EVENT_NAME } from '@common/ipcNames'
+import { HOTKEY_RENDERER_EVENT_NAME, WIN_MAIN_RENDERER_EVENT_NAME, CMMON_EVENT_NAME, AI_EVENT_NAME, ANALYSIS_EVENT_NAME, COVER_COLOR_EVENT_NAME } from '@common/ipcNames'
 import { type ProgressInfo, type UpdateDownloadedEvent, type UpdateInfo } from 'electron-updater'
 import { markRaw } from '@common/utils/vueTools'
 import * as hotKeys from '@common/hotKey'
@@ -440,6 +440,17 @@ export const getSystemFonts = async() => {
     return []
   })
 }
+
+// ============================ 跟随封面取色（coverColor） ============================
+//
+// 只管把封面读成一张 36×36 的 PNG data URL，颜色怎么算是渲染层自己的事
+// （见 @renderer/core/useApp/useCoverColor.ts 顶部的说明）。
+
+/** 把图源读成一张小图。返回 null 表示读不到（文件没了 / 网络失败 / 不是图）。 */
+export const getCoverImage = async(pic: string) => {
+  return rendererInvoke<{ pic: string }, string | null>(COVER_COLOR_EVENT_NAME.get_image, { pic })
+}
+
 
 export const getUserSoundEffectEQPresetList = async() => {
   return rendererInvoke<LX.SoundEffect.EQPreset[]>(WIN_MAIN_RENDERER_EVENT_NAME.get_sound_effect_eq_preset)

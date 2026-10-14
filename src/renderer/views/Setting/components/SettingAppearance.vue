@@ -19,6 +19,23 @@
     </div>
 
     <div>
+      <h3 id="appearance_cover">{{ $t('setting__appearance_cover') }}</h3>
+
+      <div class="p gap-top">{{ $t('setting__appearance_cover_desc') }}</div>
+
+      <div class="p gap-top">
+        <base-checkbox
+          id="setting_cover_color"
+          :model-value="appSetting['common.coverColor']"
+          :label="$t('setting__appearance_cover_enable')"
+          @update:model-value="updateSetting({ 'common.coverColor': $event })"
+        />
+      </div>
+
+      <div class="p small gap-top">{{ $t('setting__appearance_cover_tip') }}</div>
+    </div>
+
+    <div>
       <h3 id="appearance_splash">{{ $t('setting__appearance_splash') }}</h3>
 
       <div class="p gap-top">{{ $t('setting__appearance_splash_desc') }}</div>

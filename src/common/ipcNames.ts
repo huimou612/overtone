@@ -183,6 +183,10 @@ const modules = {
     parse_manual_result: 'parse_manual_result',
     apply_lxlrc: 'apply_lxlrc',
   },
+  // 泛音新增：跟随封面取色（把当前专辑封面的主色读成一张小图交给渲染层量化）。
+  coverColor: {
+    get_image: 'get_image',
+  },
   analysis: {
     // 模型（htdemucs 权重 + Python 运行时）
     get_status: 'get_status',
@@ -221,4 +225,5 @@ export const WIN_MAIN_RENDERER_EVENT_NAME = modules.winMain
 export const WIN_LYRIC_RENDERER_EVENT_NAME = modules.winLyric
 export const HOTKEY_RENDERER_EVENT_NAME = modules.hotKey
 export const AI_EVENT_NAME = modules.ai
+export const COVER_COLOR_EVENT_NAME = modules.coverColor
 export const ANALYSIS_EVENT_NAME = modules.analysis

@@ -9,6 +9,8 @@ import registerCommonRenderers from './commonRenderers'
 import registerAi from './ai'
 // 泛音新增：音源分离（移植自 Folia 的 htdemucs sidecar）
 import registerAnalysis from './analysis'
+// 泛音新增：跟随封面取色（把封面读成小图交给渲染层量化）
+import registerCoverColor from './coverColor'
 
 let isRegistered = false
 export default () => {
@@ -22,5 +24,6 @@ export default () => {
   registerWinLyric()
   registerAi()
   registerAnalysis()
+  registerCoverColor()
   isRegistered = true
 }
