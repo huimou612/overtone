@@ -64,6 +64,71 @@ const defaultThemes = [
     },
   },
   {
+    /*
+      通透主题：与「余音绕梁」同色系，唯一区别是内容层带 alpha。
+      做它的原因是「壁纸与封面取色默认看不见」—— 那两者都在背景层，
+      而默认主题的内容背景（--color-main-background）是不透明白，
+      播放详情页的 .bg::after 又正好拿它当遮罩，于是壁纸被整个盖住。
+      上游的解法是「主题自己决定透不透」，所以这里补一套开箱即用的。
+      两个背景刻意用中性黑白而不是主色派生（默认主题用的就是
+      --color-primary-light-600-alpha-* 这种）：
+      主色会稀释封面取色的色相，而通透主题的意义正是让歌的颜色当主角。
+    */
+    id: 'overtone_glass',
+    name: '澄澈泛音',
+    isDark: false,
+    isDarkFont: false,
+    config: {
+      primary: 'rgb(79, 70, 229)',
+      font: 'rgb(33, 33, 33)',
+      '--color-app-background': 'rgba(255, 255, 255, 0.35)',
+      '--color-main-background': 'rgba(255, 255, 255, 0.62)',
+      '--color-nav-font': 'var(--color-primary)',
+      '--background-image': 'none',
+      '--background-video': '',
+      // 半透明的内容层上要压一点模糊，文字才不会跟壁纸的细节打架
+      '--background-blur': '14',
+      '--background-mask': '16',
+      '--background-image-position': 'center',
+      '--background-image-size': 'cover',
+
+      '--color-btn-hide': '#3bc2b2',
+      '--color-btn-min': '#85c43b',
+      '--color-btn-close': '#fab4a0',
+
+      '--color-badge-primary': 'var(--color-primary)',
+      '--color-badge-secondary': '#9333ea',
+      '--color-badge-tertiary': '#a78bfa',
+    },
+  },
+  {
+    id: 'overtone_glass_dark',
+    name: '澄澈夜色',
+    isDark: true,
+    isDarkFont: false,
+    config: {
+      primary: 'rgb(129, 140, 248)',
+      font: 'rgb(229, 229, 229)',
+      '--color-app-background': 'rgba(0, 0, 0, 0.25)',
+      '--color-main-background': 'rgba(19, 19, 19, 0.72)',
+      '--color-nav-font': 'var(--color-primary)',
+      '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '14',
+      '--background-mask': '16',
+      '--background-image-position': 'center',
+      '--background-image-size': 'cover',
+
+      '--color-btn-hide': '#3bc2b2',
+      '--color-btn-min': '#85c43b',
+      '--color-btn-close': '#fab4a0',
+
+      '--color-badge-primary': 'var(--color-primary-dark-200)',
+      '--color-badge-secondary': 'var(--color-primary)',
+      '--color-badge-tertiary': 'var(--color-primary-dark-300)',
+    },
+  },
+  {
     id: 'green',
     name: '绿意盎然',
     isDark: false,

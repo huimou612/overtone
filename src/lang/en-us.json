@@ -324,7 +324,7 @@
   "setting__appearance_cover": "Cover color",
   "setting__appearance_cover_desc": "Pull the dominant color out of the current track's cover art and let the background follow the song — one song, one mood, a new one with every skip.",
   "setting__appearance_cover_enable": "Follow the album cover color",
-  "setting__appearance_cover_tip": "A theme with an opaque background hides the background layer. Pair this with a translucent theme or a wallpaper to see it.",
+  "setting__appearance_cover_tip": "A theme with an opaque background hides the background layer. To make it visible, switch to the \"Clear Overtone\" theme, or click \"Make translucent\" in the theme editor.",
   "setting__appearance_splash": "Splash screen",
   "setting__appearance_splash_desc": "There is a short gap between clicking the icon and the UI appearing, while settings and data load. The splash screen fills it so you never stare at an empty window.",
   "setting__appearance_splash_enable": "Show splash screen",
@@ -787,7 +787,7 @@
   "theme_edit_modal__bg_image": "Wallpaper",
   "theme_edit_modal__wallpaper_blur": "Wallpaper blur",
   "theme_edit_modal__wallpaper_mask": "Wallpaper overlay",
-  "theme_edit_modal__wallpaper_hint": "Images and videos are supported; keep videos under 30s",
+  "theme_edit_modal__wallpaper_hint": "Images and videos are supported; keep videos under 30s. To actually see a wallpaper, the content layer must be translucent",
   "theme_edit_modal__bg_image_add": "Add background image",
   "theme_edit_modal__bg_image_change": "Change background image",
   "theme_edit_modal__bg_image_remove": "Remove background image",
@@ -882,5 +882,10 @@
   "workbench__open_dir": "Open folder",
   "player__tool_ai_lyric": "AI lyrics",
   "player__tool_stem": "Split stems",
-  "user_api_import_online__title": "Import Music API from network."
+  "user_api_import_online__title": "Import Music API from network.",
+  "theme_overtone_glass": "Clear Overtone",
+  "theme_overtone_glass_dark": "Clear Nightfall",
+  "theme_edit_modal__translucent": "Content layer opacity",
+  "theme_edit_modal__translucent_on": "Make translucent",
+  "theme_edit_modal__translucent_off": "Make opaque"
 }

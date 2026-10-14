@@ -72,6 +72,19 @@
                 <span :class="$style.value">{{ bgMask }}</span>
               </div>
             </div>
+            <!-- 阶段 7.5：壁纸能不能被看见，最终由内容层的 alpha 决定。
+                 这个值本来只能靠「内容区域背景颜色」那个取色器拖 alpha 通道来调，
+                 藏得太深（也没人知道要找它），所以在这里给一个明确的一步到位。 -->
+            <div :class="[$style.item, $style.translucentItem]">
+              <button
+                :class="[$style.translucentBtn, { [$style.on]: isTranslucent }]"
+                type="button"
+                @click="handleToggleTranslucent"
+              >
+                {{ isTranslucent ? $t('theme_edit_modal__translucent_off') : $t('theme_edit_modal__translucent_on') }}
+              </button>
+              <div :class="$style.label">{{ $t('theme_edit_modal__translucent') }}</div>
+            </div>
           </div>
         </div>
         <div :class="$style.groupContent">
@@ -205,6 +218,9 @@ export default {
     const bgMediaKind = ref('none')
     const bgBlur = ref(0)
     const bgMask = ref(0)
+    // 内容层当前是不是透明的。既决定「一键通透」按钮显示哪个词，
+    // 也解释了「壁纸为什么看不见」—— 就是它撑着。
+    const isTranslucent = ref(false)
     let bgMediaRaw = ''
     let originBgName = ''
     let currentBgPath = ''
@@ -300,6 +316,36 @@ export default {
     const { min_btn_color_ref, initMinBtnColor, destroyMinBtnColor, setMinBtnColor } = useMinBtnColor()
     const { hide_btn_color_ref, initHideBtnColor, destroyHideBtnColor, setHideBtnColor } = useHideBtnColor()
 
+    // 主题的背景色可能是 var() 引用（如 var(--color-primary-light-600-alpha-700)），
+    // 所以要先经 getColor 解析成实际色值，再从里面抠 alpha。
+    const readAlpha = (color) => {
+      const parts = String(color).match(/[\d.]+/g) ?? []
+      return parts.length >= 4 ? Number(parts[3]) : 1
+    }
+
+    const syncTranslucent = () => {
+      const raw = theme?.config.extInfo['--color-main-background']
+      isTranslucent.value = raw ? readAlpha(getColor(raw, theme)) < 0.99 : false
+    }
+
+    /**
+     * 在不透明 ↔ 半透明之间一键切。
+     *
+     * 只动 alpha、保留 RGB —— 用户挑的颜色不该被这个动作改掉。
+     * 深浅两档取值不同：深色下内容层本来就更沉，给浅色那档的 0.62 会糊得读不清。
+     */
+    const handleToggleTranslucent = () => {
+      const current = getColor(theme.config.extInfo['--color-main-background'], theme)
+      const [r, g, b] = (String(current).match(/[\d.]+/g) ?? []).slice(0, 3)
+      const alpha = isTranslucent.value ? 1 : (theme.isDark ? 0.72 : 0.62)
+      const next = `rgba(${r}, ${g}, ${b}, ${alpha})`
+      theme.config.extInfo['--color-main-background'] = next
+      // 基本组里那个取色器还显示着旧值，一并推过去，否则两个控件各说各话
+      setMainBgColor(next)
+      syncTranslucent()
+      createPreview()
+    }
+
     let appBgColorOrigin
     let appBgColor
     let asideFontColorOrigin
@@ -342,6 +388,7 @@ export default {
       isDarkFont.value = theme.isDarkFont ?? false
       currentBgPath = ''
       syncBgFromExtInfo()
+      syncTranslucent()
       appBgColorOrigin = theme.config.extInfo['--color-app-background']
       appBgColor = getColor(appBgColorOrigin, theme)
       asideFontColorOrigin = theme.config.extInfo['--color-nav-font']
@@ -378,6 +425,8 @@ export default {
       }, () => { setAsideFontColor(getColor(asideFontColorOrigin, theme)) })
       initMainBgColor(mainBgColor, (color) => {
         theme.config.extInfo['--color-main-background'] = color == mainBgColor ? mainBgColorOrigin : color
+        // 用户可能直接在取色器里把 alpha 拖下去，按钮上的字得跟着变
+        syncTranslucent()
         createPreview()
       }, () => { setMainBgColor(getColor(mainBgColorOrigin, theme)) })
       initBadgePrimaryColor(badgePrimaryColor, (color) => {
@@ -618,6 +667,8 @@ export default {
       selectBgImg,
       removeBgImg,
       handleWallpaperChange,
+      isTranslucent,
+      handleToggleTranslucent,
 
       primary_color_ref,
       font_color_ref,
@@ -804,6 +855,34 @@ export default {
 // 滑块比色块宽：色块是方的没关系，滑块太窄就没法调了
 .rangeItem {
   width: 150px;
+}
+// 「通透」不是一个可以连续调的量（要么看得见壁纸、要么看不见），
+// 所以做成一步到位的按钮，独占一行，不去跟两个滑块抢对齐。
+.translucentItem {
+  width: 100%;
+  padding-top: 12px;
+}
+.translucentBtn {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px dashed var(--color-primary-light-100-alpha-300);
+  border-radius: 5px;
+  background-color: transparent;
+  color: var(--color-font);
+  font-size: inherit;
+  cursor: pointer;
+  transition: @transition-fast !important;
+  transition-property: border-color, color, opacity !important;
+  &:hover {
+    opacity: .7;
+  }
+  // 已通透：实线描边 + 主色，一眼能看出这个开关是开着的
+  &.on {
+    border-style: solid;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
 .range {
   width: 100%;

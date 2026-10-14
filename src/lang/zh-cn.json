@@ -324,7 +324,7 @@
   "setting__appearance_cover": "跟随封面取色",
   "setting__appearance_cover_desc": "从当前播放歌曲的封面里提出主色，让背景的氛围跟着这首歌走 —— 一首歌一个味道，切歌就换。",
   "setting__appearance_cover_enable": "开启跟随封面取色",
-  "setting__appearance_cover_tip": "背景色不透明的主题会盖住背景层，配合半透明主题或壁纸才能看到效果。",
+  "setting__appearance_cover_tip": "背景不透明的主题会盖住背景层。想让它生效，切到「澄澈泛音」主题，或在主题编辑器里点「一键通透」。",
   "setting__appearance_splash": "启动动画",
   "setting__appearance_splash_desc": "点开软件到界面出现之间有一小段空窗，要等设置和数据加载。启动动画就是用来填这段时间的，填满了才不会先看到一个空的窗口。",
   "setting__appearance_splash_enable": "显示启动动画",
@@ -787,7 +787,7 @@
   "theme_edit_modal__bg_image": "壁纸",
   "theme_edit_modal__wallpaper_blur": "壁纸模糊",
   "theme_edit_modal__wallpaper_mask": "壁纸遮罩",
-  "theme_edit_modal__wallpaper_hint": "支持图片与视频，视频建议 30 秒以内",
+  "theme_edit_modal__wallpaper_hint": "支持图片与视频，视频建议 30 秒以内。壁纸要被看见，内容层得是半透明的",
   "theme_edit_modal__bg_image_add": "背景图片：",
   "theme_edit_modal__bg_image_change": "更改背景图片",
   "theme_edit_modal__bg_image_remove": "移除背景图片",
@@ -882,5 +882,10 @@
   "workbench__open_dir": "打开目录",
   "player__tool_ai_lyric": "分词",
   "player__tool_stem": "分离",
-  "user_api_import_online__title": "在线导入自定义源"
+  "user_api_import_online__title": "在线导入自定义源",
+  "theme_overtone_glass": "澄澈泛音",
+  "theme_overtone_glass_dark": "澄澈夜色",
+  "theme_edit_modal__translucent": "内容层通透",
+  "theme_edit_modal__translucent_on": "一键通透",
+  "theme_edit_modal__translucent_off": "恢复不透明"
 }

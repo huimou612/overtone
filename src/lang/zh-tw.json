@@ -324,7 +324,7 @@
   "setting__appearance_cover": "跟隨封面取色",
   "setting__appearance_cover_desc": "從目前播放歌曲的封面提出主色，讓背景氛圍跟著這首歌走 —— 一首歌一個味道，切歌就換。",
   "setting__appearance_cover_enable": "開啟跟隨封面取色",
-  "setting__appearance_cover_tip": "背景色不透明的佈景主題會蓋住背景層，搭配半透明主題或桌布才看得到效果。",
+  "setting__appearance_cover_tip": "背景不透明的佈景主題會蓋住背景層。想讓它生效，切到「澄澈泛音」主題，或在主題編輯器裡點「一鍵通透」。",
   "setting__appearance_splash": "啟動動畫",
   "setting__appearance_splash_desc": "點開軟體到介面出現之間有一小段空窗，要等設定與資料載入。啟動動畫就是用來填這段時間的，填滿了才不會先看到一個空的視窗。",
   "setting__appearance_splash_enable": "顯示啟動動畫",
@@ -787,7 +787,7 @@
   "theme_edit_modal__bg_image": "壁紙",
   "theme_edit_modal__wallpaper_blur": "壁紙模糊",
   "theme_edit_modal__wallpaper_mask": "壁紙遮罩",
-  "theme_edit_modal__wallpaper_hint": "支援圖片與影片，影片建議 30 秒以內",
+  "theme_edit_modal__wallpaper_hint": "支援圖片與影片，影片建議 30 秒以內。桌布要被看見，內容層必須是半透明的",
   "theme_edit_modal__bg_image_add": "背景圖片：",
   "theme_edit_modal__bg_image_change": "變更背景圖片",
   "theme_edit_modal__bg_image_remove": "移除背景圖片",
@@ -882,5 +882,10 @@
   "workbench__open_dir": "開啟目錄",
   "player__tool_ai_lyric": "分詞",
   "player__tool_stem": "分離",
-  "user_api_import_online__title": "從線上匯入自訂來源 API"
+  "user_api_import_online__title": "從線上匯入自訂來源 API",
+  "theme_overtone_glass": "澄澈泛音",
+  "theme_overtone_glass_dark": "澄澈夜色",
+  "theme_edit_modal__translucent": "內容層通透",
+  "theme_edit_modal__translucent_on": "一鍵通透",
+  "theme_edit_modal__translucent_off": "恢復不透明"
 }
