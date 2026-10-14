@@ -352,7 +352,7 @@ const readMainBg = cdp => cdp.eval(`(() => {
     const blur = await cdp.eval("getComputedStyle(document.documentElement).getPropertyValue('--background-blur').trim()")
     console.log('  --background-blur =', blur)
     check(Number(blur) > 0, `主题自带模糊（${blur}），半透明上的文字不至于和壁纸细节打架`, `模糊没生效：${blur}`)
-    await shootAndSample(cdp, '18-glass-theme-setting.png')
+    await shootAndSample(cdp, '22-glass-theme-setting.png')
 
     console.log('\n[3/6] 通透主题 + 红壁纸：播放详情页')
     await goHome(cdp)
@@ -361,7 +361,7 @@ const readMainBg = cdp => cdp.eval(`(() => {
     await setWallpaper(cdp, wallUrl)
     const opened = await openPlayDetail(cdp)
     if (opened === 'no-trigger') throw new Error('找不到打开播放详情页的入口')
-    const glassShot = await shootAndSample(cdp, '19-glass-wallpaper.png')
+    const glassShot = await shootAndSample(cdp, '23-glass-wallpaper.png')
     check(red(glassShot.center) > 12, `壁纸透出来了（中部 rgb(${glassShot.center.join(', ')})，红度 ${red(glassShot.center)}）`, `壁纸还是看不见（中部 rgb(${glassShot.center.join(', ')})，红度 ${red(glassShot.center)}）`)
 
     console.log('\n[4/6] 同一张壁纸，换回不透明主题')
@@ -376,7 +376,7 @@ const readMainBg = cdp => cdp.eval(`(() => {
     check(opaque.alpha >= 0.99, `内容层恢复不透明（alpha ${opaque.alpha}）`, `内容层还是半透明（alpha ${opaque.alpha}）`)
     await goHome(cdp)
     await openPlayDetail(cdp)
-    const opaqueShot = await shootAndSample(cdp, '20-opaque-wallpaper.png')
+    const opaqueShot = await shootAndSample(cdp, '24-opaque-wallpaper.png')
 
     const glassRed = red(glassShot.center)
     const opaqueRed = red(opaqueShot.center)
@@ -428,7 +428,7 @@ const readMainBg = cdp => cdp.eval(`(() => {
       })()`))
       console.log('  点击后按钮变成：', toggled.label)
       check(toggled.label.includes('恢复'), `点完变成「${toggled.label}」，说明确实切到了半透明`, `点完按钮是「${toggled.label}」，状态没变`)
-      await shootAndSample(cdp, '21-theme-editor-translucent.png')
+      await shootAndSample(cdp, '25-theme-editor-translucent.png')
     }
   } finally {
     console.log('\n[6/6] 复原')
