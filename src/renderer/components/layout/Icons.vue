@@ -213,6 +213,14 @@
         <!-- 0 0 24 24-->
         <path fill="currentColor" d="M22 12L20 13L19 14L18 13L17 16L16 13L15 21L14 13L13 15L12 13L11 17L10 13L9 22L8 13L7 19L6 13L5 14L4 13L2 12L4 11L5 10L6 11L7 5L8 11L9 2L10 11L11 7L12 11L13 9L14 11L15 3L16 11L17 8L18 11L19 10L20 11L22 12Z" />
       </g>
+      <g id="icon-workbench" fill="currentColor">
+        <!-- 0 0 24 24-->
+        <path fill="currentColor" d="M4 4H11V11H4V4M13 4H20V11H13V4M4 13H11V20H4V13M13 13H20V20H13V13Z" />
+      </g>
+      <g id="icon-folder-open" fill="currentColor">
+        <!-- 0 0 24 24-->
+        <path fill="currentColor" d="M19 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4H10L12 6H20C21.1 6 22 6.9 22 8H4V18L6.5 12H23L20.2 19.2C19.9 19.7 19.5 20 19 20Z" />
+      </g>
       <g id="icon-font-decrease" fill="currentColor">
         <!-- 0 0 24 24-->
         <path d="M5.12,14L7.5,7.67L9.87,14M6.5,5L1,19H3.25L4.37,16H10.62L11.75,19H14L8.5,5H6.5M18,17L23,11.93L21.59,10.5L19,13.1V7H17V13.1L14.41,10.5L13,11.93L18,17Z" />

@@ -40,11 +40,15 @@
 - 主题系统、托盘、全局快捷键
 - Windows / macOS / Linux 三平台打包
 
-### 来自 Folia 的 AI 能力（开发路线）
+### 泛音自研（已完成）
 
-- [ ] **AI 歌词分词** —— 用大模型把整行歌词切成词，为逐词高亮动画提供边界
-- [ ] **AI 凭据管理** —— 用 Electron `safeStorage`（Windows DPAPI / macOS Keychain / Linux libsecret）加密存储 API Key
-- [ ] **音源分离** —— HTDemucs，把一首歌拆成人声 / 鼓 / 贝斯 / 其他四轨
+- **AI 歌词分词** —— 用大模型把整行歌词切成词，为逐字高亮提供边界。结果写回本地库，重装不丢
+- **AI 凭据管理** —— 用 Electron `safeStorage`（Windows DPAPI / macOS Keychain / Linux libsecret）加密存储 API Key，界面只拿得到「配没配」
+- **音源分离** —— HTDemucs，跑本地 Python sidecar，把一首歌拆成人声与伴奏并各导出一个文件
+- **个性化外壳** —— 可定制的入场动画、视频壁纸（模糊 / 遮罩）、经典 / 个性双档外观、跟随封面取色
+
+前两项与第三项的入口都在侧栏的**工作台**（看状态、开能力）；播放详情页底部另有一行常驻
+工具按钮（分词 · 分离），不必再右键歌词。分词与分离全程在本机完成，音频不上传。
 
 ---
 

@@ -74,6 +74,17 @@ export default {
           name: 'Download',
         },
         {
+          // 泛音的能力入口。排在设置之前：这是「这个软件与洛雪有什么不同」的答案，
+          // 而不是一个配置项。
+          to: '/workbench',
+          tips: t('workbench__nav'),
+          icon: '#icon-workbench',
+          iconSize: '0 0 24 24',
+          size,
+          enable: true,
+          name: 'Workbench',
+        },
+        {
           to: '/setting',
           tips: t('setting'),
           icon: '#icon-setting',

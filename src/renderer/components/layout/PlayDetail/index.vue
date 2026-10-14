@@ -18,6 +18,7 @@ transition(enter-active-class="animated slideInRight" leave-active-class="animat
             p {{ $t('player__music_name') }}{{ musicInfo.name }}
             p {{ $t('player__music_singer') }}{{ musicInfo.singer }}
             p(v-if="musicInfo.album") {{ $t('player__music_album') }}{{ musicInfo.album }}
+        AiToolBar
 
       transition(enter-active-class="animated fadeIn" leave-active-class="animated fadeOut")
         LyricPlayer(v-if="visibled")
@@ -46,6 +47,7 @@ import {
 import LyricPlayer from './LyricPlayer.vue'
 import PlayBar from './PlayBar.vue'
 import MusicComment from './components/MusicComment/index.vue'
+import AiToolBar from './components/AiToolBar.vue'
 import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
 import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMounse'
@@ -60,6 +62,7 @@ export default {
     LyricPlayer,
     PlayBar,
     MusicComment,
+    AiToolBar,
   },
   setup() {
     const visibled = ref(false)

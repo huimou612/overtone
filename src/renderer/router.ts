@@ -55,6 +55,16 @@ const router = createRouter({
       },
     },
     {
+      // 泛音自研能力的显性入口。没有这个页面，AI 歌词与音源分离要继续藏在
+      // 「播放页 → 右键歌词 → 菜单第 1/2 项」两层之下 —— 装了软件的人根本看不见。
+      path: '/workbench',
+      name: 'Workbench',
+      component: require('./views/Workbench/index.vue').default,
+      meta: {
+        name: 'Workbench',
+      },
+    },
+    {
       path: '/setting',
       name: 'Setting',
       component: require('./views/Setting/index.vue').default,
