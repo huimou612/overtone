@@ -149,6 +149,11 @@ jobs:
         with:
           name: packages-windows
           if-no-files-found: error
+          # 只留 1 天。四个平台的包合计约 1.5 GB，而 Free 套餐的**工件存储**额度
+          # 只有 500 MB（超出部分 $0.25/GB/月，保留期默认 90 天 —— 实测攒到
+          # 17.66 GB）。成功路径由 Release job 建完 release 后立刻删除；这里只
+          # 兜住「构建失败 / 被取消」留下的残卷。
+          retention-days: 1
           path: |
             build/*.exe
             build/*.exe.blockmap
@@ -207,6 +212,8 @@ jobs:
         with:
           name: packages-windows7
           if-no-files-found: error
+          # 见 packages-windows 处的说明：省工件存储额度
+          retention-days: 1
           path: |
             build/*.exe
             build/*.exe.blockmap
@@ -256,6 +263,8 @@ jobs:
         with:
           name: packages-macos
           if-no-files-found: error
+          # 见 packages-windows 处的说明：省工件存储额度
+          retention-days: 1
           path: |
             build/*.dmg
             build/*.dmg.blockmap
@@ -309,6 +318,8 @@ jobs:
         with:
           name: packages-linux
           if-no-files-found: error
+          # 见 packages-windows 处的说明：省工件存储额度
+          retention-days: 1
           path: |
             build/*.deb
             build/*.rpm
@@ -384,3 +395,24 @@ jobs:
             artifacts/*
 
           echo "::notice title=Draft release created::${TAG}"
+
+      # 发布完成即删掉本次的中间产物。
+      #
+      # 为什么不靠 retention-days 兜底：四个平台的包一次合计约 1.5 GB，而 Free 套餐的
+      # **工件存储**额度只有 500 MB（超出 $0.25/GB/月）—— 留一天就已经超了。安装包此刻
+      # 已经作为 **release 资产**上传（那一份不占 Actions 工件存储），中间产物没有保留价值。
+      #
+      # 刻意放在最后一步：前面任何一步失败这一步都不会执行（没有 if: always()），
+      # 失败构建的产物仍按 retention-days: 1 留着排查。
+      - name: Clean up intermediate artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" \
+            --jq '.artifacts[] | "\(.id)\t\(.name)"' \
+            | while IFS=$'\t' read -r id name; do
+                gh api -X DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}" \
+                  && echo "deleted artifact ${name} (id=${id})"
+              done
+          echo "::notice title=已清理中间产物::安装包已作为 release 资产保留，中间 artifact 已删除以节省存储额度"
