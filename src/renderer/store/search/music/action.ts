@@ -61,7 +61,9 @@ const setLists = (results: SearchResult[], page: number, text: string): LX.Music
 
 const setList = (datas: SearchResult, page: number, text: string): LX.Music.MusicInfo[] => {
   // console.log(datas.source, datas.list)
-  let listInfo = listInfos[datas.source]!
+  // 兜底：`datas.source` 由搜索实现回传，空壳实现（noSource.musicSearch.search）
+  // 回传的是 `source: null` —— 拿它查 listInfos 会得到 undefined 再炸。
+  let listInfo = listInfos[datas.source] ?? listInfos.all
   listInfo.list = deduplicationList(datas.list.map(s => markRaw(toNewMusicInfo(s))))
   if (page == 1 || (datas.total && datas.list.length)) listInfo.total = datas.total
   else listInfo.total = datas.limit * page
@@ -85,12 +87,14 @@ export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
 }
 
 export const search = async(text: string, page: number, sourceId: LX.OnlineSource | 'all'): Promise<LX.Music.MusicInfo[]> => {
-  const listInfo = listInfos[sourceId]
+  // 兜底：路由上的 source 与 listInfos 不同步时（刚切完自定义源、旧链接里的 source），
+  // 会拿到 undefined 再往它身上写字段 → TypeError。聚合视图始终存在，回落到它。
+  const listInfo = listInfos[sourceId] ?? listInfos.all
   if (!text) return resetListInfo(sourceId)
   const key = `${page}__${text}`
   if (sourceId == 'all') {
-    listInfo!.noItemLabel = window.i18n.t('list__loading')
-    listInfo!.key = key
+    listInfo.noItemLabel = window.i18n.t('list__loading')
+    listInfo.key = key
     let task = []
     for (const source of sources) {
       if (source == 'all') continue
@@ -106,19 +110,19 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
       }))
     }
     return Promise.all(task).then((results: SearchResult[]) => {
-      if (key != listInfo!.key) return []
+      if (key != listInfo.key) return []
       return setLists(results, page, text)
     })
   } else {
-    if (listInfo?.key == key && listInfo?.list.length) return listInfo?.list
-    listInfo!.noItemLabel = window.i18n.t('list__loading')
-    listInfo!.key = key
-    return music[sourceId].musicSearch.search(text, page, listInfo!.limit).then((data: SearchResult) => {
-      if (key != listInfo!.key) return []
+    if (listInfo.key == key && listInfo.list.length) return listInfo.list
+    listInfo.noItemLabel = window.i18n.t('list__loading')
+    listInfo.key = key
+    return music[sourceId].musicSearch.search(text, page, listInfo.limit).then((data: SearchResult) => {
+      if (key != listInfo.key) return []
       return setList(data, page, text)
     }).catch((error: any) => {
       resetListInfo(sourceId)
-      listInfo!.noItemLabel = window.i18n.t('list__load_failed')
+      listInfo.noItemLabel = window.i18n.t('list__load_failed')
       console.log(error)
       throw error
     })

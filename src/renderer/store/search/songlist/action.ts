@@ -60,7 +60,10 @@ const setLists = (results: SearchResult[], page: number, text: string): ListInfo
 
 const setList = (datas: SearchResult, page: number, text: string): ListInfoItem[] => {
   // console.log(datas.source, datas.list)
-  let listInfo = listInfos[datas.source]!
+  // 兜底：`datas.source` 是搜索实现回传的 source。内置源被删掉之后，空壳实现
+  // （utils/musicSdk/index.js 的 noSource.songList.search）回传的是 `source: null`，
+  // 拿它查 listInfos 会得到 undefined，接着往 undefined 上写 `list` 就是 TypeError。
+  let listInfo = listInfos[datas.source] ?? listInfos.all
   listInfo.list = markRawList(datas.list)
   if (page == 1 || (datas.total && datas.list.length)) listInfo.total = datas.total
   else listInfo.total = datas.limit * page
@@ -86,7 +89,9 @@ export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
 }
 
 export const search = async(text: string, page: number, sourceId: LX.OnlineSource | 'all'): Promise<ListInfoItem[]> => {
-  const listInfo = listInfos[sourceId]!
+  // 兜底：搜索页的源 Tab 来自「歌曲」分栏的列表，可能含自定义源（kw / …），
+  // 而歌单搜索只有内置源有 state —— 缺了就往聚合视图上写，别让 undefined 传下去。
+  const listInfo = listInfos[sourceId] ?? listInfos.all
   if (!text) return resetListInfo(sourceId)
   const key = `${page}__${sourceId}__${text}`
   if (listInfo.key == key && listInfo.list.length) return listInfo.list

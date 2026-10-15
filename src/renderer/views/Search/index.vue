@@ -47,9 +47,13 @@ const verifyQueryParams = async(to, from, next) => {
     return
   }
   // 内置源删除后，持久化设置（getSearchSetting）与旧链接里存的 source
-  // （kw / kg / tx / wy / mg，自定义源也不例外 —— 它只提供播放，不提供搜索）
-  // 都没有对应的 listInfo 了，页面会在模板里对 undefined 取 .page 而抛错。
-  // 这里统一回落到聚合视图 'all'（它始终存在）。
+  // （kw / kg / tx / wy / mg）都没有对应的 listInfo 了，页面会在模板里对
+  // undefined 取 .page 而抛错。这里统一回落到聚合视图 'all'（它始终存在）。
+  //
+  // ⚠️ `_sources` 现在**可能包含自定义源**（用户导入的脚本声明了 musicSearch 时，
+  // 见 store/search/music/state.ts 的 initSearchSources）—— 所以这个守卫不是
+  // 「把 kw 一律砍掉」，而是「只放行真的有实现的源」：自定义源就绪前 `_sources`
+  // 里没有它，此时回落到 'all' 是正确行为。
   if (!_sources.includes(_source)) {
     void setSearchSetting({ source: 'all', type: _type })
     next({
@@ -84,12 +88,15 @@ export default {
     const route = useRoute()
     const router = useRouter()
 
-    const sources = _sources.map(id => {
+    // ⚠️ 必须是 computed，不能是一次性 map —— 自定义源是**异步注册**的
+    // （见 store/search/music/state.ts 的 initSearchSources），源列表会在运行时
+    // 补齐；一次性 map 拿到的只是启动那一刻的快照，后加的自定义源不会出现在 Tab 里。
+    const sources = computed(() => _sources.map(id => {
       return {
         id,
         label: sourceNames.value[id],
       }
-    })
+    }))
     const handleSourceChange = (id) => {
       void router.replace({
         path: route.path,
