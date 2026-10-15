@@ -53,7 +53,8 @@ declare namespace LX {
    * 已下载 / 已导入的歌单里，歌曲的 `source` 字段就是这些值 —— 类型得能表示它们，
    * 界面也要靠它显示来源名。它**不代表**应用内置了对应平台的音源。
    */
-  type OnlineSource = 'kw' | 'kg' | 'tx' | 'wy' | 'mg'
+  // ov = 开放曲库（Openverse），泛音内置的 CC / 公有领域曲库，不是平台源
+  type OnlineSource = 'kw' | 'kg' | 'tx' | 'wy' | 'mg' | 'ov'
   type Source = OnlineSource | 'local'
   type Quality = '128k' | '320k' | 'flac' | 'flac24bit' | '192k' | 'ape' | 'wav'
 

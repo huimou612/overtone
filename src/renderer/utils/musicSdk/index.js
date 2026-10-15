@@ -1,5 +1,6 @@
-import { supportQuality } from './api-source'
+import { supportQuality, getApiImpl } from './api-source'
 import { versionChars } from './versionChars'
+import ov from './ov'
 
 /**
  * 内置平台接口已全部移除 —— 泛音的红线：**不内置任何平台音源接口**。
@@ -9,23 +10,31 @@ import { versionChars } from './versionChars'
  * （kg/vendors/infSign.min.js）。那些代码即使不被调用，也会被整包打进产物，
  * 等于把平台接口"内置"进了应用 —— 所以连同目录一起删除，只留下这个分发框架。
  *
- * 现在 `sources.sources` 是空的，于是：
- *   - 下面几处 `for (const source of sources.sources)` 自然不执行；
- *   - 渲染层的 store（search / songList / leaderboard / hotSearch）本来就写了
- *     `if (!music[source.id]?.xxx) continue` 守卫，那些平台的 tab 不会出现；
+ * 现在 `sources.sources` 里只剩**开放曲库**（`ov`，见 ./ov）—— 它是 CC / 公有
+ * 领域的开放版权曲库，不是任何商业音乐平台的接口，所以与红线相容。于是：
+ *   - 下面几处 `for (const source of sources.sources)` 只会带上 `ov`；
+ *   - 渲染层的 store（search / songList / leaderboard / hotSearch）遍历的是
+ *     `sources.sources` 这个数组并带 `?.` 守卫，没实现的 Tab 不会出现；
  *   - 所有取 URL / 封面 / 歌词的调用点要么包在 try 里、要么用了 `?.`，
  *     取不到实现就落进原有的「换源失败」降级分支，不会抛未捕获异常。
  *
- * 取 URL / 歌词 / 封面这条链路与这里无关：它走 `apis()`（./api-source），
- * 在 apiSource 为 `user_api*` 时返回 `userApi.apis[source]`，完全由用户导入的
- * 自定义源提供，也顺带承担本地音乐（source 为 `local`）的文件读取。
+ * ⚠️ 别把 `apis()`（./api-source）当成取 URL 的主路径 —— 它只在**换源**时被调用。
+ * 在线歌真正的主播放路径是 `musicSdk[musicInfo.source].getMusicUrl(...)`，
+ * 也就是**下面这个 Proxy**。所以哪怕用户导入的自定义源脚本是对的，只要 Proxy
+ * 只兜空壳，主路径就永远失败（实测报 `no source implementation`）——
+ * 这正是 `getUserApiSource` 存在的理由。
  *
  * searchMusic / findMusic 保留：它们是**通用骨架**（并发搜同名歌 + 按
- * 歌名/歌手/专辑/时长/版本字符排序），不含任何平台相关逻辑。现在顶层没有
- * 内置源可遍历，返回空数组；将来自定义源协议若支持 musicSearch，这里直接就能用。
+ * 歌名/歌手/专辑/时长/版本字符排序），不含任何平台相关逻辑。现在顶层只有 `ov`
+ * 一个源可遍历；将来自定义源协议若支持 musicSearch，这里直接就能用。
  */
 const sources = {
-  sources: [],
+  sources: [
+    {
+      name: '开放曲库',
+      id: 'ov',
+    },
+  ],
 }
 
 /**
@@ -46,7 +55,7 @@ const sources = {
  *     页面显示「暂无内容」，比报错合理。
  *
  * ⚠️ 它**不会**让界面冒出平台入口：渲染层那几处 store 遍历的是
- * `musicSdk.sources` 这个**数组**（现在是空的），而不是 musicSdk 上的 key。
+ * `musicSdk.sources` 这个**数组**（现在只有内置的 `ov`），而不是 musicSdk 上的 key。
  *
  * ── 空壳契约表（改这里之前先照着右列去核对消费点）────────────────────────
  * 下面每一条的「形状」都是从**消费点实际读的字段**反推的，不是照抄平台旧实现。
@@ -144,6 +153,25 @@ const noSource = {
     getHotComment: () => Promise.resolve(emptyComments()),
   },
 }
+
+/**
+ * 随应用分发、不需要用户导入的**内置源**。
+ *
+ * 现在只有 `ov`（开放曲库 / Openverse，实现见 ./ov）—— 收录的是 CC 授权与
+ * 公有领域音频，因此不违反「不内置任何平台音源接口」这条红线。
+ *
+ * ⚠️ 每个实现都要**与空壳合并**，不能直接放模块本身：消费点里有
+ * `musicSdk[source]?.songList.getTags()` 这种「先取属性再取方法」的写法，
+ * 只提供 musicSearch / getMusicUrl / getPic / getLyric 的模块会让 `.songList`
+ * 变成 undefined 再炸一次。用户导入的自定义源走同样的合并（见 getUserApiSource）。
+ *
+ * ⚠️ 位置必须在 `noSource` 之后（要用到它），又在 `musicSdk` 之前（要被展开）。
+ */
+const builtinSources = {
+  ov: { ...noSource, ...ov },
+}
+
+Object.assign(sources, builtinSources)
 
 const musicSdk = {
   ...sources,
@@ -266,7 +294,8 @@ const musicSdk = {
 /**
  * 某个 source 当前是否有可用实现。
  *
- * 删掉内置源之后恒为 false（`sources.sources` 是空数组）。界面据此把
+ * `sources.sources` 现在只有内置的 `ov`；用户导入的源不在这个数组里（它们
+ * 是按需注册到 `userApi.apis` 的，见 `getUserApiSource`）。界面用这个函数把
  * **持久化设置里存着的失效 source** 归一化掉 —— 存量用户的盘上还留着
  * `source: 'kw'`（`DEFAULT_SETTING` 过去也把默认值写死成 `'kw'`），
  * 读取处见 `renderer/utils/data.ts` 的 `clearInvalidSource`。
@@ -274,11 +303,41 @@ const musicSdk = {
 export const isValidSource = source => sources.sources.some(item => item.id === source)
 
 /**
+ * 用户导入的自定义源实现（按 source 合并后的对象）缓存。
+ *
+ * 键里带上实现对象的引用：`userApi.apis` 在切换自定义源时会被整体替换，
+ * 引用变了缓存自然失效，不需要额外的失效逻辑。
+ */
+const userApiMergedCache = new Map()
+const getUserApiSource = source => {
+  const impl = getApiImpl(source)
+  if (!impl || !Object.keys(impl).length) return null
+  const cached = userApiMergedCache.get(source)
+  if (cached && cached.impl === impl) return cached.merged
+  // 与空壳合并，而不是直接返回 impl —— 自定义源只提供 musicUrl / lyric / pic，
+  // 而消费点里还有 `musicSdk[source]?.songList.getTags()` 这种「先取属性再取方法」
+  // 的写法，只给 3 个方法会让 `.songList` 变 undefined 再炸一次。
+  const merged = { ...noSource, ...impl }
+  userApiMergedCache.set(source, { impl, merged })
+  return merged
+}
+
+/**
  * 用 Proxy 兜住「取不到的源」。
  *
  * 之所以不在 `musicSdk` 上写死 kw / kg / … 这些 key（哪怕指向空壳），是因为
  * 那会让 `'kw' in musicSdk` 为真、让读者以为这些源还在；而 `sources.sources`
- * 是空的，界面本来就不该出现它们。Proxy 只在**真的去取**的时候才兜底。
+ * 里只有内置的 `ov`，界面本来就不该出现那些平台的 tab。Proxy 只在**真的去取**
+ * 的时候才兜底。
+ *
+ * ⚠️ 但空壳不能只是空壳 —— **在线歌的主播放路径走的就是这里**
+ * （`core/music/utils.ts` 的 `musicSdk[musicInfo.source].getMusicUrl(...)`），
+ * 而 `apis()` 那条只是「换源」。所以只留空壳的话，就算用户自己导入了自定义源，
+ * 主路径也永远拿不到实现、永远失败（实测报 `no source implementation`）。
+ *
+ * 这里的顺序因此是：**内置源（已登记在 target 上）> 用户导入的源 > 空壳**。
+ * 泛音自身不含任何商业平台实现 —— 内置的只有开放版权曲库，其余是用户自己
+ * 导入的脚本。
  */
 export default new Proxy(musicSdk, {
   get(target, key) {
@@ -286,6 +345,6 @@ export default new Proxy(musicSdk, {
     // Symbol（toStringTag / iterator 之类）如实返回 undefined，
     // 否则会被当成一个"源"塞进某些遍历逻辑里
     if (typeof key != 'string') return undefined
-    return noSource
+    return getUserApiSource(key) ?? noSource
   },
 })

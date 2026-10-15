@@ -96,6 +96,7 @@ export const sourceNames = computed(() => {
   // 原来这几个 key 写的是占位字面量（kw: 'kw'），因为紧接着的循环一定会用
   // i18n 名称覆盖掉。现在循环不再有内容，占位就得改成真正的名称。
   const sourceNames: Record<LX.OnlineSource | 'all', string> = {
+    ov: window.i18n.t(prefix + 'ov' as any),
     kw: window.i18n.t(prefix + 'kw' as any),
     tx: window.i18n.t(prefix + 'tx' as any),
     kg: window.i18n.t(prefix + 'kg' as any),
@@ -103,8 +104,9 @@ export const sourceNames = computed(() => {
     wy: window.i18n.t(prefix + 'wy' as any),
     all: window.i18n.t(prefix + 'all' as any),
   }
-  // 目前 music.sources 是空的（没有内置源）。保留这个循环是为了让「将来把
-  // 自定义源登记进 music.sources」时不必回来改这里。
+  // 内置源（现在只有 ov）与将来登记进 music.sources 的源都靠这个循环取名字，
+  // 所以上面那张表里的 ov 其实是冗余的 —— 留着是为了满足
+  // Record<LX.OnlineSource | 'all', string> 的穷尽性检查。
   for (const { id } of music.sources) {
     sourceNames[id as LX.OnlineSource] = window.i18n.t(prefix + id as any)
   }

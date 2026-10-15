@@ -83,7 +83,13 @@ declare namespace LX {
       meta: MusicInfoMeta_mg
     }
 
-    type MusicInfoOnline = MusicInfo_online_common | MusicInfo_kg | MusicInfo_tx | MusicInfo_mg
+    // 开放曲库（Openverse）：字段形状与通用在线源一致，单独立一个是为了
+    // 让「这是泛音内置的开放版权曲库、不是平台源」这件事在类型上也看得见。
+    interface MusicInfo_ov extends MusicInfoBase<'ov'> {
+      meta: MusicInfoMeta_online
+    }
+
+    type MusicInfoOnline = MusicInfo_online_common | MusicInfo_kg | MusicInfo_tx | MusicInfo_mg | MusicInfo_ov
     type MusicInfo = MusicInfoOnline | MusicInfoLocal
 
     interface LyricInfo {

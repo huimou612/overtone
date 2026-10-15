@@ -36,4 +36,20 @@ const apis = source => {
   throw new Error('Api is not found')
 }
 
-export { apis, supportQuality }
+/**
+ * 取「用户导入的自定义源」为某个 source 提供的实现。
+ *
+ * 为什么需要这个出口 —— 在线歌的**主播放路径**不是走 `apis()`，而是
+ * `core/music/utils.ts` 里的 `musicSdk[musicInfo.source].getMusicUrl(...)`；
+ * `apis()` 只在「换源」时被调用。删掉内置实现后 `musicSdk[source]` 落到
+ * 空壳上，主路径就永远失败了 —— 这跟用户有没有导入音源无关。
+ *
+ * 这里把用户导入的源暴露给 `index.js` 的 Proxy：**泛音自身仍不含任何平台实现**，
+ * 只是把「用户自己导入的东西」接上正确的调用点（见 index.js 的 Proxy 说明）。
+ *
+ * 返回的对象可能是空的（脚本没声明这个 source），调用方据此回落空壳。
+ */
+const getApiImpl = source =>
+  /^user_api/.test(String(apiSource.value)) ? userApi.apis[source] : undefined
+
+export { apis, supportQuality, getApiImpl }
