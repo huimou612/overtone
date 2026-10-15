@@ -6,6 +6,7 @@ import {
   status,
   statusText,
   isShowPlayerDetail,
+  isShowImmersiveLyric,
   isShowPlayComment,
   isShowLrcSelectContent,
   playInfo,
@@ -59,6 +60,10 @@ export const setAllStatus = (val: string) => {
 
 export const setShowPlayerDetail = (val: boolean) => {
   isShowPlayerDetail.value = val
+}
+
+export const setShowImmersiveLyric = (val: boolean) => {
+  isShowImmersiveLyric.value = val
 }
 
 export const setShowPlayComment = (val: boolean) => {

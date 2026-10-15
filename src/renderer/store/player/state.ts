@@ -36,6 +36,9 @@ export const statusText = ref('')
 
 export const isShowPlayerDetail = ref(false)
 
+// 沉浸式歌词：独立的展示模式，与普通歌词页并存，不与 `isShowPlayerDetail` 互斥
+export const isShowImmersiveLyric = ref(false)
+
 export const isShowPlayComment = ref(false)
 
 export const isShowLrcSelectContent = ref(false)

@@ -24,6 +24,9 @@
     <layout-sync-auth-code-modal />
     <layout-play-detail />
   </div>
+  <!-- 沉浸式歌词是独立的展示模式，不全屏时也应该盖住整个窗口，
+       所以挂在 #container 之外（#root 下），和 layout-app-background 同一层思路 -->
+  <layout-immersive-lyric />
 </template>
 
 <script setup>

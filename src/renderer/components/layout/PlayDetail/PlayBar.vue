@@ -33,6 +33,12 @@
           <use xlink:href="#icon-nextMusic" />
         </svg>
       </div>
+      <!-- 进入沉浸式歌词（独立于普通歌词页，点右上角的 × 或 Esc 退出） -->
+      <div :class="$style.playBtn" :aria-label="$t('immersive_lyric__open')" @click="openImmersiveLyric">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
+          <use xlink:href="#icon-text" />
+        </svg>
+      </div>
     </div>
   </div>
 </template>
@@ -40,6 +46,7 @@
 <script setup>
 import { playNext, playPrev, togglePlay } from '@renderer/core/player'
 import { status, isPlay } from '@renderer/store/player/state'
+import { setShowImmersiveLyric } from '@renderer/store/player/action'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 
 import ControlBtns from './components/ControlBtns.vue'
@@ -51,6 +58,10 @@ const {
   isActiveTransition,
   handleTransitionEnd,
 } = usePlayProgress()
+
+const openImmersiveLyric = () => {
+  setShowImmersiveLyric(true)
+}
 
 </script>
 
