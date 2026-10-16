@@ -4,11 +4,15 @@
     data-view="immersive-lyric"
     :class="$style.root"
   >
-    <!-- 背景两层：封面优先；没有封面时回落到现有的壁纸/主题背景（--background-image）。
-         这里刻意不复用 AppBackground 组件 —— 它是为 #root / PlayDetail 两处挂点写的，
-         沉浸式视图只需要「一张图 + 一张暗幕」，直接铺 CSS 更轻，也不会牵动背景系统。 -->
-    <div :class="$style.bgPic" :style="bgStyle"></div>
+    <!-- 背景三层（自底向上）：
+         · bgFallBack：不透明深色兜底，永远在最低层 —— 有封面时它被上方封面完全盖住；
+           无封面 / 封面加载失败 / 切歌间隙时它顶上，保证底层播放页面永不透出、也不闪白。
+         · bgPic：封面层，仅在 musicInfo.pic 存在时才有 background-image；否则透明，露出兜底层。
+         · bgMask：暗化渐变，压在最上保证歌词可读。
+         刻意不复用 AppBackground 组件：它是为 #root / PlayDetail 挂点写的，沉浸式只需
+         「一张图 + 一张暗幕 + 一层不透明兜底」，直接铺 CSS 更轻，也不牵动背景系统。 -->
     <div :class="$style.bgFallBack"></div>
+    <div :class="$style.bgPic" :style="bgStyle"></div>
     <div :class="$style.bgMask"></div>
 
     <div :class="$style.topBar">
@@ -402,16 +406,18 @@ export default {
   transform: scale(1.1);
 }
 
+// 兜底背景：必须「不透明」，否则无封面时底层播放页面会透出来。
+// 之前用的是 --color-app-background（带 alpha 的主题色）+ --background-image: none，
+// 两者都半透明，无封面时底层直接漏出来（第四阶段任务 A 修复）。
+// 这里改成纯不透明深色渐变：有封面时被上方 .bgPic 完全盖住；无封面 / 加载失败 /
+// 切歌间隙时它顶上，既不会透出底层页面，也不会因为图片未加载完而闪白。
 .bgFallBack {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--color-app-background);
-  background-image: var(--background-image);
-  background-position: center;
-  background-size: cover;
+  background: linear-gradient(180deg, #1b1b22 0%, #101015 100%);
 }
 
 // 暗幕：保证大字在任何封面上都读得清
