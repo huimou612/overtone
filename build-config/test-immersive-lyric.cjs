@@ -13,6 +13,12 @@
  *
  * ⚠️ 测的是**现有语义**，不是「我觉得应该怎样」。若发现语义本身可疑，只在注释里标注、不改代码。
  *
+ * ⚠️ 第七阶段：上一版用「锁定现状」记录的两处边界，已被判为真实缺陷并修复，
+ *   本文件相应更新为**修复后的语义**（两处都在用例里标了「第七阶段修复」）：
+ *     ① 畸形时间戳（如 `[00:00:00:00.000]`）必须整段校验后作废，不再被正则部分匹配截成 0ms 歌词行；
+ *     ② `getWordFill` 遇到负时长/无效时长时，不得在起点之前给出正向填充。
+ *   其余用例仍然是「钉死现有语义」，若再发现可疑之处只标注、不改代码。
+ *
  * 加载方式：这两个 .ts 是纯函数、无运行时依赖（fill.ts 只 `import type`）。
  * 用 Node 内置 module.stripTypeScriptTypes 去掉类型后再以 data: URL 当 ESM 载入，
  * **不引入任何构建工具或运行期依赖**。
@@ -138,14 +144,66 @@ async function main() {
     assert.deepEqual(t.lines.map(l => l.text), ['前', '后'])
   })
 
-  test('畸形时间戳（4 段）不抛异常，正常行仍被解析', () => {
-    // ⚠️ 现状记录：文件头注释写「时间戳段数 > 3 → 丢弃」，但 TIME_RXP 每段最多吃 2 个冒号，
-    //    所以 [00:00:00:00.000] 不会被判为「>3 段」，而是被拆成 00:00:00 与 00.000 两段（都=0ms），
-    //    从而产出两条时间 0 的重复行 —— 与注释意图有出入。属边界输入，本阶段只记录、不改源码。
+  test('非法时间戳（段数超标）：整个标记作废，不再凭空产出 0ms 歌词行', () => {
+    // 🔧 第七阶段修复：旧实现沿用上游 timeExp 的**部分匹配**，会把 [00:00:00:00.000]
+    //    截出 00:00:00.000 当成合法时间戳，于是畸形标记变成一条时间为 0 的歌词行。
+    //    现在改为「先切出方括号内容、再整段校验」，段数超标的标记直接作废。
     let t
     assert.doesNotThrow(() => { t = build({ lrc: '[00:00:00:00.000]四段\n[00:01.000]正常' }) })
-    assert.ok(t.lines.some(l => l.text === '正常' && l.time === 1000), '正常行必须被解析')
-    console.log(`       现状：畸形行解析为 ${JSON.stringify(t.lines.filter(l => l.text === '四段').map(l => l.time))}（见报告「语义与注释不一致」）`)
+    assert.ok(!t.lines.some(l => l.text === '四段'), '畸形标记不得进入时间轴')
+    assert.ok(!t.lines.some(l => l.time === 0), '不得凭空多出一条 0ms 行')
+    assert.deepEqual(t.lines.map(l => [l.time, l.text]), [[1000, '正常']], '同一份歌词里的合法行照常解析')
+  })
+
+  test('非法时间戳的其他形式（含字母 / 缺小数位 / 小数位超 3 位）：一律不作数', () => {
+    for (const lrc of ['[ab:cd]含字母', '[00:12]缺小数位', '[00:01.0000]四位小数', '[00:1:2:3]多段无小数']) {
+      const t = build({ lrc })
+      assert.equal(t.lines.length, 0, `不应解析出任何行：${lrc}`)
+    }
+    // 同一行内「合法 + 非法」混合：只采用合法标记
+    const sameLine = build({ lrc: '[00:01.00][00:00:00:00.000]混合\n[00:03.00]句' })
+    assert.deepEqual(sameLine.lines.map(l => [l.time, l.text]), [[1000, '混合'], [3000, '句']])
+    // 合法标记在后、畸形在前：合法标记同样要保住
+    const after = build({ lrc: '[00:00:00:00.000][00:02.00]在后\n[00:04.00]下句' })
+    assert.deepEqual(after.lines.map(l => [l.time, l.text]), [[2000, '在后'], [4000, '下句']])
+  })
+
+  test('非法时间戳不抛异常：整份只有畸形标记时退回 none，不产生空行', () => {
+    let t
+    assert.doesNotThrow(() => { t = build({ lrc: '[00:00:00:00.000]只有畸形\n[99:99.99.99]也是畸形' }) })
+    assert.equal(t.lines.length, 0)
+    assert.equal(t.source, 'none', '没有任何合法时间戳 → 回到降级文案')
+  })
+
+  test('合法边界值：0ms 歌词必须保留（厘秒与毫秒两种写法都不许误删）', () => {
+    const cs = build({ lrc: '[00:00.00]开头\n[00:01.50]第二句' })
+    assert.deepEqual(cs.lines.map(l => [l.time, l.text]), [[0, '开头'], [1500, '第二句']])
+    const ms = build({ lrc: '[00:00.000]开头\n[00:01.500]第二句' })
+    assert.deepEqual(ms.lines.map(l => [l.time, l.text]), [[0, '开头'], [1500, '第二句']])
+  })
+
+  test('合法边界值：hh:mm:ss.xxx / 一位小数 / 纯秒 ss.xx 都能整段通过', () => {
+    assert.equal(build({ lrc: '[01:02:03.500]长时' }).lines[0].time, 3723500, '1h2m3s500ms')
+    assert.equal(build({ lrc: '[00:01.5]一位小数' }).lines[0].time, 1500, '厘秒写法 .5 → 500ms')
+    assert.equal(build({ lrc: '[30.50]纯秒' }).lines[0].time, 30500, '无冒号、只有秒+小数，仍按 ss.xx 解释')
+  })
+
+  test('连续时间戳：合法多标记从 0ms 起连续展开；其中夹畸形只丢畸形那一个', () => {
+    const all = build({ lrc: '[00:00.00][00:01.00][00:02.00]连三' })
+    assert.deepEqual(all.lines.map(l => [l.time, l.text]), [[0, '连三'], [1000, '连三'], [2000, '连三']])
+    const withBad = build({ lrc: '[00:01.00][00:00:00:00.000][00:02.00]夹一个畸形' })
+    assert.deepEqual(withBad.lines.map(l => l.time), [1000, 2000], '只丢畸形标记，前后合法标记保留')
+  })
+
+  test('连续/重复时间戳：同一时间在一行内重复出现时保留先到的，不产生重复行', () => {
+    const dup = build({ lrc: '[00:01.00][00:01.00]先\n[00:02.00]后' })
+    assert.deepEqual(dup.lines.map(l => [l.time, l.text]), [[1000, '先'], [2000, '后']])
+  })
+
+  test('合法与元数据混排：元数据行不产出歌词，offset 仍按规则叠加', () => {
+    const t = build({ lrc: '[ti:标题]\n[ar:歌手]\n[offset:200]\n[00:01.000]词\n[00:00:00:00.000]畸形' })
+    assert.deepEqual(t.lines.map(l => [l.time, l.text]), [[1200, '词']])
+    assert.equal(t.offset, 200)
   })
 
   test('一行多时间标签展开成多行，正文一致', () => {
@@ -218,17 +276,41 @@ async function main() {
 
   test('逐字零时长（duration=0）：到点即整段点亮，不除零', () => {
     const w = { text: 'x', start: 1000, duration: 0 }
-    assert.equal(getWordFill(w, 999), 0)
-    assert.equal(getWordFill(w, 1000), 1)
+    assert.equal(getWordFill(w, 999), 0, '起点之前必须 0')
+    assert.equal(getWordFill(w, 1000), 1, '到点即点亮')
+    assert.equal(getWordFill(w, 5000), 1)
   })
 
-  test('逐字负时长：按当前实现（视为异常数据），起点后恒 0、起点前可能给出分数', () => {
-    // ⚠️ 语义标注：duration<0 属于不该出现的数据。当前实现不特判，
-    //    走 (t-start)/duration；t>start 时为负 → 0，t<start 时为正分数。
-    //    这里锁定「当前行为」以免被误改；是否要改成「负时长一律当 0」由后续决定。
+  test('逐字负时长：起点之前不得给出任何正向填充（第七阶段修复）', () => {
+    // 🔧 第七阶段修复：旧实现不特判负时长，直接走 (t-start)/duration，于是
+    //    t < start 时会算出**正**比例（旧用例记录到 0.4）——等于「还没唱到就先亮了一块」。
+    //    现在负时长与零时长同样处理：没有可信渐变区间 → 到点即整段点亮。
     const w = { text: 'x', start: 1000, duration: -500 }
-    assert.equal(getWordFill(w, 1200), 0, '起点之后 → 0')
-    assert.equal(getWordFill(w, 800), 0.4, '起点之前 → 当前实现给出正比例（异常数据，仅记录）')
+    assert.equal(getWordFill(w, 800), 0, '起点之前必须 0（不得出现正向填充）')
+    assert.equal(getWordFill(w, 1000), 1, '到点即点亮')
+    assert.equal(getWordFill(w, 1200), 1, '起点之后 1')
+    // 但无论怎么取，结果都必须落在 [0,1] 且有界
+    for (const t of [-1000, 0, 500, 999, 1000, 1001, 99999]) {
+      const f = getWordFill(w, t)
+      assert.ok(f >= 0 && f <= 1, `t=${t} 的填充必须落在 [0,1]，实得 ${f}`)
+    }
+  })
+
+  test('逐字异常时长（NaN / ±Infinity / 字段缺失）：一律按「到点即点亮」，不外泄 NaN', () => {
+    for (const duration of [NaN, Infinity, -Infinity, undefined, null]) {
+      const w = { text: 'x', start: 1000, duration }
+      const before = getWordFill(w, 800)
+      const at = getWordFill(w, 1000)
+      const after = getWordFill(w, 5000)
+      assert.equal(before, 0, `duration=${String(duration)}：起点之前必须 0`)
+      assert.equal(at, 1, `duration=${String(duration)}：到点 1`)
+      assert.equal(after, 1, `duration=${String(duration)}：之后 1`)
+    }
+  })
+
+  test('逐字：timeMs 异常（NaN）时不把 NaN 外泄（CSS 变量必须是数值）', () => {
+    assert.equal(getWordFill({ text: 'x', start: 1000, duration: 500 }, NaN), 0, '有效时长 + NaN 时间')
+    assert.equal(getWordFill({ text: 'x', start: 1000, duration: 0 }, NaN), 0, '无效时长 + NaN 时间')
   })
 
   test('整句：未开始=0、进行中=比例、完成=1', () => {
@@ -254,6 +336,33 @@ async function main() {
 
   test('整句：maxRateMs=0（异常）→ 直接返回 1，不除零', () => {
     assert.equal(getLineFill(1000, null, 2000, 0), 1)
+  })
+
+  test('整句：maxRateMs 为负数 / NaN / Infinity（异常）→ 结果仍落在 [0,1]，不外泄 NaN', () => {
+    // 🔧 第七阶段：旧实现在「上限为负数」时会算出**负**比例（例如 (2000-1000)/-4000 = -0.25）。
+    //    现在与 maxRateMs=0 同路：没有可信区间 → 视为「立即铺满」返回 1。
+    for (const rate of [-1, -4000, NaN, Infinity, -Infinity]) {
+      const f = getLineFill(1000, null, 2000, rate)
+      assert.ok(Number.isFinite(f) && f >= 0 && f <= 1, `maxRateMs=${String(rate)} 必须落在 [0,1]，实得 ${f}`)
+    }
+    assert.equal(getLineFill(1000, null, 2000, -4000), 1, '负上限不再算出负比例')
+  })
+
+  test('整句：nextTime 为 NaN / Infinity / 等于 lineTime / 小于 lineTime → 一律退回上限，不越界', () => {
+    assert.equal(getLineFill(1000, NaN, 2000), 0.25, 'NaN 间隔 → 退回 4000ms 上限')
+    assert.equal(getLineFill(1000, Infinity, 2000), 0.25, '无限间隔 → 被 maxRateMs 截断')
+    assert.equal(getLineFill(1000, 1000, 2000), 0.25, '间隔 0 → 退回上限，不除零')
+    assert.equal(getLineFill(1000, 500, 2000), 0.25, '间隔为负 → 退回上限')
+  })
+
+  test('整句：timeMs 异常（NaN）与正常正时长回归钉死', () => {
+    assert.equal(getLineFill(1000, 3000, NaN), 0, 'NaN 时间不外泄 NaN，按未开始处理')
+    // 正常正时长：起点前 / 起点 / 中间 / 结束 / 之后
+    assert.equal(getLineFill(1000, 3000, 500), 0)
+    assert.equal(getLineFill(1000, 3000, 1000), 0)
+    assert.equal(getLineFill(1000, 3000, 2000), 0.5)
+    assert.equal(getLineFill(1000, 3000, 3000), 1)
+    assert.equal(getLineFill(1000, 3000, 9000), 1)
   })
 
   test('逐字与整句各自独立计算（互不干扰）', () => {

@@ -14,13 +14,22 @@
  */
 import type { ImmersiveLyricWord } from './timeline'
 
+/**
+ * 「可用的渐变区间」判定：必须是**有限正数**。
+ * duration 为 0 / 负数 / NaN / Infinity、或字段缺失时，都不足以构成一条可信的时间轴。
+ */
+const isUsableDuration = (value: number): boolean => Number.isFinite(value) && value > 0
+
 /** 单个字（词）的演唱填充比例，0=还没唱，1=已唱完 */
 export const getWordFill = (word: ImmersiveLyricWord, timeMs: number): number => {
-  // 极少数音源会给出 duration=0（可选字段缺失被兜底成 0）：视作「到点即整段点亮」，
-  // 不除零，也不假装它有渐变过程
-  if (!word.duration) return timeMs >= word.start ? 1 : 0
+  // duration 不可用（0 / 负数 / NaN / Infinity / 字段缺失）→ 没有任何可信的渐变区间：
+  // 既不做除法（避免除零、负比例、NaN），也**绝不在起点之前给出任何正向填充**，
+  // 统一退回「到点即整段点亮」。这正是原先只有 duration=0 才走的那条分支，
+  // 现在把「负时长」也并进来 —— 负时长同样无法定义渐变，不该在起点前就有色块。
+  if (!isUsableDuration(word.duration)) return timeMs >= word.start ? 1 : 0
   const progress = (timeMs - word.start) / word.duration
-  if (progress <= 0) return 0
+  // !(progress > 0) 同时覆盖 progress <= 0 与 progress 为 NaN（timeMs 异常时也不外泄 NaN）
+  if (!(progress > 0)) return 0
   if (progress >= 1) return 1
   return progress
 }
@@ -32,6 +41,14 @@ export const getWordFill = (word: ImmersiveLyricWord, timeMs: number): number =>
  * maxRateMs 是**视觉层面的速率上限**：两行之间隔了很长间奏时，如果老老实实按真实间隔铺，
  * 色块会在十来秒里几乎不动，看着像卡住了。超过这个上限的行按上限铺满。
  * ⚠️ 它只影响「色块铺多快」，不参与任何定位判定，也没有改动时间轴的任何数字。
+ *
+ * ── 无效时长的行为约定（第七阶段收紧）──────────────────────────────
+ * 这里的「时长」有两处来源，都要求是**有限正数**才算可用：
+ *   ① 本行到下一行的间隔（nextTime - lineTime）；
+ *   ② 兜底上限 maxRateMs。
+ * 不可用时（缺下一行、时间戳乱序/相等、NaN、0、负数）统一退回 maxRateMs；
+ * 若 maxRateMs 本身也不可用，则视为「立即铺满」返回 1（沿用改动前 `!duration → 1` 的语义），
+ * 换算过程绝不产生除零、负比例或 NaN。合法正时长的结果与改动前**完全一致**。
  */
 export const getLineFill = (
   lineTime: number,
@@ -39,11 +56,16 @@ export const getLineFill = (
   timeMs: number,
   maxRateMs = 4000,
 ): number => {
-  if (timeMs <= lineTime) return 0
-  const duration = nextTime == null
-    ? maxRateMs
-    : Math.min(Math.max(nextTime - lineTime, 0) || maxRateMs, maxRateMs)
-  if (!duration) return 1
+  // !(timeMs > lineTime) 同时覆盖 timeMs <= lineTime 与 timeMs 为 NaN 的情况
+  if (!(timeMs > lineTime)) return 0
+
+  // 下一行的时间差才是这一行的真实演唱区间；差值为 0 / 负数 / 非有限都不可用，退回 maxRateMs
+  const gap = nextTime == null ? NaN : nextTime - lineTime
+  const duration = isUsableDuration(gap) ? Math.min(gap, maxRateMs) : maxRateMs
+
+  // maxRateMs 自身不可用（0 / 负数 / 非有限）→ 没有可信区间，视为「立即铺满」
+  if (!isUsableDuration(duration)) return 1
+
   const progress = (timeMs - lineTime) / duration
   return progress >= 1 ? 1 : progress
 }
