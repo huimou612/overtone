@@ -30,24 +30,43 @@
         {{ $t('immersive_lyric__no_lyric') }}
       </div>
       <div v-else :class="$style.lyricColumn">
-        <div
-          v-for="item in visibleLines"
-          :key="`${keyPrefix}-${item.index}`"
-          :class="[$style.line, $style['line_' + item.state]]"
-          :data-state="item.state"
-          :data-index="item.index"
+        <!-- 进出场交给 <TransitionGroup>：窗口滚动时新行淡入上浮、离场行淡出，
+             时长刻意压到 0.22s / 0.18s —— 歌词不能滞后于音乐，宁可朴素也不能拖。
+             ⚠️ 不用项目里常见的 'animated fadeIn' 那套全局类：animate.css 的关键帧里写了
+             transform，会把按行状态设置的错位旋转覆盖掉，而且它的默认时长是 1s。 -->
+        <TransitionGroup
+          :enter-from-class="$style.enterFrom"
+          :enter-active-class="$style.enterActive"
+          :leave-active-class="$style.leaveActive"
+          :leave-to-class="$style.leaveTo"
         >
-          <p v-if="item.line.words" :class="$style.words">
-            <span
-              v-for="(word, wi) in item.line.words"
-              :key="wi"
-              :class="[$style.word, $style['word_' + getWordState(word, nowMs)]]"
-              :data-word-state="getWordState(word, nowMs)"
-            >{{ word.text }}</span>
-          </p>
-          <p v-else :class="$style.text">{{ item.line.text }}</p>
-          <p v-if="item.line.translation" :class="$style.translation">{{ item.line.translation }}</p>
-        </div>
+          <div
+            v-for="item in visibleLines"
+            :key="`${keyPrefix}-${item.index}`"
+            :class="[$style.line, $style['line_' + item.state]]"
+            :data-state="item.state"
+            :data-index="item.index"
+            :style="{ '--ilus-shift': `${item.shift}px` }"
+          >
+            <p v-if="item.line.words" :class="$style.words">
+              <!-- 逐字：填充比例直接由真实时间算出（getWordFill），
+                   :style 里的自定义属性不带缓动，音乐停它就停 -->
+              <span
+                v-for="(word, wi) in item.line.words"
+                :key="wi"
+                :class="[$style.word, $style['word_' + getWordState(word, nowMs)], $style.fillText]"
+                :data-word-state="getWordState(word, nowMs)"
+                :style="{ '--ilus-fill': getWordFill(word, nowMs) }"
+              >{{ word.text }}</span>
+            </p>
+            <p
+              v-else
+              :class="[$style.text, $style.fillText]"
+              :style="{ '--ilus-fill': item.fill }"
+            >{{ item.line.text }}</p>
+            <p v-if="item.line.translation" :class="$style.translation">{{ item.line.translation }}</p>
+          </div>
+        </TransitionGroup>
       </div>
     </div>
 
@@ -107,6 +126,10 @@ import {
   findActiveLineIndex,
   getWordState,
 } from '@renderer/core/immersiveLyric/timeline'
+import {
+  getWordFill,
+  getLineFill,
+} from '@renderer/core/immersiveLyric/fill'
 
 export default {
   name: 'ImmersiveLyric',
@@ -167,6 +190,10 @@ export default {
 
     const activeIndex = computed(() => findActiveLineIndex(timeline.value.lines, nowMs.value))
 
+    // 错位量表（px）：只跟**行自身的序号**挂钩，跟窗口位置无关 —— 窗口向下滑一格时，
+    // 留下的那几行拿到的仍是自己那份错位，不会集体跳一下。
+    const SHIFT_TABLE = [0, 10, 20, 6]
+
     const visibleLines = computed(() => {
       const lines = timeline.value.lines
       if (!lines.length) return []
@@ -175,10 +202,17 @@ export default {
       const end = Math.min(lines.length, start + 4)
       const list = []
       for (let index = start; index < end; index++) {
+        const line = lines[index]
         list.push({
           index,
-          line: lines[index],
+          line,
           state: index === activeIndex.value ? 'active' : (index < activeIndex.value ? 'prev' : 'next'),
+          shift: SHIFT_TABLE[index % SHIFT_TABLE.length],
+          // 整行填充只在**没有逐字时间戳**时才算；有逐字时逐个字算（见模板）。
+          // 这里是纯粹的时间函数，没有任何缓动，所以拖进度/暂停都能立刻到位。
+          fill: line.words
+            ? 0
+            : getLineFill(line.time, lines[index + 1]?.time, nowMs.value),
         })
       }
       return list
@@ -316,6 +350,7 @@ export default {
       bgStyle,
       close,
       getWordState,
+      getWordFill,
       nowPlayTimeStr,
       maxPlayTimeStr,
       progress,
@@ -332,6 +367,11 @@ export default {
 <style lang="less" module>
 // 层级夹在弹窗(100)之上、Tips(10001)之下
 @immersive-z: 200;
+
+// 歌词状态切换的节奏（行错位、旋转、色块淡入）。
+// 只有「切换的那一瞬间」会动一下，跟播放帧率无关，也不参与任何定位判定。
+@ilus-dur: .26s;
+@ilus-ease: cubic-bezier(.22, .61, .36, 1);
 
 .root {
   position: fixed;
@@ -435,27 +475,57 @@ export default {
 }
 
 .line {
+  position: relative;
   max-width: 100%;
-  line-height: 1.4;
+  line-height: 1.45;
   word-break: break-word;
-  transition: opacity .28s ease;
+  // 错位/旋转都以行状态的形式写在 transform 上，交给浏览器合成去做；
+  // 只有行切换的那一瞬间才会触发一次重排（字号变化），不是每帧都在算布局。
+  transform-origin: left center;
+  transition: opacity @ilus-dur @ilus-ease, transform @ilus-dur @ilus-ease;
+  // ⚠️ 关键：强制本行自成「层叠上下文」。
+  // 当前行身下的色块（::before, z-index:-1）要落在「文字之下、背景暗幕之上」，
+  // 前提是 .line 自己是个层叠上下文。正常模式下 translateX 顺带创造了这个上下文，
+  // 但 reduced-motion 下 transform:none 会把上下文撤掉，色块就会沉到 .bgMask 之下被遮住
+  // （实测截图 24 缺块即此因）。isolation:isolate 不依赖 transform，两种模式都兜住。
+  isolation: isolate;
 }
 
-// 当前行是焦点，其余弱化但不隐藏：滚动/跟读都需要看到上下文
+// 当前行是焦点，其余弱化但不隐藏：滚动/跟读都需要看到上下文。
+// 错位量 --ilus-shift 跟「行自己的序号」绑定（见 SHIFT_TABLE），窗口滑动时不会整排跳。
 .line_active {
   font-size: 42px;
   font-weight: 700;
   opacity: 1;
+  transform: translateX(var(--ilus-shift, 0));
+
+  // 「色块」本体：当前行身下那块主色底。
+  // 主色在暗幕上够醒目，但透明度压到很淡 —— 逐字推进的高亮是白色，两者叠着仍要读得清。
+  &::before {
+    content: '';
+    position: absolute;
+    top: -.14em;
+    bottom: -.14em;
+    left: -.5em;
+    right: -.5em;
+    z-index: -1;
+    border-radius: 10px;
+    background-color: var(--color-primary, #4facfe);
+    opacity: .22;
+    transition: opacity @ilus-dur @ilus-ease;
+  }
 }
 
 .line_next {
   font-size: 26px;
-  opacity: .42;
+  opacity: .46;
+  transform: translateX(var(--ilus-shift, 0)) rotate(.55deg);
 }
 
 .line_prev {
   font-size: 26px;
-  opacity: .28;
+  opacity: .3;
+  transform: translateX(var(--ilus-shift, 0)) rotate(-.7deg);
 }
 
 .text {
@@ -466,23 +536,50 @@ export default {
   margin: 0;
 }
 
-.word {
-  transition: color .18s ease, opacity .18s ease;
+// ── 色块 / 填充推进（第三阶段核心）────────────────────────────────
+// 做法：整条背景渐变铺满，断点位置由 --ilus-fill（0~1，真实播放时间算出）决定，
+// 再用 background-clip: text 把渐变裁进字形 —— 「已唱/未唱」同时可见，
+// 不需要复制一层文字节点，也不需要 CSS animation（那样暂停就不会停）。
+.fillText {
+  background-image: linear-gradient(
+    90deg,
+    #fff 0,
+    #fff calc(var(--ilus-fill, 0) * 100%),
+    rgba(255, 255, 255, .42) calc(var(--ilus-fill, 0) * 100%),
+    rgba(255, 255, 255, .42) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-// 已唱过的字：恢复到满亮白（未唱到的字是半透明，形成自然的推进感）
+// 万一碰到不支持 background-clip: text 的环境，透明字会直接看不见 —— 必须兜住，
+// 宁可退化成第二阶段的「整段变色」，也不能出现空白。
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .fillText {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    color: rgba(255, 255, 255, .85);
+  }
+}
+
+.word {
+  transition: opacity .18s ease;
+}
+
+// 文字颜色已经交给上面的渐变管了，这三个状态只留作状态钩子（测试与后续阶段要用）。
 .word_done {
-  color: #fff;
   opacity: 1;
 }
 
-// 正在唱的字：只上主色，不做位移/缩放 —— 阅读优先
 .word_active {
-  color: var(--color-primary, #4facfe);
+  opacity: 1;
 }
 
 .word_todo {
-  opacity: .5;
+  opacity: 1;
 }
 
 .translation {
@@ -490,6 +587,70 @@ export default {
   font-size: 18px;
   font-weight: 400;
   opacity: .62;
+}
+
+// ── 进场 / 退场 ──────────────────────────────────────────────────
+// ⚠️ 刻意只用 opacity + translate（独立位移属性），不碰 transform：
+//    transform 上挂着按行状态的错位与旋转，关键帧里再写一次会把它整个覆盖掉，
+//    动画结束的瞬间就会「啪」地跳回错位位置。translate 与 transform 是叠加关系。
+// 时长压到 0.22s / 0.18s：歌词不能滞后于音乐，宁可朴素。
+@keyframes immersiveLineIn {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes immersiveLineOut {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  to {
+    opacity: 0;
+    translate: 0 -10px;
+  }
+}
+
+.enterActive {
+  animation: immersiveLineIn .22s @ilus-ease both;
+}
+
+// 退场行脱离文档流：否则它会在 0.18s 里继续占着位置，走完之后整列才猛地往上跳一下
+.leaveActive {
+  position: absolute;
+  width: 100%;
+  animation: immersiveLineOut .18s ease both;
+}
+
+// ── 减少动态效果 ─────────────────────────────────────────────────
+// 系统开了「减少动态效果」就给静态版：去掉位移、旋转、错位和进出场，
+// 但**保留状态本身**（当前行依然醒目、色块依然在）—— 那是阅读需要的信息，不是装饰。
+@media (prefers-reduced-motion: reduce) {
+  .line {
+    transition: none;
+  }
+
+  .line_active,
+  .line_prev,
+  .line_next {
+    transform: none;
+  }
+
+  .line_active::before {
+    transition: none;
+  }
+
+  .enterActive,
+  .leaveActive {
+    animation: none;
+  }
 }
 
 // ── 底部信息与控制 ──────────────────────────────────────────────────
