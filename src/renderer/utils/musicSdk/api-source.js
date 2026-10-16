@@ -10,21 +10,41 @@ import { apiSource, userApi } from '@renderer/store'
  * 2. **内置源** → 查 `apiList` 表。这张表由 `apiSourceInfo`（注册表）与各平台的
  *    接口实现共同构成。
  *
- * ⚠️ 泛音里这条路是**关闭**的：`api-source-info.ts` 是空数组（上游 `1ff6a006`
- * 「移除所有内置源」只清空了注册表），平台实现目录也已整体删除（见 `index.js`
- * 顶部说明）。所以 `supportQuality` 与 `apiList` 恒为空、`getAPI()` 恒返回
- * `undefined`，`apis()` 对非自定义源一律抛 `Api is not found`。
+ * ⚠️ 这条路对**内置接口**仍然是关闭的：`api-source-info.ts` 是空数组（上游
+ * `1ff6a006`「移除所有内置源」清空了注册表），而平台实现目录已在后续按用户要求
+ * 恢复（见 `index.js` 顶部说明）—— 注册表没跟着恢复。于是 `supportQuality` 与
+ * `apiList` 恒为空、`getAPI()` 恒返回 `undefined`，`apis()` 对非自定义源一律抛
+ * `Api is not found`。各平台 `index.js` 的 `getMusicUrl` 因此**只能**走
+ * `user_api*` 那条分支拿到实现。
  *
  * 这里保留表的结构而不是把 `apis()` 简化成一行，是为了让「注册表 + 实现表」
  * 这套形状还在：将来若要支持自定义源注册搜索能力，接着往这里挂即可。
  * 上游原本还有一张 `allApi`（把各平台 `api-temp` / `api-test` 调试接口映射成
  * `<id>_<source>`），那些 import 早已被注释掉、表本身就是空的 —— 已一并清掉。
  */
+/**
+ * 「接口实现表」：把 `api-source-info.ts` 注册的接口 id 与它的实现文件对应起来。
+ * 上游把各平台的 `api-temp` / `api-test` 调试接口映射成 `<id>_<source>` 挂在这里，
+ * 那些 import 一直是注释状态、表本身也是空的 —— 恢复平台源时**保持原样**，
+ * 不去激活它们（那几个调试接口指向的是早已停服的外部地址）。
+ */
+const allApi = {
+  // temp_kw: api_temp_kw,
+  // test_tx: api_test_tx,
+  // test_kg: api_test_kg,
+  // test_kw: api_test_kw,
+  // test_mg: api_test_mg,
+  // test_wy: api_test_wy,
+}
+
 const apiList = {}
 const supportQuality = {}
 
 for (const api of apiSourceInfo) {
   supportQuality[api.id] = api.supportQualitys
+  for (const source of Object.keys(api.supportQualitys)) {
+    apiList[`${api.id}_api_${source}`] = allApi[`${api.id}_${source}`]
+  }
 }
 
 const getAPI = source => apiList[`${apiSource.value}_api_${source}`]
