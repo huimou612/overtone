@@ -11,7 +11,12 @@ div(:class="$style.header")
       svg(:class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve")
         use(xlink:href="#icon-window-minimize-2")
 
-    //- button(type="button" :class="$style.max" @click="max")
+    button(type="button" :class="$style.max" :aria-label="isMaximized ? $t('restore') : $t('maximize')" ignore-tip :title="isMaximized ? $t('restore') : $t('maximize')" @click="maxWindowToggle")
+      svg(v-if="isMaximized" :class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve")
+        use(xlink:href="#icon-window-restore-2")
+      svg(v-else :class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve")
+        use(xlink:href="#icon-window-maximize-2")
+
     button(type="button" :class="$style.close" :aria-label="$t('close')" ignore-tip :title="$t('close')" @click="closeWindow")
       svg(:class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve")
         use(xlink:href="#icon-window-close-2")
@@ -22,10 +27,13 @@ div(:class="$style.header")
 import { onMounted, onBeforeUnmount, ref, useCssModule } from '@common/utils/vueTools'
 import { isFullscreen } from '@renderer/store'
 import { setShowPlayerDetail } from '@renderer/store/player/action'
-import { closeWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
+import { closeWindow, minWindow, maxWindowToggle, onMaxStatus, setFullScreen } from '@renderer/utils/ipc'
 
 const dom_btns = ref()
 const cssModule = useCssModule()
+const isMaximized = ref(false)
+
+let removeMaxStatusListener
 
 const handle_focus = () => {
   if (!dom_btns.value) return
@@ -48,11 +56,15 @@ const handle_mouseout = (event) => {
 
 
 onMounted(() => {
+  removeMaxStatusListener = onMaxStatus(({ params }) => {
+    isMaximized.value = params
+  })
   window.app_event.on('focus', handle_focus)
   dom_btns.value.addEventListener('mouseover', handle_mouseover)
   dom_btns.value.addEventListener('mouseout', handle_mouseout)
 })
 onBeforeUnmount(() => {
+  removeMaxStatusListener?.()
   window.app_event.off('focus', handle_focus)
   dom_btns.value.removeEventListener('mouseover', handle_mouseover)
   dom_btns.value.removeEventListener('mouseout', handle_mouseout)

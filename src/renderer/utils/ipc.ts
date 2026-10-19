@@ -845,6 +845,23 @@ export const maxWindow = () => {
 }
 
 /**
+ * 最大化、还原窗口切换
+ */
+export const maxWindowToggle = () => {
+  rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.max_toggle)
+}
+
+/**
+ * 订阅窗口最大化状态变化（还原/最大化按钮图标切换）
+ */
+export const onMaxStatus = (listener: LX.IpcRendererEventListenerParams<boolean>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.max_status, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.max_status, listener)
+  }
+}
+
+/**
  * 最小化、最大化窗口切换
  */
 export const minMaxWindowToggle = () => {

@@ -1,5 +1,5 @@
 <template>
-  <div :class="[$style.progress, className]">
+  <div :class="[$style.progress, className, { [$style.onDark]: onDark }]">
     <div :class="[$style.progressBar, $style.progressBar2, {[$style.barTransition]: isActiveTransition}]" :style="{ transform: `scaleX(${progress || 0})` }" @transitionend="handleTransitionEnd" />
     <div v-show="dragging" :class="[$style.progressBar, $style.progressBar3]" :style="{ transform: `scaleX(${dragProgress || 0})` }" />
   </div>
@@ -15,6 +15,12 @@ export default {
     className: {
       type: String,
       default: '',
+    },
+    // 暗色舞台变体：轨道/进度用白色系，保证在沉浸式暗幕上可见
+    // （默认 false，主窗口播放栏行为完全不变）
+    onDark: {
+      type: Boolean,
+      default: false,
     },
     progress: {
       type: Number,
@@ -119,6 +125,20 @@ export default {
   width: 100%;
   height: 100%;
   transform-origin: 0;
+}
+.onDark {
+  &.progress {
+    background-color: rgba(255, 255, 255, .22);
+  }
+  .progressBar1 {
+    background-color: rgba(255, 255, 255, .30);
+  }
+  .progressBar2 {
+    background-color: #fff;
+  }
+  .progressBar3 {
+    background-color: rgba(255, 255, 255, .75);
+  }
 }
 .progressBar1 {
   background-color: var(--color-primary-light-100-alpha-600);

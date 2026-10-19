@@ -40,9 +40,10 @@
           <div
             :class="$style.topBtn"
             role="button"
-            aria-hidden="true"
+            tabindex="0"
             :aria-label="$t('immersive_lyric__close')"
             @click="$emit('close')"
+            @keydown.enter="$emit('close')"
           >
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="18px" viewBox="0 0 24 24" space="preserve">
               <use xlink:href="#icon-close" />
@@ -79,6 +80,7 @@
       <div :class="$style.progressWrap">
         <common-progress-bar
           :class-name="$style.progress"
+          on-dark
           :progress="progress"
           :handle-transition-end="handleTransitionEnd"
           :is-active-transition="isActiveTransition"
@@ -426,7 +428,8 @@ button.topBtn {
 }
 
 .progress {
-  height: 100%;
+  height: 5px;
+  margin: 12px 0 6px;
 }
 
 .timeLabel {

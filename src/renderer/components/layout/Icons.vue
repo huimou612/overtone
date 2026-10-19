@@ -159,6 +159,13 @@
       <g id="icon-window-close-2" fill="currentColor">
         <path d="M13.46,12L19,17.54V19H17.54L12,13.46L6.46,19H5V17.54L10.54,12L5,6.46V5H6.46L12,10.54L17.54,5H19V6.46L13.46,12Z" />
       </g>
+      <g id="icon-window-maximize-2" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="5.5" y="5.5" width="13" height="13" rx="1" />
+      </g>
+      <g id="icon-window-restore-2" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="4.5" y="7.5" width="11" height="11" rx="1" />
+        <path d="M8.5 7.5V6a1.5 1.5 0 0 1 1.5-1.5h8A1.5 1.5 0 0 1 19.5 6v8a1.5 1.5 0 0 1-1.5 1.5h-1.5" />
+      </g>
       <g id="icon-list-loop" fill="currentColor">
         <!-- 0 0 24 24-->
         <path d="M0 0h24v24H0z" fill="none" />
@@ -239,6 +246,13 @@
         <rect x="4" y="3.5" width="16" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" />
         <path d="M8 8.5h8M8 12h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
         <path d="m13.4 15.6 1.9 1.9 3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </g>
+      <g id="icon-wall" fill="currentColor">
+        <!-- 0 0 24 24｜四宫格封面墙（阶段 E：歌单封面墙入口）-->
+        <rect x="3.5" y="3.5" width="7.4" height="7.4" rx="2" />
+        <rect x="13.1" y="3.5" width="7.4" height="7.4" rx="2" />
+        <rect x="3.5" y="13.1" width="7.4" height="7.4" rx="2" />
+        <rect x="13.1" y="13.1" width="7.4" height="7.4" rx="2" />
       </g>
     </defs>
   </svg>

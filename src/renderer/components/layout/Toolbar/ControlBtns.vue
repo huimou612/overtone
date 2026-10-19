@@ -5,6 +5,14 @@
         <use xlink:href="#icon-window-minimize-2" />
       </svg>
     </button>
+    <button type="button" :class="[$style.btn, $style.max]" :aria-label="isMaximized ? $t('restore') : $t('maximize')" ignore-tip :title="isMaximized ? $t('restore') : $t('maximize')" @click="maxWindowToggle">
+      <svg v-if="isMaximized" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
+        <use xlink:href="#icon-window-restore-2" />
+      </svg>
+      <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
+        <use xlink:href="#icon-window-maximize-2" />
+      </svg>
+    </button>
     <button type="button" :class="[$style.btn, $style.close]" :aria-label="$t('close')" ignore-tip :title="$t('close')" @click="closeWindow">
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
         <use xlink:href="#icon-window-close-2" />
@@ -14,46 +22,22 @@
 </template>
 
 <script setup>
-import { minWindow, closeWindow } from '@renderer/utils/ipc'
-import { onMounted, onBeforeUnmount, ref, useCssModule } from '@common/utils/vueTools'
-// import { getRandom } from '../../utils'
+import { ref, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
+import { minWindow, closeWindow, maxWindowToggle, onMaxStatus } from '@renderer/utils/ipc'
 import { isFullscreen } from '@renderer/store'
 
 const dom_btns = ref()
+const isMaximized = ref(false)
 
-const cssModule = useCssModule()
-
-const handle_focus = () => {
-  if (!dom_btns.value) return
-  for (const node of dom_btns.value.childNodes) {
-    if (node.tagName != 'BUTTON') continue
-    node.classList.remove(cssModule.hover)
-  }
-}
-const getBtnEl = (el) => el.tagName == 'BUTTON' || !el ? el : getBtnEl(el.parentNode)
-const handle_mouseover = (event) => {
-  const btn = getBtnEl(event.target)
-  if (!btn) return
-  btn.classList.add(cssModule.hover)
-}
-const handle_mouseout = (event) => {
-  const btn = getBtnEl(event.target)
-  if (!btn) return
-  btn.classList.remove(cssModule.hover)
-}
-
-
+let removeMaxStatusListener
 onMounted(() => {
-  window.app_event.on('focus', handle_focus)
-  dom_btns.value.addEventListener('mouseover', handle_mouseover)
-  dom_btns.value.addEventListener('mouseout', handle_mouseout)
+  removeMaxStatusListener = onMaxStatus(({ params }) => {
+    isMaximized.value = params
+  })
 })
 onBeforeUnmount(() => {
-  window.app_event.off('focus', handle_focus)
-  dom_btns.value.removeEventListener('mouseover', handle_mouseover)
-  dom_btns.value.removeEventListener('mouseout', handle_mouseout)
+  removeMaxStatusListener?.()
 })
-
 </script>
 
 
@@ -80,7 +64,7 @@ onBeforeUnmount(() => {
     cursor: pointer;
     color: var(--color-font-label);
     transition: background-color 0.2s ease-in-out;
-    &.hover {
+    &:hover {
       &.min, &.max {
         background-color: var(--color-button-background-hover);
       }

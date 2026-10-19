@@ -25,7 +25,7 @@ export default {
     const dom_menu = ref<HTMLElement>()
 
     const menus = computed(() => {
-      const size = 17
+      const size = 20
       return [
         {
           to: '/search',
@@ -138,8 +138,8 @@ export default {
 .link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 14px;
+  padding: 12px 14px;
   border-radius: 10px;
   box-sizing: border-box;
 
@@ -193,13 +193,14 @@ export default {
 .navText {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
-  line-height: 1.2;
-  letter-spacing: .5px;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: .3px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: .92;
+  opacity: 1;
 }
 .link svg {
   flex: none;

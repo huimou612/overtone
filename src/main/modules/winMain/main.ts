@@ -4,7 +4,7 @@ import { createTaskBarButtons, getWindowSizeInfo } from './utils'
 import { getOSVersion, getPlatform, isLinux, isMac, isWin } from '@common/utils'
 import { getProxy, openDevTools as handleOpenDevTools } from '@main/utils'
 import { mainSend } from '@common/mainIpc'
-import { sendFocus, sendTaskbarButtonClick } from './rendererEvent'
+import { sendFocus, sendMaxStatus, sendTaskbarButtonClick } from './rendererEvent'
 import { encodePath } from '@common/utils/electron'
 import { requestClose as requestSplashClose } from '@main/modules/winSplash/main'
 
@@ -41,6 +41,13 @@ const winEvent = () => {
   browserWindow.on('blur', () => {
     global.lx.event_app.main_window_blur()
   })
+  // 最大化状态变化 → 同步给渲染层（还原/最大化按钮图标切换用）
+  browserWindow.on('maximize', () => {
+    sendMaxStatus(true)
+  })
+  browserWindow.on('unmaximize', () => {
+    sendMaxStatus(false)
+  })
   browserWindow.on('enter-full-screen', () => {
     global.lx.event_app.main_window_fullscreen(true)
   })
@@ -63,6 +70,8 @@ const winEvent = () => {
     // 主窗口已经渲染好了，把入场动画淡出（不足最短时长时它会等满再淡出）
     requestSplashClose()
     global.lx.event_app.main_window_ready_to_show()
+    // 初始最大化状态同步（启动即最大化的场景）
+    sendMaxStatus(browserWindow!.isMaximized())
   })
 
   browserWindow.on('show', () => {
@@ -196,6 +205,11 @@ export const maximize = () => {
 export const unmaximize = () => {
   if (!browserWindow) return
   browserWindow.unmaximize()
+}
+export const toggleMaximize = () => {
+  if (!browserWindow) return
+  if (browserWindow.isMaximized()) browserWindow.unmaximize()
+  else browserWindow.maximize()
 }
 export const toggleHide = () => {
   if (!browserWindow) return

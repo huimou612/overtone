@@ -7,8 +7,7 @@ transition(enter-active-class="animated slideInRight" leave-active-class="animat
       layout-app-background(behind)
     //- div(:class="$style.bg" :style="bgStyle")
     //- div(:class="$style.bg2")
-    ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'")
-    ControlBtnsRightHeader(v-else)
+    ControlBtnsRightHeader
     div(:class="[$style.main, {[$style.showComment]: isShowPlayComment}]")
       div.left(:class="$style.left")
         //- div(:class="$style.info")
@@ -48,7 +47,6 @@ import LyricPlayer from './LyricPlayer.vue'
 import PlayBar from './PlayBar.vue'
 import MusicComment from './components/MusicComment/index.vue'
 import AiToolBar from './components/AiToolBar.vue'
-import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
 import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMounse'
 import { appSetting } from '@renderer/store/setting'
@@ -57,7 +55,6 @@ import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/util
 export default {
   name: 'CorePlayDetail',
   components: {
-    ControlBtnsLeftHeader,
     ControlBtnsRightHeader,
     LyricPlayer,
     PlayBar,

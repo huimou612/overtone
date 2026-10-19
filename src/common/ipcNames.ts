@@ -47,6 +47,8 @@ const modules = {
     close: 'close',
     min: 'min',
     max: 'max',
+    max_toggle: 'max_toggle',
+    max_status: 'max_status',
     fullscreen: 'fullscreen',
     set_app_name: 'set_app_name',
     clear_cache: 'clear_cache',

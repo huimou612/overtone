@@ -10,16 +10,25 @@
         <use xlink:href="#icon-window-minimize" />
       </svg>
     </button>
+    <!-- 最大化/还原：left（mac 圆点）布局此前缺失这个按钮，Windows 用户切到 left 时无法还原窗口 -->
+    <button type="button" :class="[$style.btn, $style.max]" :aria-label="isMaximized ? $t('restore') : $t('maximize')" ignore-tip :title="isMaximized ? $t('restore') : $t('maximize')" @click="maxWindowToggle">
+      <svg :class="$style.controlBtniIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
+        <use :xlink:href="isMaximized ? '#icon-window-restore-2' : '#icon-window-maximize-2'" />
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup>
-import { minWindow, closeWindow } from '@renderer/utils/ipc'
+import { minWindow, closeWindow, maxWindowToggle, onMaxStatus } from '@renderer/utils/ipc'
 import { onMounted, onBeforeUnmount, ref, useCssModule } from '@common/utils/vueTools'
 // import { getRandom } from '../../utils'
 import { isFullscreen } from '@renderer/store'
 
 const dom_btns = ref()
+const isMaximized = ref(false)
+
+let removeMaxStatusListener
 
 const cssModule = useCssModule()
 
@@ -36,11 +45,15 @@ const handle_mouseleave = () => {
 
 
 onMounted(() => {
+  removeMaxStatusListener = onMaxStatus(({ params }) => {
+    isMaximized.value = params
+  })
   window.app_event.on('focus', handle_focus)
   dom_btns.value.addEventListener('mouseenter', handle_mouseenter)
   dom_btns.value.addEventListener('mouseleave', handle_mouseleave)
 })
 onBeforeUnmount(() => {
+  removeMaxStatusListener?.()
   window.app_event.off('focus', handle_focus)
   dom_btns.value.removeEventListener('mouseenter', handle_mouseenter)
   dom_btns.value.removeEventListener('mouseleave', handle_mouseleave)
@@ -90,9 +103,9 @@ onBeforeUnmount(() => {
   &.min {
     background-color: var(--color-btn-min);
   }
-  // &.max {
-  //   background-color: var(--color-btn-max);
-  // }
+  &.max {
+    background-color: var(--color-btn-max);
+  }
   &.close {
     background-color: var(--color-btn-close);
   }

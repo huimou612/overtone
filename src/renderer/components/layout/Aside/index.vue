@@ -1,16 +1,13 @@
 <template>
   <div :class="[$style.aside, { [$style.fullscreen]: isFullscreen }]">
-    <ControlBtns v-if="appSetting['common.controlBtnPosition'] == 'left'" />
-    <div v-else :class="$style.logo">泛音</div>
+    <div :class="$style.logo">泛音</div>
     <NavBar />
   </div>
 </template>
 
 <script setup>
 import { isFullscreen } from '@renderer/store'
-import { appSetting } from '@renderer/store/setting'
 
-import ControlBtns from './ControlBtns.vue'
 import NavBar from './NavBar.vue'
 
 </script>
