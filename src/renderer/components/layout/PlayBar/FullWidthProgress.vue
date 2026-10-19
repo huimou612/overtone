@@ -26,7 +26,7 @@
           <use xlink:href="#icon-prevMusic" />
         </svg>
       </div>
-      <div :class="$style.playBtn" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
+      <div :class="[$style.playBtn, $style.playBtnMain]" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
         <svg v-if="isPlay" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
           <use xlink:href="#icon-pause" />
         </svg>
@@ -183,8 +183,8 @@ export default {
   padding-bottom: 6px;
   // height: 15px;
   .progressBar {
-    height: 2px;
-    border-radius: 0;
+    height: 3px;
+    border-radius: 999px;
   }
 }
 
@@ -256,13 +256,16 @@ export default {
 
 .title {
   max-width: 100%;
-  font-size: 12px;
-  color: var(--color-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-font);
   .mixin-ellipsis-1();
 }
 .status {
   padding-top: 3px;
   height: 23px;
+  font-size: 12px;
+  color: var(--color-font-label);
   .mixin-ellipsis-1();
   max-width: 100%;
 }
@@ -283,6 +286,10 @@ export default {
   padding-left: 10px;
   padding-right: 15px;
   gap: 18px;
+}
+
+.playBtn.playBtnMain {
+  height: 64%;
 }
 
 .playBtn {

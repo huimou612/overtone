@@ -60,7 +60,7 @@ export default {
   flex: none;
   display: flex;
   flex-flow: row nowrap;
-  gap: 10px;
+  gap: 12px;
 
   button {
     color: var(--color-button-font);
@@ -83,7 +83,7 @@ export default {
   width: 24px;
   padding: 0;
 
-  opacity: .6;
+  opacity: .72;
   cursor: pointer;
 
   svg {

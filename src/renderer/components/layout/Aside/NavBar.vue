@@ -6,6 +6,7 @@
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
             <use :xlink:href="item.icon" />
           </svg>
+          <span :class="$style.navText">{{ item.tips }}</span>
         </router-link>
       </li>
     </ul>
@@ -16,17 +17,15 @@
 import { appSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
 import { ref, computed } from '@common/utils/vueTools'
-import { useIconSize } from '@renderer/utils/compositions/useIconSize'
 
 export default {
   name: 'NavBar',
   setup() {
     const t = useI18n()
     const dom_menu = ref<HTMLElement>()
-    const iconSize = useIconSize(dom_menu, 0.32)
 
     const menus = computed(() => {
-      const size = iconSize.value
+      const size = 17
       return [
         {
           to: '/search',
@@ -135,50 +134,29 @@ export default {
 }
 .navItem {
   position: relative;
-  &:before {
-    content: '';
-    display: block;
-    width: 100%;
-    padding-bottom: 84%;
-  }
 }
 .link {
-  position: absolute;
-  left: 0%;
-  top: 0%;
-  width: 100%;
-  height: 100%;
-  // left: 15%;
-  // top: 15%;
-  // width: 70%;
-  // height: 70%;
-  // display: block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
   box-sizing: border-box;
-  // text-decoration: none;
-  // border-radius: 20%;
 
-  // padding: 18px 3px;
-  // margin: 5px 0;
-  // border-left: 5px solid transparent;
   transition: @transition-fast;
   transition-property: background-color, opacity;
   color: var(--color-nav-font);
   cursor: pointer;
-  // font-size: 11.5px;
-  text-align: center;
+  text-align: left;
   outline: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  // border-radius: @radius-border;
   .mixin-ellipsis-1();
   &:before {
     .mixin-after();
     left: 0;
-    top: 0;
+    top: 20%;
+    bottom: 20%;
     width: 3px;
-    height: 100%;
+    height: auto;
     background-color: var(--color-primary-dark-200-alpha-700);
     border-radius: 4px;
     transform: translateX(-100%);
@@ -211,6 +189,20 @@ export default {
     opacity: .6;
     background-color: var(--color-primary-light-300-alpha-600);
   }
+}
+.navText {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: .92;
+}
+.link svg {
+  flex: none;
 }
 
 // .icon {

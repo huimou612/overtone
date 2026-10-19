@@ -535,6 +535,38 @@ const defaultThemes = [
       '--color-badge-tertiary': 'var(--color-primary-light-100)',
     },
   },
+  {
+    // 深海唱片（UI 改造阶段 A 新增）：深炭黑/石墨底，蓝色仅作状态强调。
+    // 颜色来源：已验收的 v4 静态视觉稿（ui-mock/overtone-ui-mock.html）。
+    // --color-content-background 直接 pin：该令牌在 index.less 里派生自
+    // --color-primary-light-1000，深色下派生值偏蓝黑而非设计要求的纯炭黑。
+    id: 'deepsea',
+    name: '深海唱片',
+    isDark: true,
+    isDarkFont: false,
+    config: {
+      primary: 'rgb(90, 141, 255)',
+      font: 'rgb(236, 238, 242)',
+      '--color-app-background': '#0e0f12',
+      '--color-main-background': '#131519',
+      '--color-content-background': '#131519',
+      '--color-nav-font': 'var(--color-primary)',
+      '--background-image': 'none',
+      '--background-video': '',
+      '--background-blur': '0',
+      '--background-mask': '0',
+      '--background-image-position': 'center',
+      '--background-image-size': 'cover',
+
+      '--color-btn-hide': '#3a3d44',
+      '--color-btn-min': '#3a3d44',
+      '--color-btn-close': '#c8443f',
+
+      '--color-badge-primary': 'var(--color-primary)',
+      '--color-badge-secondary': '#3f6d80',
+      '--color-badge-tertiary': '#8fb0bd',
+    },
+  },
 ]
 
 const themes = defaultThemes.map(({ config: { primary, font, ...extInfo }, ...themeInfo }) => {

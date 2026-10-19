@@ -34,10 +34,11 @@
         </svg>
       </div>
       <!-- 进入沉浸式歌词（独立于普通歌词页，点右上角的 × 或 Esc 退出） -->
-      <div :class="$style.playBtn" :aria-label="$t('immersive_lyric__open')" @click="openImmersiveLyric">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-text" />
+      <div :class="$style.openImmersive" :aria-label="$t('immersive_lyric__open')" @click="openImmersiveLyric">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="16px" viewBox="0 0 24 24" space="preserve">
+          <use xlink:href="#icon-immersive" />
         </svg>
+        <span :class="$style.openText">{{ $t('immersive_lyric__open') }}</span>
       </div>
     </div>
   </div>
@@ -124,6 +125,52 @@ const openImmersiveLyric = () => {
   padding: 0 25px;
   color: var(--color-button-font);
 }
+.openImmersive {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 14px;
+  padding: 7px 14px 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-primary-alpha-300);
+  background-color: var(--color-primary-alpha-100);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+
+  svg {
+    fill: currentColor;
+    flex: none;
+  }
+
+  &:hover {
+    background-color: var(--color-primary-alpha-200);
+    border-color: var(--color-primary-alpha-400);
+  }
+
+  &:active {
+    opacity: .8;
+  }
+}
+
+.openText {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .openText {
+    display: none;
+  }
+
+  .openImmersive {
+    padding: 7px 10px;
+  }
+}
+
 .playBtn {
   height: 40%;
   padding: 5px;

@@ -1,0 +1,12 @@
+# 视觉回归基线必须逐字节稳定。
+#
+# 本仓库 core.autocrlf=true 时，文本文件在提交/检出时会被做行尾转换（LF ↔ CRLF），
+# 而视觉门禁（build-config/verify-visual-gate.cjs）是按 sha256 逐字节校验基线的 ——
+# 一旦被转换，清单对不上，门禁会判 INVALID（不是误报回归，但也无法通过）。
+# 因此这里显式禁用基线目录的文本属性，保证仓库内与工作区字节一致。
+#
+# ⚠️ 修改本文件或基线文件后，必须重跑一次视觉门禁并更新 hashes.txt。
+
+test/visual-baseline/immersive/*.png binary
+test/visual-baseline/immersive/*.json -text
+test/visual-baseline/immersive/hashes.txt -text

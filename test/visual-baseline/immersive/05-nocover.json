@@ -1,0 +1,67 @@
+{
+ "ok": true,
+ "open": true,
+ "lineCount": 4,
+ "lines": [
+  {
+   "state": "prev",
+   "index": "1",
+   "text": "第二句 前一句留作上下文",
+   "css": {
+    "font-size": "26px",
+    "font-weight": "400",
+    "opacity": "0.3",
+    "transform": "matrix(0.999925, -0.012217, 0.012217, 0.999925, 10, 0)",
+    "isolation": "isolate"
+   },
+   "fill": "1",
+   "shift": "10px",
+   "words": []
+  },
+  {
+   "state": "active",
+   "index": "2",
+   "text": "第三句 当前这一句正在唱 Translation of the active line",
+   "css": {
+    "font-size": "42px",
+    "font-weight": "800",
+    "opacity": "1",
+    "transform": "matrix(1, 0, 0, 1, 20, 0)",
+    "isolation": "isolate"
+   },
+   "fill": "0.25",
+   "shift": "20px",
+   "words": []
+  },
+  {
+   "state": "next",
+   "index": "3",
+   "text": "第四句 下一句提示 Translation of the next line",
+   "css": {
+    "font-size": "26px",
+    "font-weight": "400",
+    "opacity": "0.46",
+    "transform": "matrix(0.999954, 0.00959916, -0.00959916, 0.999954, 6, 0)",
+    "isolation": "isolate"
+   },
+   "fill": "0",
+   "shift": "6px",
+   "words": []
+  },
+  {
+   "state": "next",
+   "index": "4",
+   "text": "第五句 再下一句",
+   "css": {
+    "font-size": "26px",
+    "font-weight": "400",
+    "opacity": "0.46",
+    "transform": "matrix(0.999954, 0.00959916, -0.00959916, 0.999954, 0, 0)",
+    "isolation": "isolate"
+   },
+   "fill": "0",
+   "shift": "0px",
+   "words": []
+  }
+ ]
+}

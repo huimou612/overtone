@@ -8,33 +8,40 @@
   >
     <div :class="$style.header">
       <span :class="$style.title">{{ $t('immersive_lyric__panel_title') }}</span>
-      <div
+      <button
+        type="button"
         :class="$style.closeBtn"
-        role="button"
-        tabindex="0"
         :aria-label="$t('immersive_lyric__panel_close')"
         @click="$emit('close')"
       >
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="16px" viewBox="0 0 24 24" space="preserve">
           <use xlink:href="#icon-close" />
         </svg>
-      </div>
+      </button>
     </div>
     <div :class="$style.body">
-      <p :class="$style.placeholder">{{ $t('immersive_lyric__panel_placeholder') }}</p>
+      <slot>
+        <p :class="$style.placeholder">{{ $t('immersive_lyric__panel_placeholder') }}</p>
+      </slot>
     </div>
   </aside>
 </template>
 
 <script>
 /**
- * 沉浸式侧栏空壳（L1）
+ * 沉浸式侧栏外壳（L2）
  *
- * 只做三件事：开关（`v-if`，关闭时**不渲染任何节点**，所以经典模式布局零影响）、
- * 明确的关闭按钮、可测试的 `data-immersive-panel` 钩子。内容留给 L2/L4 填。
+ * 仍然只负责「壳」：开关（v-if，关闭时**不渲染任何节点**）、标题、关闭按钮、
+ * 可测试的 `data-immersive-panel` 钩子、以及内容区的滚动/伸缩容器。
+ * 内容由调用方通过默认插槽传入（音量 / 播放模式 / 当前列表），
+ * 本组件不碰任何播放器状态 —— 这样它可被单独复用与测试。
  *
- * 打开时由 ImmersiveStage 给歌词区加右内边距让位（不是盖上去）。
- * 宽度必须与 ImmersiveStage.vue 里的 `@panel-width` 保持一致。
+ * 宽度：
+ *  · 正常窗口 var(--ilus-panel-w)（ImmersiveStage 里定义，约 320px）；
+ *  · 窄窗口由 ImmersiveStage 的媒体查询把该变量降级（288 / 264px），这里跟着变；
+ *  · 极窄窗口（<= 760px）切「覆盖式」：不再是右侧一列，而是盖住歌词主区（不含底部
+ *    播放栏 —— 面板的定位上下文是 .mainArea，footer 在它之外，永远不被遮挡）。
+ *  ⚠️ 断点数值与 ImmersiveStage.vue 的媒体查询必须保持一致，改一处就要改另一处。
  */
 export default {
   name: 'ImmersivePanelShell',
@@ -46,24 +53,33 @@ export default {
 </script>
 
 <style lang="less" module>
-// 与 ImmersiveStage.vue 的 @panel-width 保持一致（320px）
-@panel-width: 320px;
-
 .panel {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: @panel-width;
+  width: var(--ilus-panel-w, 320px);
   z-index: 2;
   display: flex;
   flex-flow: column nowrap;
   box-sizing: border-box;
   color: #fff;
-  background-color: rgba(0, 0, 0, .42);
-  backdrop-filter: blur(18px);
+  background-color: rgba(15, 18, 26, .78);
+  backdrop-filter: blur(14px);
   border-left: 1px solid rgba(255, 255, 255, .08);
   animation: immersivePanelIn .26s cubic-bezier(.22, .61, .36, 1) both;
+}
+
+// 覆盖式：盖住歌词主区，但底部播放栏在 .mainArea 之外，仍然完整可用
+@media (max-width: 760px) {
+  .panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    border-left: none;
+    // 覆盖态必须足够不透明：底层歌词不能透出来干扰阅读
+    background-color: rgba(13, 15, 20, .94);
+  }
 }
 
 @keyframes immersivePanelIn {
@@ -98,8 +114,12 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  border: none;
   cursor: pointer;
+  color: #fff;
   border-radius: 50%;
+  background-color: transparent;
   opacity: .7;
   transition: opacity .2s ease, background-color .2s ease;
 
@@ -109,11 +129,13 @@ export default {
   }
 }
 
+// 内容区：整体不滚动，由各分区自行决定（队列列表在自己的容器里滚）
 .body {
   flex: auto;
   min-height: 0;
-  overflow: auto;
-  padding: 4px 20px 20px;
+  display: flex;
+  flex-flow: column nowrap;
+  padding: 0 20px 16px;
 }
 
 .placeholder {

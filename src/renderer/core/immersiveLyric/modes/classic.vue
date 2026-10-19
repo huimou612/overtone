@@ -111,7 +111,7 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   align-items: flex-start;
-  gap: 18px;
+  gap: 20px;
 }
 
 .line {
@@ -135,7 +135,8 @@ export default {
 // 错位量 --ilus-shift 跟「行自己的序号」绑定（见 SHIFT_TABLE），窗口滑动时不会整排跳。
 .line_active {
   font-size: 42px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: .4px;
   opacity: 1;
   transform: translateX(var(--ilus-shift, 0));
 

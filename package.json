@@ -4,11 +4,12 @@
   "description": "泛音 —— 带 AI 音源分离与智能歌词处理的本地音乐播放器",
   "main": "./dist/main.js",
   "scripts": {
-    "test": "npm run test:lxlrc && npm run test:ai && npm run test:analysis && npm run test:immersive",
+    "test": "npm run test:lxlrc && npm run test:ai && npm run test:analysis && npm run test:immersive && npm run test:panel",
     "test:lxlrc": "node build-config/test-lxlrc.cjs",
     "test:ai": "node build-config/test-ai-service.cjs",
     "test:analysis": "node build-config/test-analysis.cjs",
     "test:immersive": "node build-config/test-immersive-lyric.cjs",
+    "test:panel": "node build-config/test-l2-panel.cjs",
     "pack": "node build-config/pack.js && npm run pack:win:setup:x64",
     "pack:win": "node build-config/pack.js && npm run pack:win:setup:x64 && npm run pack:win:setup:x86 && npm run pack:win:setup:arm64 && npm run pack:win:setup:x86_64 && npm run pack:win:7z",
     "pack:win:setup:x86_64": "node build-config/build-pack.js target=win arch=x86_64 type=setup",

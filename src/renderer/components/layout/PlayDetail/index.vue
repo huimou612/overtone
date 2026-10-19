@@ -266,9 +266,15 @@ export default {
   padding-bottom: 15px;
   min-height: 0;
   p {
-    line-height: 1.5;
-    font-size: 14px;
+    line-height: 1.6;
+    font-size: 13px;
+    color: var(--color-font-label);
     overflow-wrap: break-word;
+  }
+  p:first-child {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-font);
   }
 }
 

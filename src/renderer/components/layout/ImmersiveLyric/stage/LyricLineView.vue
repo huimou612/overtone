@@ -111,9 +111,10 @@ export default {
 }
 
 .translation {
-  margin: 6px 0 0;
-  font-size: 18px;
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-style: italic;
   font-weight: 400;
-  opacity: .62;
+  opacity: .55;
 }
 </style>

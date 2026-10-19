@@ -229,6 +229,17 @@
         <!-- 0 0 24 24-->
         <path d="M5.12,14L7.5,7.67L9.87,14M6.5,5L1,19H3.25L4.37,16H10.62L11.75,19H14L8.5,5H6.5M18,7L13,12.07L14.41,13.5L17,10.9V17H19V10.9L21.59,13.5L23,12.07L18,7Z" />
       </g>
+      <g id="icon-immersive" fill="currentColor">
+        <!-- 0 0 24 24｜全屏四角括号 + 歌词高亮行（阶段 D：沉浸入口专用，与 icon-text 区分）-->
+        <path d="M4 8.5V6a2 2 0 0 1 2-2h2.5M15.5 4H18a2 2 0 0 1 2 2v2.5M20 15.5V18a2 2 0 0 1-2 2h-2.5M8.5 20H6a2 2 0 0 1-2-2v-2.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+        <rect x="7" y="10.4" width="10" height="3.2" rx="1.6" />
+      </g>
+      <g id="icon-lyric-select" fill="currentColor">
+        <!-- 0 0 24 24｜文档行 + 对勾（阶段 D：歌词选择专用，与沉浸入口区分）-->
+        <rect x="4" y="3.5" width="16" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="M8 8.5h8M8 12h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        <path d="m13.4 15.6 1.9 1.9 3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </g>
     </defs>
   </svg>
 </template>
