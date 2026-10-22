@@ -11,7 +11,7 @@ const defaultSetting: LX.AppSetting = {
   'common.fontSize': 16,
   'common.startInFullscreen': false,
   'common.langId': null,
-  'common.apiSource': 'temp',
+  'common.apiSource': 'user_api_fanyin_builtin',
   'common.sourceNameType': 'alias',
   'common.font': '',
   'common.isShowAnimation': true,
