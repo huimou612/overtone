@@ -383,3 +383,5 @@ npm run pack:win:setup
   AI 能力之外，v0.2 的海报墙、全屏歌词、歌词时间线、灵动岛式控制条的交互与视觉也参考了它。
 
 没有这两个项目，就没有泛音。
+
+泛音由 [huimou612](https://github.com/huimou612) 开发与维护。
