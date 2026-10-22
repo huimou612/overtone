@@ -6,7 +6,7 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [0.2.0](https://github.com/huimou612/overtone/compare/v0.1.0...v0.2.0) - 2026-10-22
+## [0.3.0](https://github.com/huimou612/overtone/compare/v0.2.3...v0.3.0) - 2026-10-22
 
 「看封面听歌」的一版。把 [Folia](https://github.com/chthollyphile/folia-major) 的海报墙与全屏歌词
 接进 [LX Music](https://github.com/lyswhut/lx-music-desktop) 的外壳，操作习惯不变，听歌界面重做。

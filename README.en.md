@@ -60,7 +60,7 @@ audio is never uploaded.
 
 ---
 
-## New in v0.2: Poster Wall & Lattice Lyrics
+## New in v0.3: Poster Wall & Lattice Lyrics
 
 This release brings Folia's "listen by looking at the cover" experience into the LX Music shell.
 The habits stay the same — the listening screen is rebuilt.

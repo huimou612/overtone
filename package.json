@@ -1,6 +1,6 @@
 {
   "name": "overtone",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "泛音 —— 带 AI 音源分离与智能歌词处理的本地音乐播放器",
   "main": "./dist/main.js",
   "scripts": {
