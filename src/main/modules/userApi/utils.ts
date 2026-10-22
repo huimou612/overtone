@@ -1,4 +1,4 @@
-import { userApis as defaultUserApis } from './config'
+import { userApis as defaultUserApis, BUILTIN_API_IDS } from './config'
 import { STORE_NAMES } from '@common/constants'
 import getStore from '@main/utils/store'
 import zlib from 'node:zlib'
@@ -22,6 +22,16 @@ export const getUserApis = (): LX.UserApi.UserApiInfo[] => {
   let infoFull = electronStore_userApi.get('userApis') as LX.UserApi.UserApiInfoFull[]
   let requiredUpdate = false
   if (infoFull) {
+    // —— 内置源补齐 ——
+    // 老用户的 store 里已经有自己导入的源，不会走下面的默认值分支，
+    // 内置源就永远不会出现。这里按 id 缺啥补啥，并写回 store。
+    const existIds = new Set(infoFull.map(api => api.id))
+    const builtinIds = BUILTIN_API_IDS as readonly string[]
+    const missing = defaultUserApis.filter(api => builtinIds.includes(api.id) && !existIds.has(api.id))
+    if (missing.length) {
+      infoFull = [...missing, ...infoFull]
+      requiredUpdate = true
+    }
     for (let i = 0; i < infoFull.length; i++) {
       const api = infoFull[i]
       if (api.version != null) continue
@@ -129,6 +139,10 @@ export const importApi = async(scriptRaw: string): Promise<LX.UserApi.UserApiInf
 }
 
 export const removeApi = (ids: string[]) => {
+  // 内置源不允许删除（删了下次启动还会回来，不如直接挡住）
+  const BUILTIN_API_IDS = ['user_api_fanyin_builtin']
+  ids = ids.filter(id => !BUILTIN_API_IDS.includes(id))
+  if (!ids.length) return
   if (!userApis) return
   for (let index = userApis.length - 1; index > -1; index--) {
     if (ids.includes(userApis[index].id)) {
