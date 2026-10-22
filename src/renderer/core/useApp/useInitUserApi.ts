@@ -245,6 +245,13 @@ export default () => {
       //   let api = apiSourceInfo.find(api => !api.disabled)
       //   if (api) apiSource.value = api.id
       // }
+      // —— 内置源迁移：当前音源已失效（如旧默认值 'temp'）时，切到内置源 ——
+      const BUILTIN_API_IDS = ['user_api_fanyin_builtin'] // 与 main/modules/userApi/config/index.ts 保持一致
+      const validIds = list.map(a => a.id)
+      if (!validIds.includes(appSetting['common.apiSource'])) {
+        const builtin = list.find(a => BUILTIN_API_IDS.includes(a.id))
+        if (builtin) void setUserApi(builtin.id)
+      }
       userApi.list = list
     }).catch(err => {
       console.log(err)
