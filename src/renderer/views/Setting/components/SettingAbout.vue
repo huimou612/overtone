@@ -46,7 +46,13 @@ dd
   .p.small
     | ·&nbsp;
     span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/chthollyphile/folia-major')") Folia
-    | &nbsp;—— AI 歌词处理与音源分离能力
+    | &nbsp;—— AI 歌词处理与音源分离能力，作者&nbsp;
+    strong 冬霧
+
+  br
+  .p.small.by
+    | By:&nbsp;
+    strong.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/huimou612')") huimou612
 </template>
 
 <script>
