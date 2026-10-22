@@ -50,7 +50,7 @@
 - **AI 凭据管理** —— 用 Electron `safeStorage`（Windows DPAPI / macOS Keychain / Linux libsecret）加密存储 API Key，界面只拿得到「配没配」
 - **音源分离** —— HTDemucs，跑本地 Python sidecar，把一首歌拆成人声与伴奏并各导出一个文件
 - **个性化外壳** —— 可定制的入场动画、视频壁纸（模糊 / 遮罩）、经典 / 个性双档外观、跟随封面取色
-- **封面墙 + Lattice 歌词**（v0.3）—— 海报墙（悬停放大 / 单击播放 / 双击进歌词）、全屏逐字歌词、
+- **封面墙 + Lattice 歌词**（v0.2）—— 海报墙（悬停放大 / 单击播放 / 双击进歌词）、全屏逐字歌词、
   右侧四页签面板（封面 / 音效 / 列表 / 时间线）、可缩放控制条、粒子与变色背景
 
 前两项与第三项的入口都在侧栏的**工作台**（看状态、开能力）；播放详情页底部另有一行常驻
@@ -58,7 +58,7 @@
 
 ---
 
-## v0.3 新增：封面墙与 Lattice 歌词
+## v0.2 新增：封面墙与 Lattice 歌词
 
 这一版的主要工作，是把 [Folia](https://github.com/chthollyphile/folia-major) 那种「看着封面听歌」的体验，
 接进 [LX Music](https://github.com/lyswhut/lx-music-desktop) 的桌面外壳里 —— 操作习惯仍然是 LX，
@@ -374,6 +374,6 @@ npm run pack:win:setup
 - [LX Music（落雪音乐）](https://github.com/lyswhut/lx-music-desktop) —— 落雪无痕 (lyswhut) 及所有贡献者。
   桌面外壳、播放器内核、列表与音源机制、桌面歌词、主题系统都来自这里。
 - [Folia](https://github.com/chthollyphile/folia-major) —— 冬霧 (chthollyphile) 及所有贡献者。
-  AI 能力之外，v0.3 的海报墙、全屏歌词、歌词时间线、灵动岛式控制条的交互与视觉也参考了它。
+  AI 能力之外，v0.2 的海报墙、全屏歌词、歌词时间线、灵动岛式控制条的交互与视觉也参考了它。
 
 没有这两个项目，就没有泛音。
