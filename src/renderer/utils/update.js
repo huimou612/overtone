@@ -20,10 +20,15 @@ const address = [
   [`https://gcore.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
 ]
 
+// 缓存穿透：版本源（raw.githubusercontent / jsdelivr）都会带缓存，
+// 发版后不加时间戳的话客户端可能长时间读到旧版本号，表现为「一直已是最新」。
+const bustCache = url => `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`
+
 const request = async(url, retryNum = 0) => {
   return new Promise((resolve, reject) => {
-    httpGet(url, {
+    httpGet(bustCache(url), {
       timeout: 10000,
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
     }, (err, resp, body) => {
       if (err || resp.statusCode != 200) {
         ++retryNum >= 3
