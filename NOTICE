@@ -34,6 +34,12 @@ Copyright (C) 2026 huimou612
    aiTextClient）、AI 凭据安全存储（Electron safeStorage）、音源分离
    （HTDemucs + onnxruntime）等 AI 能力，在设计思路与实现上参考并移植自该项目。
 
+   另：本项目的「Folia Lattice 歌词视觉」（源码位于 slice/lattice-lyrics/
+   与 slice/folia-viewer/，经独立窗口加载）直接复制改编自该项目的
+   src/components/app/lattice/ 与 src/components/visualizer/ 等目录，
+   适用相同的 GNU Affero General Public License v3.0，版权声明见
+   上述目录内各文件头部及本文件第 2 节。
+
 --------------------------------------------------------------------------------
 3. 许可证兼容性说明
 --------------------------------------------------------------------------------

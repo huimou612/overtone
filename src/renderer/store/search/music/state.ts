@@ -59,6 +59,12 @@ export const maxPages: Partial<Record<LX.OnlineSource, number>> = {}
 export const initSearchSources = (userApiSourceIds: LX.OnlineSource[] = []) => {
   const ids: LX.OnlineSource[] = []
   for (const source of music.sources) {
+    // 开放曲库（ov / Openverse）不进搜索页：
+    //  · 直连 api.openverse.org 会长时间挂住不返回（必须挂代理才能用），
+    //    表现为一个永远「加载中」的死 Tab；
+    //  · 它还会拖死聚合搜索 —— 聚合是 Promise.all，一个源不返回就永远等不到结果。
+    // 曲库内容以英文为主，中文关键词本来就搜不到，所以直接不展示。
+    if (source.id === 'ov') continue
     if (!music[source.id as LX.OnlineSource]?.musicSearch) continue
     ids.push(source.id as LX.OnlineSource)
   }

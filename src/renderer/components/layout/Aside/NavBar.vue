@@ -2,11 +2,10 @@
   <div ref="dom_menu" :class="$style.menu">
     <ul :class="$style.list" role="toolbar">
       <li v-for="item in menus" :key="item.to" :class="$style.navItem" role="presentation">
-        <router-link :class="[$style.link, {[$style.active]: $route.meta.name == item.name}]" role="tab" :aria-selected="$route.meta.name == item.name" :to="item.to" :aria-label="item.tips">
+        <router-link :class="[$style.link, {[$style.active]: $route.meta.name == item.name}]" role="tab" :aria-selected="$route.meta.name == item.name" :to="item.to" :aria-label="item.tips" :title="item.tips" @click="item.onActivate?.()">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
             <use :xlink:href="item.icon" />
           </svg>
-          <span :class="$style.navText">{{ item.tips }}</span>
         </router-link>
       </li>
     </ul>
@@ -17,15 +16,18 @@
 import { appSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
 import { ref, computed } from '@common/utils/vueTools'
+import { useIconSize } from '@renderer/utils/compositions/useIconSize'
+import { wallOpenRequest } from '@renderer/store/songWall'
 
 export default {
   name: 'NavBar',
   setup() {
     const t = useI18n()
     const dom_menu = ref<HTMLElement>()
+    const iconSize = useIconSize(dom_menu, 0.32)
 
     const menus = computed(() => {
-      const size = 20
+      const size = iconSize.value
       return [
         {
           to: '/search',
@@ -73,15 +75,16 @@ export default {
           name: 'Download',
         },
         {
-          // 泛音的能力入口。排在设置之前：这是「这个软件与洛雪有什么不同」的答案，
-          // 而不是一个配置项。
-          to: '/workbench',
-          tips: t('workbench__nav'),
-          icon: '#icon-workbench',
+          // 封面墙入口（用户指定：覆盖原工作台位）。跳到我的列表并消费打开请求标记，
+          // 由 List 视图展开全屏封面墙。
+          to: '/list',
+          tips: t('wall__open'),
+          icon: '#icon-wall',
           iconSize: '0 0 24 24',
           size,
           enable: true,
-          name: 'Workbench',
+          name: 'SongWall',
+          onActivate: () => { wallOpenRequest.value = true },
         },
         {
           to: '/setting',
@@ -122,41 +125,40 @@ export default {
   &:last-child {
     margin-bottom: 0;
   }
-  // background-color: pink;
-  // dt {
-  //   padding-left: 5px;
-  //   font-size: 11px;
-  //   transition: @transition-normal;
-  //   transition-property: color;
-  //   color: @color-theme-font-label;
-  //   .mixin-ellipsis-1();
-  // }
 }
 .navItem {
   position: relative;
+  &:before {
+    content: '';
+    display: block;
+    width: 100%;
+    padding-bottom: 84%;
+  }
 }
 .link {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
-  border-radius: 10px;
+  position: absolute;
+  left: 0%;
+  top: 0%;
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
 
   transition: @transition-fast;
   transition-property: background-color, opacity;
   color: var(--color-nav-font);
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   .mixin-ellipsis-1();
   &:before {
     .mixin-after();
     left: 0;
-    top: 20%;
-    bottom: 20%;
+    top: 0;
     width: 3px;
-    height: auto;
+    height: 100%;
     background-color: var(--color-primary-dark-200-alpha-700);
     border-radius: 4px;
     transform: translateX(-100%);
@@ -190,27 +192,8 @@ export default {
     background-color: var(--color-primary-light-300-alpha-600);
   }
 }
-.navText {
-  flex: 1;
-  min-width: 0;
-  font-size: 14.5px;
-  font-weight: 500;
-  line-height: 1.25;
-  letter-spacing: .3px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  opacity: 1;
-}
 .link svg {
   flex: none;
 }
-
-// .icon {
-//   // margin-bottom: 5px;
-//   &> svg {
-//     width: 32%;
-//   }
-// }
 
 </style>

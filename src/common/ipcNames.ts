@@ -49,6 +49,8 @@ const modules = {
     max: 'max',
     max_toggle: 'max_toggle',
     max_status: 'max_status',
+    open_folia_window: 'open_folia_window',
+    close_folia_window: 'close_folia_window',
     fullscreen: 'fullscreen',
     set_app_name: 'set_app_name',
     clear_cache: 'clear_cache',

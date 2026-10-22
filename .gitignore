@@ -71,3 +71,9 @@ publish/assets
 publish/utils/githubToken.js
 
 src/**/*-internal.js
+
+# 本地素材/切片目录（不参与构建，也不进仓库）
+slice/
+
+# 本地验收截图（体积大，不进仓库）
+notes/preview/

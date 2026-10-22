@@ -60,6 +60,56 @@ audio is never uploaded.
 
 ---
 
+## New in v0.2: Poster Wall & Lattice Lyrics
+
+This release brings Folia's "listen by looking at the cover" experience into the LX Music shell.
+The habits stay the same — the listening screen is rebuilt.
+
+> Inspired by [LX Music (落雪音乐)](https://github.com/lyswhut/lx-music-desktop) for the player core and shell,
+> and [Folia](https://github.com/chthollyphile/folia-major) for the poster wall / full-screen lyrics / timeline.
+
+### Poster wall
+
+- Open it from the sidebar; the current list is laid out as a wall of posters
+- **Hover**: the cover scales up, gets a white outline, and drifts slightly with the pointer (parallax)
+- **Single click**: play that track
+- **Double click**: play it and enter the Lattice lyric screen
+- Drag the window by the top bar; move the pointer to the **top-right corner** to reveal minimize / maximize / close
+
+### Lattice lyric screen
+
+- Large centered lyrics with per-word fill, plus one context line above and below
+- Background: blurred cover + slowly shifting color layer + drifting particles
+- Right-hand panel with four tabs:
+
+  | Tab | Contents |
+  | --- | --- |
+  | Cover | Artwork, title, artist, album |
+  | Audio FX | Sound-effect window (convolution reverb / equalizer / pitch / 3D panning), volume, lyric kind, timeline offset |
+  | Queue | Play queue as a simple title/artist list, current track highlighted, click to play |
+  | Timeline | Lyrics in time order; click a line to jump there; "Full timeline" for the large view |
+
+- **Bottom bar**: a small pill by default (prev / play / next + title); hover it to expand into the full bar (draggable progress, time, panel toggle, open player)
+- When the panel is closed, a round button at the bottom-right reopens it
+- **Timeline offset**: nudge with `◀` / `▶` in ±100 ms steps; click the value to reset
+
+### Cheat sheet
+
+| Action | Result |
+| --- | --- |
+| Sidebar → Poster wall | Enter the wall |
+| Click a cover | Play the track |
+| Double-click a cover | Play and enter Lattice |
+| Pointer near the top-right corner | Reveal window buttons |
+| Hover the bottom pill | Expand the full control bar |
+| Click the four panel icons | Switch Cover / Audio FX / Queue / Timeline |
+| Click a timeline line | Seek to that line |
+| `P` | Toggle the right panel |
+| `ESC` | Step back: timeline → panel → lyric screen |
+| Panel `✕` | Collapse the panel only |
+
+---
+
 ## How online playback works
 
 Overtone **ships no music-platform interfaces** (this is a hard rule of the project, not a

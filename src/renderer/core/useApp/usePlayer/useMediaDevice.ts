@@ -3,7 +3,6 @@ import {
   watch,
 } from '@common/utils/vueTools'
 import { pause } from '@renderer/core/player/action'
-import { dialog } from '@renderer/plugins/Dialog'
 import { setMediaDeviceId } from '@renderer/plugins/player'
 import { isPlay } from '@renderer/store/player/state'
 import { appSetting, saveMediaDeviceId } from '@renderer/store/setting'
@@ -28,13 +27,11 @@ export default () => {
     }
 
     if (!device && !devices.length && !isShowingTipAlert) {
+      // 用户要求：不再弹「音频输出设备为空」的对话框（每次启动都弹太打扰）。
+      // 只在控制台留一行，方便排查播放无声的问题。
       isShowingTipAlert = true
-      void dialog({
-        message: window.i18n.t('media_device__empty_device_tip'),
-        confirmButtonText: window.i18n.t('ok'),
-      }).finally(() => {
-        isShowingTipAlert = false
-      })
+      console.warn('[media-device] 音频输出设备为空，若播放无声请检查声卡驱动')
+      isShowingTipAlert = false
     }
     return device ? { label: device.label, deviceId: device.deviceId } : { label: '', deviceId: '' }
   }

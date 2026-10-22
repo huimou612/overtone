@@ -854,6 +854,21 @@ export const maxWindowToggle = () => {
 /**
  * 订阅窗口最大化状态变化（还原/最大化按钮图标切换）
  */
+/**
+ * 打开 Folia 视觉独立窗口（路线 B 阶段一）。主进程单实例：重复调用只聚焦。
+ */
+export const openFoliaWindow = () => {
+  rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.open_folia_window)
+}
+
+/**
+ * 关闭 Folia 视觉独立窗口。
+ */
+export const closeFoliaWindow = () => {
+  rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.close_folia_window)
+}
+
+
 export const onMaxStatus = (listener: LX.IpcRendererEventListenerParams<boolean>): RemoveListener => {
   rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.max_status, listener)
   return () => {

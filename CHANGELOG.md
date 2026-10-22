@@ -6,6 +6,40 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.2.0](https://github.com/huimou612/overtone/compare/v0.1.0...v0.2.0) - 2026-10-22
+
+「看封面听歌」的一版。把 [Folia](https://github.com/chthollyphile/folia-major) 的海报墙与全屏歌词
+接进 [LX Music](https://github.com/lyswhut/lx-music-desktop) 的外壳，操作习惯不变，听歌界面重做。
+
+### 新增
+
+- **封面墙**：当前列表铺成海报墙；悬停放大 + 描边 + 封面视差；单击播放、双击进入歌词界面
+- **Lattice 歌词界面**（沉浸式歌词与封面墙歌词合并为同一界面）：
+  - 居中大字歌词、逐字填充、上下文行
+  - 背景：封面模糊铺底 + 会变色的色调层（hue 缓慢漂移）+ canvas 2D 飘浮粒子
+  - 右侧常驻面板四页签：封面（歌名/歌手/专辑）、音效、播放列表、时间线
+  - 底部控制条：默认小胶囊，悬停展开为完整控制条（可拖动进度）
+  - 时间轴偏移：±100ms 微调，点数值归零
+  - 时间线弹窗：中间竖线 + 左右交错卡片，当前句高亮、自动跟随、点卡片跳转
+- **音效设置窗口**：环境混响 / 均衡器 / 音调升降 / 3D 环绕，两栏卡片布局
+- **播放队列**：标题 + 歌名/歌手两行列表，当前曲高亮，点击即播（支持上千首）
+- **隐藏式窗口控制**：封面墙与歌词界面右上角，鼠标靠近才浮出 最小化 / 最大化 / 关闭
+- 新增文案键 `timeline.title`、`maximize`（简中/繁中/英）
+
+### 变更
+
+- 「沉浸式歌词」入口（播放详情页按钮）现在打开的就是 Lattice 界面，不再有第二套歌词页面
+- 面板 ✕ 改为「只收起面板」，不再退出歌词界面；面板关闭后右下角常驻圆形按钮可重新打开
+- 歌词类型与时间轴偏移只在「音效」页签内显示
+- 封面墙顶栏收窄拖动区，保证右上角窗口按钮可交互
+
+### 修复
+
+- 修复歌词界面/封面墙中真实鼠标无法触发右上角窗口按钮的问题（拖动区覆盖导致系统吞事件）
+- 修复「音频输出设备为空」弹窗每次启动都打扰的问题（改为仅控制台日志）
+- 修复 ESC 一次同时关闭歌词界面与封面墙的问题（改为逐级退出）
+- 修复面板内图标因 sprite 坐标系不一致而显示异常的问题
+
 ## [0.1.0](https://github.com/huimou612/overtone/compare/v0.0.0...v0.1.0) - 2026-10-12
 
 泛音（Overtone）首个开发版本。基于 [LX Music](https://github.com/lyswhut/lx-music-desktop)（Apache-2.0）

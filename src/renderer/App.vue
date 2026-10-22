@@ -24,9 +24,9 @@
     <layout-sync-auth-code-modal />
     <layout-play-detail />
   </div>
-  <!-- 沉浸式歌词是独立的展示模式，不全屏时也应该盖住整个窗口，
+  <!-- 统一歌词界面（沉浸式歌词 + Lattice 合并）：不只属于封面墙，全屏展示，
        所以挂在 #container 之外（#root 下），和 layout-app-background 同一层思路 -->
-  <layout-immersive-lyric />
+  <lattice-lyric :visible="isShowImmersiveLyric" @close="setShowImmersiveLyric(false)" />
 </template>
 
 <script setup>
@@ -34,6 +34,9 @@ import { onMounted } from '@common/utils/vueTools'
 // import BubbleCursor from '@common/utils/effects/cursor-effects/bubbleCursor'
 // import '@common/utils/effects/snow.min'
 import { isPersonalMode } from '@renderer/store'
+import { isShowImmersiveLyric } from '@renderer/store/player/state'
+import { setShowImmersiveLyric } from '@renderer/store/player/action'
+import LatticeLyric from './components/layout/LatticeLyric/index.vue'
 import useApp from '@renderer/core/useApp'
 
 useApp()
@@ -148,9 +151,6 @@ body {
 #left {
   flex: none;
   width: @width-app-left;
-  // 保底宽度：窄窗口下 6.6% 会缩到放不下「图标+文字标签」（文字被截成单字）。
-  // 128px = 图标 20 + gap 14 + padding 28 + 四字标签（我的列表）≈ 60px + 余量
-  min-width: 128px;
 }
 
 /* ── 个性模式（沉浸形态） ──────────────────────────────────────

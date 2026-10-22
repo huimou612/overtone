@@ -11,6 +11,8 @@ import registerAi from './ai'
 import registerAnalysis from './analysis'
 // 泛音新增：跟随封面取色（把封面读成小图交给渲染层量化）
 import registerCoverColor from './coverColor'
+// 泛音新增：Folia 视觉独立窗口（路线 B 阶段一）
+import registerFolia from './folia'
 
 let isRegistered = false
 export default () => {
@@ -25,5 +27,6 @@ export default () => {
   registerAi()
   registerAnalysis()
   registerCoverColor()
+  registerFolia()
   isRegistered = true
 }

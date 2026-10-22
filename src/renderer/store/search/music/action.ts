@@ -86,6 +86,26 @@ export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
   return []
 }
 
+/**
+ * 单源搜索超时保护。
+ *
+ * 聚合搜索是 `Promise.all`：只要有一个源永远不返回（比如需要代理才能连的源、
+ * 或者脚本卡死的自定义源），整个聚合就永远停在「加载中」。
+ * 这里给每个源加超时，超时按「该源无结果」处理，其余源照常展示。
+ */
+const SEARCH_SOURCE_TIMEOUT = 9000
+const withTimeout = async<T>(task: Promise<T>, source: LX.OnlineSource): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => { reject(new Error(`search timeout: ${source}`)) }, SEARCH_SOURCE_TIMEOUT)
+  })
+  try {
+    return await Promise.race([task, timeout])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
+
 export const search = async(text: string, page: number, sourceId: LX.OnlineSource | 'all'): Promise<LX.Music.MusicInfo[]> => {
   // 兜底：路由上的 source 与 listInfos 不同步时（刚切完自定义源、旧链接里的 source），
   // 会拿到 undefined 再往它身上写字段 → TypeError。聚合视图始终存在，回落到它。
@@ -98,7 +118,10 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
     let task = []
     for (const source of sources) {
       if (source == 'all') continue
-      task.push((music[source]?.musicSearch.search(text, page, listInfos.all.limit) ?? Promise.reject(new Error('source not found: ' + source))).catch((error: any) => {
+      task.push(withTimeout<SearchResult>(
+        music[source]?.musicSearch.search(text, page, listInfos.all.limit) ?? Promise.reject(new Error('source not found: ' + source)),
+        source,
+      ).catch((error: any) => {
         console.log(error)
         return {
           allPage: 1,
@@ -117,7 +140,7 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
     if (listInfo.key == key && listInfo.list.length) return listInfo.list
     listInfo.noItemLabel = window.i18n.t('list__loading')
     listInfo.key = key
-    return music[sourceId].musicSearch.search(text, page, listInfo.limit).then((data: SearchResult) => {
+    return withTimeout<SearchResult>(music[sourceId].musicSearch.search(text, page, listInfo.limit), sourceId).then((data: SearchResult) => {
       if (key != listInfo.key) return []
       return setList(data, page, text)
     }).catch((error: any) => {

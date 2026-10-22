@@ -20,7 +20,7 @@ import TagList from './components/TagList.vue'
 import SortTab from './components/SortTab.vue'
 import OpenListModal from './components/OpenListModal.vue'
 import ListView from './ListView.vue'
-import { sources, listInfo, isVisibleListDetail } from '@renderer/store/songList/state'
+import { sources, listInfo, isVisibleListDetail, sortList } from '@renderer/store/songList/state'
 import { sourceNames } from '@renderer/store'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 
@@ -59,6 +59,10 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
       _sortId = setting.sortId
       _page = '1'
     }
+
+    // 泛音修复：从未选过排序时 sortId 为空串，ListView 的 watch 会因 `!sortId` 直接 return，
+    // 导致首次进入歌单永远空白（上游 bug）。兜底取该源第一个排序（kw: 最新）。
+    if (!_sortId) _sortId = sortList[_source as LX.OnlineSource]?.[0]?.id ?? 'new'
 
     next({
       path: to.path,

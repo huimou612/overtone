@@ -1,10 +1,10 @@
 {
   "name": "overtone",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "泛音 —— 带 AI 音源分离与智能歌词处理的本地音乐播放器",
   "main": "./dist/main.js",
   "scripts": {
-    "test": "npm run test:lxlrc && npm run test:ai && npm run test:analysis && npm run test:immersive && npm run test:panel",
+    "test": "npm run test:lxlrc && npm run test:ai && npm run test:analysis && npm run test:immersive && npm run test:panel && npm run test:folia",
     "test:lxlrc": "node build-config/test-lxlrc.cjs",
     "test:ai": "node build-config/test-ai-service.cjs",
     "test:analysis": "node build-config/test-analysis.cjs",
@@ -71,7 +71,8 @@
     "lint:fix": "eslint --ext .ts,.js,.vue -f node_modules/eslint-formatter-friendly --fix src",
     "postinstall": "node build-config/postinstall.js",
     "dp": "cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://127.0.0.1:2081 npm run pack",
-    "up": "cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://127.0.0.1:2081 npm i"
+    "up": "cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://127.0.0.1:2081 npm i",
+    "test:folia": "node build-config/test-folia-bridge.cjs"
   },
   "browserslist": [
     "Electron 22.3.0"
