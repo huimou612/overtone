@@ -135,7 +135,7 @@ The correctness and availability of that URL are the source's responsibility, no
 
 > This boundary is deliberate. The AI lyric segmentation and source separation that Folia
 > brings are technically far more interesting than wiring up one more platform endpoint -
-> and the latter would drag the whole project into legal risk. See "Red lines" below.
+> and the latter would drag the whole project into legal risk. See "Boundaries" below.
 
 ---
 
@@ -309,17 +309,44 @@ is provided for convenience only.**
 
 ---
 
-## Red lines
+## Boundaries
 
-The following **never** enter this repository:
+What this project does and does not do — a checkable statement of the current state rather
+than a promise of "never". Where this text and the code disagree, the code wins.
 
-1. Any reverse-engineered interface implementation, encryption algorithm, signing logic, or
-   private-protocol code for any music platform.
-2. Any copyrighted material — audio files, lyric data, album art.
-3. Any technique that circumvents a platform's copyright protection or paywall.
+### The current facts (revised 2026-10-22)
 
-Online playback is exposed only through the "custom source" mechanism, and the source is
-provided by the user.
+- **Search / charts / playlists**: the repository ships the seven platform interface
+  implementations inherited from upstream LX Music (kw / kg / tx / wy / mg / bd / xm),
+  including their request protocols and signing algorithms. They do send search and
+  chart requests to those platforms' servers.
+- **Audio URLs**: this project does not parse or crack any platform's audio links. At play
+  time the URL comes from a **"custom source" the user imports**; Overtone only hands the
+  source a title and artist, and plays whatever URL comes back.
+- **Lyrics and artwork**: likewise from the custom source, or from data already on the
+  user's machine.
+- **Why those interfaces stay**: they are the only provider of search. Phase 5 once deleted
+  all seven platforms under the old "no built-in platform sources" wording and kept only
+  the open catalogue `ov` — the search page then showed nothing but "open catalogue",
+  which users experienced as "search finds no songs". That deletion was reverted on
+  2026-10-16.
+
+### What we still do not do
+
+1. **No copyrighted material in the repository** — not a single audio file, lyric line, or cover.
+2. **No circumvention** — no cracking, no paywall or membership bypass, no DRM removal.
+3. **No new platform implementations** — to add a platform (netease / qq / kugou / migu /
+   kuwo / bodian, …), write a "custom source" that runs in the `src/renderer-scripts/`
+   sandbox instead of touching the core.
+4. **No commercial distribution** — see section 8 of the supplementary agreement.
+
+### Who carries the risk
+
+Because the repository contains platform interface calls and signing algorithms, **the
+consequences of distributing, deploying or using this project are yours**: assess your own
+legal environment and follow local law. See sections 1 and 6 of the supplementary agreement.
+
+Music platforms have a hard time as it is. Respect copyright; support the official releases.
 
 ---
 
