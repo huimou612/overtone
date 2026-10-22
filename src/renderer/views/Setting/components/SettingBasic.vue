@@ -560,18 +560,18 @@ export default {
 // ── 自定义源：左侧列表 + 右侧内置源说明卡 ──────────────────────
 .sourceWrap {
   display: flex;
-  flex-flow: row nowrap;
+  flex-flow: row wrap; // 窗口窄时卡片自动换到列表下方，避免横向溢出把音源列表挤出视野
   align-items: flex-start;
-  gap: 28px;
+  gap: 20px 28px;
 }
 .sourceList {
-  flex: none;
-  min-width: 300px;
+  flex: 1 1 300px;
+  min-width: 0;
   max-width: 440px;
 }
 .builtinCard {
-  flex: 1 1 0;
-  min-width: 210px;
+  flex: 1 1 240px;
+  min-width: 0;
   max-width: 340px;
   padding: 14px 16px;
   border-radius: 10px;
