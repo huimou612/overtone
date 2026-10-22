@@ -17,6 +17,16 @@ material-modal(:show="modelValue" bg-close teleport="#view" @close="handleClose"
             use(xlink:href="#icon-delete")
     div(v-else :class="$style.content")
       div(:class="$style.noitem") {{ $t('user_api__noitem') }}
+    div(:class="$style.safety")
+      h3(:class="$style.safetyTitle")
+        span(:class="$style.safetyBadge") 说明
+        | 网络公开来源
+      ul(:class="$style.safetyList")
+        li 内置的「泛音聚合音源」聚合的是互联网上公开的第三方接口，与本项目无隶属关系，也不代表本项目的立场。
+        li 这些接口可能随时限流、变更或失效；播放失败不代表软件故障，可在「音乐来源」里换一个源。
+        li 本项目不会上传你的账号、歌单或本地文件；播放时只把歌名与歌手交给音源，取回播放地址。
+        li 自定义源脚本在本机执行。导入来路不明的脚本有风险，请只导入你信任的源。
+        li 音乐平台不易，请尊重版权、支持正版。
     div(:class="$style.note")
       p(:class="[$style.ruleLink]")
         | {{ $t('user_api__readme') }}
@@ -214,6 +224,42 @@ export default {
     width: 60%;
   }
 }
+.safety {
+  margin-top: 15px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--color-primary-background);
+  color: var(--color-font);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.safetyTitle {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.safetyBadge {
+  flex: none;
+  padding: 0 6px;
+  line-height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 400;
+}
+.safetyList {
+  margin-top: 8px;
+  padding-left: 16px;
+  list-style: disc;
+  opacity: .85;
+
+  li + li { margin-top: 4px; }
+}
+
 .note {
   padding: 0 7px;
   margin-top: 15px;
