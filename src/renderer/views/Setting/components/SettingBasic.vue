@@ -37,17 +37,35 @@ dd
 
 dd
   h3#basic_source {{ $t('setting__basic_source') }}
-  div
-    .gap-top(v-for="item in apiSources" :key="item.id")
-      base-checkbox(
-        :id="`setting_api_source_${item.id}`" name="setting_api_source"
-        need :model-value="appSetting['common.apiSource']" :disabled="item.disabled" :value="item.id" :aria-label="item.label" @update:model-value="updateSetting({'common.apiSource': $event})")
-        span(:class="$style.sourceLabel")
-          | {{ item.name }}
-          span(v-if="item.desc" :class="$style.desc") {{ item.desc }}
-          span(v-if="item.statusLabel" :class="$style.status") {{ item.statusLabel }}
-    .p.gap-top
-      base-btn.btn(min @click="isShowUserApiModal = true") {{ $t('setting__basic_source_user_api_btn') }}
+  div(:class="$style.sourceWrap")
+    div(:class="$style.sourceList")
+      .gap-top(v-for="item in apiSources" :key="item.id")
+        base-checkbox(
+          :id="`setting_api_source_${item.id}`" name="setting_api_source"
+          need :model-value="appSetting['common.apiSource']" :disabled="item.disabled" :value="item.id" :aria-label="item.label" @update:model-value="updateSetting({'common.apiSource': $event})")
+          span(:class="$style.sourceLabel")
+            | {{ item.name }}
+            span(v-if="item.desc" :class="$style.desc") {{ item.desc }}
+            span(v-if="item.statusLabel" :class="$style.status") {{ item.statusLabel }}
+      .p.gap-top
+        base-btn.btn(min @click="isShowUserApiModal = true") {{ $t('setting__basic_source_user_api_btn') }}
+    aside(:class="$style.builtinCard")
+      div(:class="$style.builtinHead")
+        span(:class="$style.builtinTag") 内置
+        strong(:class="$style.builtinName") 泛音聚合音源
+        span(v-if="builtinApi && builtinApi.version" :class="$style.builtinVer") {{ /^\d/.test(builtinApi.version) ? `v${builtinApi.version}` : builtinApi.version }}
+      p(:class="$style.builtinDesc") 随软件一起提供，无需导入。合并多个公开音源后端，按平台并发回退，失败自动降音质。
+      ul(:class="$style.builtinMeta")
+        li
+          span(:class="$style.metaKey") 支持平台
+          span(:class="$style.metaVal") 酷我 · 酷狗 · QQ · 网易 · 咪咕
+        li
+          span(:class="$style.metaKey") 提供内容
+          span(:class="$style.metaVal") 仅播放地址，不含任何音频
+        li
+          span(:class="$style.metaKey") 稳定性
+          span(:class="$style.metaVal") 依赖第三方公开接口，可能随时失效
+      p(:class="$style.builtinTip") 播放失败时可在左侧切换到其它源；第三方源的可信度请自行判断。
 
 dd
   h3#basic_window_size {{ $t('setting__basic_window_size') }}
@@ -258,6 +276,8 @@ export default {
 
       return status
     }
+    // 右侧说明卡用：内置源条目（拿版本号显示）
+    const builtinApi = computed(() => userApi.list.find(api => api.id === 'user_api_fanyin_builtin'))
     const apiSources = computed(() => {
       return [
         ...apiSourceInfo.map(api => ({
@@ -347,6 +367,7 @@ export default {
       windowSizeList,
       langList,
       sourceNameTypes,
+      builtinApi,
       controlBtnPositionList,
       fontList,
       isFullscreen,
@@ -533,6 +554,88 @@ export default {
       }
     }
   }
+}
+
+
+// ── 自定义源：左侧列表 + 右侧内置源说明卡 ──────────────────────
+.sourceWrap {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+  gap: 28px;
+}
+.sourceList {
+  flex: none;
+  min-width: 300px;
+  max-width: 440px;
+}
+.builtinCard {
+  flex: 1 1 0;
+  min-width: 210px;
+  max-width: 340px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--color-primary-background);
+  border: 1px solid var(--color-primary-light-400-alpha-700);
+  color: var(--color-font);
+}
+.builtinHead {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 8px;
+}
+.builtinTag {
+  flex: none;
+  padding: 0 6px;
+  line-height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: 11px;
+}
+.builtinName {
+  font-size: 14px;
+  font-weight: 700;
+}
+.builtinVer {
+  font-size: 12px;
+  opacity: .65;
+}
+.builtinDesc {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  opacity: .85;
+}
+.builtinMeta {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+
+  li {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 8px;
+
+    + li { margin-top: 4px; }
+  }
+}
+.metaKey {
+  flex: none;
+  width: 58px;
+  opacity: .6;
+}
+.metaVal {
+  flex: auto;
+  min-width: 0;
+  opacity: .9;
+}
+.builtinTip {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: .55;
 }
 
 .sourceLabel {

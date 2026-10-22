@@ -25,13 +25,22 @@ export const getUserApis = (): LX.UserApi.UserApiInfo[] => {
     // —— 内置源补齐 ——
     // 老用户的 store 里已经有自己导入的源，不会走下面的默认值分支，
     // 内置源就永远不会出现。这里按 id 缺啥补啥，并写回 store。
-    const existIds = new Set(infoFull.map(api => api.id))
     const builtinIds = BUILTIN_API_IDS as readonly string[]
+    const existIds = new Set(infoFull.map(api => api.id))
     const missing = defaultUserApis.filter(api => builtinIds.includes(api.id) && !existIds.has(api.id))
     if (missing.length) {
       infoFull = [...missing, ...infoFull]
       requiredUpdate = true
     }
+    // 内置源随 App 更新：store 里的版本和当前打包的版本不一致时，用新的覆盖
+    // （否则用户升级了 App，内置音源脚本还停在旧版，永远拿不到修好的后端）
+    infoFull = infoFull.map(api => {
+      if (!builtinIds.includes(api.id)) return api
+      const latest = defaultUserApis.find(def => def.id === api.id)
+      if (!latest || String(latest.version) === String(api.version)) return api
+      requiredUpdate = true
+      return latest
+    })
     for (let i = 0; i < infoFull.length; i++) {
       const api = infoFull[i]
       if (api.version != null) continue
