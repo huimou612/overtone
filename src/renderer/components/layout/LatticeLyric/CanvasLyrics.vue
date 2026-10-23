@@ -31,6 +31,10 @@ export default {
     styleName: { type: String, default: 'standard' },
     scale: { type: Number, default: 1 },
     paused: { type: Boolean, default: false },
+    // 主题色覆盖（AI 主题/内置生成器输出）；为空则用默认白
+    themeBase: { type: String, default: '' },
+    themeWord: { type: String, default: '' },
+    themeGlow: { type: String, default: '' },
   },
   setup(props) {
     const canvas_ref = ref(null)
@@ -192,8 +196,8 @@ export default {
       const oy = centerY - layout.textHeight / 2
 
       const chorus = style === 'chorus'
-      const baseColor = active ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.34)'
-      const wordColor = chorus ? 'rgba(214,196,255,1)' : 'rgba(255,255,255,1)'
+      const baseColor = props.themeBase || (active ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.34)')
+      const wordColor = props.themeWord || (chorus ? 'rgba(214,196,255,1)' : 'rgba(255,255,255,1)')
 
       if (active && chorus) {
         for (const off of [-fontPx * 0.22, fontPx * 0.22]) {
