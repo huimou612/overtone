@@ -363,6 +363,7 @@
               <circle cx="12" cy="16" r="1.9" />
             </svg>
           </button>
+          <button :class="$style.openBtn" @click="handleOpenFolia">Folia 窗口</button>
           <button :class="$style.openBtn" @click="openPlayer">打开播放器</button>
         </template>
       </footer>
@@ -459,6 +460,7 @@ import { buildLyricTimeline, findActiveLineIndex } from '@renderer/core/immersiv
 import { getLineFill } from '@renderer/core/immersiveLyric/fill'
 import LyricLineView from '@renderer/components/layout/ImmersiveLyric/stage/LyricLineView.vue'
 import PanelVolume from '@renderer/components/layout/ImmersiveLyric/panel/PanelVolume.vue'
+import { openFoliaWindow } from '@renderer/utils/ipc'
 import AudioConvolution from '@renderer/components/common/SoundEffectBtn/AudioConvolution.vue'
 import BiquadFilter from '@renderer/components/common/SoundEffectBtn/BiquadFilter.vue'
 import PitchShifter from '@renderer/components/common/SoundEffectBtn/PitchShifter.vue'
@@ -817,6 +819,8 @@ export default {
       emit('close')
       setShowPlayerDetail(true)
     }
+    // Folia 视觉窗口入口（此前 openFoliaWindow 只有 IPC 定义、没有任何 UI 调用，窗口无从打开）
+    const handleOpenFolia = () => { openFoliaWindow() }
 
     // 底部播放条：悬停展开（离开留 180ms 缓冲，避免抖动）
     const handleBarEnter = () => {
@@ -945,6 +949,7 @@ export default {
       playNext,
       playPrev,
       openPlayer,
+      handleOpenFolia,
       progress,
       nowPlayTimeStr,
       maxPlayTimeStr,
