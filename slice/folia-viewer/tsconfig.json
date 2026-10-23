@@ -1,0 +1,60 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "paths": {
+      "react": [
+        "./node_modules/@types/react"
+      ],
+      "react/jsx-runtime": [
+        "./node_modules/@types/react/jsx-runtime"
+      ],
+      "react-dom": [
+        "./node_modules/@types/react-dom"
+      ],
+      "framer-motion": [
+        "./node_modules/framer-motion"
+      ],
+      "pixi.js": [
+        "./node_modules/pixi.js"
+      ],
+      "lucide-react": [
+        "./node_modules/lucide-react"
+      ],
+      "@chenglou/pretext": [
+        "./node_modules/@chenglou/pretext"
+      ],
+      "@chenglou/pretext/rich-inline": [
+        "./node_modules/@chenglou/pretext/dist/rich-inline.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "vite.config.ts",
+    "../lattice-lyrics/src"
+  ]
+}

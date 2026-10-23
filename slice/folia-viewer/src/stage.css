@@ -1,0 +1,100 @@
+/* 宿主舞台样式（只管宿主自己的 chrome，不碰切片内部样式）。 */
+
+/* 切片入口会渲染一个 .sr-only 无障碍文本（当前行全文），它在 Folia 本体里
+   靠全局工具类隐藏；切片 CSS 本身没有这条定义，宿主补上标准 visually-hidden。 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.folia-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  color: #e8e6f0;
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  /* 无边框窗口：整窗可拖动（交互元素各自 no-drag） */
+  -webkit-app-region: drag;
+}
+
+/* 封面模糊铺底（P1 最小背景层；正式背景模式在 P5 接入切片 backgrounds） */
+.folia-backdrop {
+  position: absolute;
+  inset: -40px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(48px) brightness(0.55) saturate(1.2);
+  z-index: 0;
+}
+.folia-backdrop-shade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
+  z-index: 0;
+}
+
+/* 切片的歌名/歌手元信息（.lattice-poster-copy）在海报墙外没有基础定位，
+   宿主给它一个舞台左上角的位置。 */
+.folia-stage .lattice-poster-copy {
+  position: absolute;
+  top: 28px;
+  left: 32px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+}
+.folia-stage .lattice-poster-copy strong {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.folia-stage .lattice-poster-copy small {
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+/* 右上角关闭热区：默认隐形，悬停才显（舞台保持无 chrome 感） */
+.folia-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 52px;
+  height: 44px;
+  z-index: 10;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.18s ease, background 0.18s ease;
+  -webkit-app-region: no-drag;
+}
+.folia-close:hover {
+  opacity: 1;
+  background: rgba(232, 17, 35, 0.85);
+}
+
+.folia-mock-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  z-index: 10;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}

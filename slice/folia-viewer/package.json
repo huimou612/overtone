@@ -1,0 +1,29 @@
+{
+  "name": "folia-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Folia lattice-lyrics host app for Overtone (路线 B / P1). Independent Vite + React + TS build; prod output copied to dist/folia/ by the main webpack build, dev served on :9090.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 9090",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 9090",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "^0.0.5",
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.544.0",
+    "pixi.js": "^8.14.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9"
+  }
+}

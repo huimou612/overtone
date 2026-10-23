@@ -1,0 +1,21 @@
+{
+  // 切片自有 tsconfig（2026-10-23，folia-viewer 接入时新增 —— doc 09 第 8 节预言的
+  // 「等切片有了自己的构建配置，给它一份自己的 tsconfig」）。
+  // 作用一：让 Vite/esbuild 在切片目录内就近命中本文件，而不是一路向上撞到
+  //         仓库根 tsconfig（其 extends 的 @tsconfig/recommended 切片侧并未安装）。
+  // 作用二：给编辑器/类型工具一个只属于切片的程序边界。
+  // 本文件不改变任何切片源码行为；folia-viewer 的类型解析仍由 viewer 的
+  // tsconfig（paths 映射）负责。
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"]
+}
