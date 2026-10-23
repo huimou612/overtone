@@ -75,9 +75,9 @@
             :active-index="activeIndex"
             :style-name="lyricStyle"
             :scale="lyricScale"
-            :theme-base="bgType === 'ai' && aiTheme ? aiTheme.baseColor : ''"
-            :theme-word="bgType === 'ai' && aiTheme ? aiTheme.wordColor : ''"
-            :theme-glow="bgType === 'ai' && aiTheme ? aiTheme.glowColor : ''"
+            :theme-base="themeBaseNow"
+            :theme-word="themeWordNow"
+            :theme-glow="themeGlowNow"
             :class="$style.canvasLyrics"
           />
           <TransitionGroup
@@ -181,7 +181,17 @@
                   @click="setBgType(t.key)"
                 >{{ t.label }}</button>
               </div>
-              <div :class="$style.presetHead">
+              <div v-if="bgType === 'custom'" :class="$style.tpEntry">
+                <button :class="$style.tpOpenBtn" @click="openThemePark">
+                  <svg viewBox="0 0 24 24" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                    <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+                  </svg>
+                  <span>{{ customTheme ? '编辑我的主题' : '创建我的主题' }}</span>
+                </button>
+                <p v-if="customTheme" :class="$style.tpNow">当前：{{ customTheme.name }}</p>
+                <p v-else :class="$style.tpNow">打开主题公园，调色并实时预览</p>
+              </div>
+              <div v-if="bgType !== 'custom'" :class="$style.presetHead">
                 <span>{{ bgPresetName }}</span>
                 <button
                   v-if="bgType === 'ai'"
@@ -347,6 +357,14 @@
         </template>
       </footer>
 
+      <!-- ── 主题公园 ── -->
+      <theme-park
+        :visible="themeParkOpen"
+        :initial="customTheme"
+        @close="themeParkOpen = false"
+        @apply="applyCustomTheme"
+      />
+
       <!-- ── 音效设置窗口 ── -->
       <div v-if="fxOpen" :class="$style.fxMask" @click.self="fxOpen = false">
         <div :class="$style.fxPanel" role="dialog" aria-label="音效设置">
@@ -433,6 +451,7 @@ import PitchShifter from '@renderer/components/common/SoundEffectBtn/PitchShifte
 import AudioPanner from '@renderer/components/common/SoundEffectBtn/AudioPanner.vue'
 import CanvasLyrics from './CanvasLyrics.vue'
 import { generateThemeFromCover } from './builtinTheme.js'
+import ThemePark from './ThemePark.vue'
 import { getListMusics } from '@renderer/store/list/action'
 import { resolveQueueView } from '@renderer/core/immersiveLyric/panel/queue'
 import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
@@ -454,7 +473,7 @@ const lyricOffset = ref(0)
 
 export default {
   name: 'LatticeLyric',
-  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner, CanvasLyrics },
+  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner, CanvasLyrics, ThemePark },
   props: {
     visible: Boolean,
   },
@@ -516,6 +535,26 @@ export default {
     }
     const setLyricStyle = key => { lyricStyle.value = key; savePrefs() }
     const toggleCanvas = () => { canvasMode.value = !canvasMode.value; savePrefs() }
+
+    // ── 主题公园（自定义主题编辑器，移植自 Folia ThemePark）─────────────
+    const themeParkOpen = ref(false)
+    const customTheme = ref(savedPrefs.customTheme ?? null)
+    const openThemePark = () => { themeParkOpen.value = true }
+    const applyCustomTheme = t => {
+      customTheme.value = t
+      bgType.value = 'custom'
+      savePrefs()
+    }
+    // 应用优先级：自定义主题 > AI 主题 > 预设
+    const activeBgTintOverride = computed(() => {
+      if (customTheme.value) {
+        return {
+          background: 'radial-gradient(80% 60% at 22% 18%, rgba(255,255,255,.05), rgba(255,255,255,0) 62%),' +
+            `linear-gradient(140deg, ${customTheme.value.backgroundColor}cc, ${customTheme.value.backgroundColor}f2)`,
+        }
+      }
+      return null
+    })
     const setBgType = key => { bgType.value = key; savePrefs() }
     const setBgPreset = key => { bgPresetKey.value = key; savePrefs() }
     const shuffleBg = () => {
@@ -546,6 +585,7 @@ export default {
 
     // 应用到背景与歌词颜色：AI 主题优先，其次预设
     const activeBgTint = computed(() => {
+      if (bgType.value === 'custom' && activeBgTintOverride.value) return activeBgTintOverride.value
       if (bgType.value === 'ai' && aiTheme.value) return { background: aiTheme.value.bg.tint }
       const p = bgPresets.find(x => x.key === bgPresetKey.value) ?? bgPresets[0]
       return { background: p.tint }
@@ -555,6 +595,23 @@ export default {
       return (bgPresets.find(p => p.key === bgPresetKey.value) ?? bgPresets[0]).name
     })
     const currentStyleLabel = computed(() => (lyricStyles.find(s => s.key === lyricStyle.value) ?? lyricStyles[0]).label)
+    // 当前生效的歌词颜色（自定义主题 > AI 主题 > 默认）
+    const themeBaseNow = computed(() => {
+      if (bgType.value === 'custom' && customTheme.value) return customTheme.value.primaryColor + '8c'
+      if (bgType.value === 'ai' && aiTheme.value) return aiTheme.value.baseColor
+      return ''
+    })
+    const themeWordNow = computed(() => {
+      if (bgType.value === 'custom' && customTheme.value) return '#ffffff'
+      if (bgType.value === 'ai' && aiTheme.value) return aiTheme.value.wordColor
+      return ''
+    })
+    const themeGlowNow = computed(() => {
+      if (bgType.value === 'custom' && customTheme.value) return customTheme.value.accentColor
+      if (bgType.value === 'ai' && aiTheme.value) return aiTheme.value.glowColor
+      return ''
+    })
+
     const bgTintStyle = activeBgTint
     const barExpanded = ref(false)
     const timelineOpen = ref(false)
@@ -879,6 +936,13 @@ export default {
       aiThemeName,
       generateAiTheme,
       aiThemeLoading,
+      themeParkOpen,
+      openThemePark,
+      customTheme,
+      applyCustomTheme,
+      themeBaseNow,
+      themeWordNow,
+      themeGlowNow,
       lyricScale,
       nudgeScale,
       canvasMode,
@@ -1953,6 +2017,39 @@ export default {
 
   &:hover { background: rgba(255, 255, 255, .22); }
 }
+.tpEntry {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 10px;
+  align-items: stretch;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px dashed rgba(255, 255, 255, .18);
+}
+.tpOpenBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 0;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--color-primary), #9b6fe8);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .18s ease;
+  &:hover { filter: brightness(1.12); }
+}
+.tpNow {
+  margin: 0;
+  font-size: 11px;
+  opacity: .55;
+  text-align: center;
+}
+
 .presetGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
