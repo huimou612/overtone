@@ -35,6 +35,10 @@ export default {
     themeBase: { type: String, default: '' },
     themeWord: { type: String, default: '' },
     themeGlow: { type: String, default: '' },
+    // 字幕：当前行下方的翻译/罗马音
+    subtitleText: { type: String, default: '' },
+    subtitleScale: { type: Number, default: 0.5 },
+    subtitleColor: { type: String, default: 'rgba(255,255,255,0.62)' },
   },
   setup(props) {
     const canvas_ref = ref(null)
@@ -265,6 +269,20 @@ export default {
       drawLine(active, cy, fontPx, {
         alpha: 1, active: true, progress: p, glow, style: props.styleName,
       })
+
+      // 字幕：当前行下方一行小字（对应 Folia 的 subtitle / translation）
+      if (props.subtitleText) {
+        const subPx = fontPx * props.subtitleScale
+        const subY = cy + fontPx * 1.35
+        const layout = layoutLine(props.subtitleText, subPx, width * 0.72)
+        const ox = (width - layout.blockW) / 2
+        ctx.globalAlpha = 0.85
+        for (const piece of layout.pieces) {
+          const r = piece.raster
+          ctx.drawImage(tint(r, props.subtitleColor), ox + piece.x - r.pad, subY - r.pad)
+        }
+        ctx.globalAlpha = 1
+      }
     }
 
     const loop = () => {
