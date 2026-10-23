@@ -2,12 +2,7 @@
 title Overtone + Folia Viewer
 cd /d "%~dp0"
 
-echo [1/3] Updating code (feat/folia-viewer)...
-git fetch origin feat/folia-viewer || goto :err
-git checkout feat/folia-viewer || goto :err
-git pull origin feat/folia-viewer || goto :err
-
-echo [2/3] Starting Folia Viewer on port 9090 (new window)...
+echo [1/2] Starting Folia Viewer on port 9090 (new window)...
 cd slice\folia-viewer || goto :err
 if not exist node_modules (
   echo First run: installing viewer dependencies, please wait...
@@ -16,7 +11,7 @@ if not exist node_modules (
 start "Folia Viewer 9090" cmd /k npm run dev
 cd ..\..
 
-echo [3/3] Starting Overtone (dev mode)...
+echo [2/2] Starting Overtone (dev mode)...
 echo When the app opens: open the Folia visual window, play a song with word-by-word lyrics.
 call npm run dev
 goto :end
