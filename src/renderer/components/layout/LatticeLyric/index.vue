@@ -68,8 +68,17 @@
       <!-- 主区：居中歌词 + 右侧常驻面板 -->
       <div :class="$style.mainArea">
         <div :class="$style.lyricArea">
+          <canvas-lyrics
+            v-if="canvasMode && lyricLines.length"
+            :lines="lyricLines"
+            :now-ms="effectiveNowMs"
+            :active-index="activeIndex"
+            :style-name="lyricStyle"
+            :scale="lyricScale"
+            :class="$style.canvasLyrics"
+          />
           <TransitionGroup
-            v-if="visibleLines.length"
+            v-else-if="visibleLines.length"
             tag="div"
             :enter-from-class="$style.enterFrom"
             :enter-active-class="$style.enterActive"
@@ -206,7 +215,10 @@
                   <button :class="$style.offsetBtn" @click="nudgeScale(1)">A+</button>
                 </div>
               </div>
-              <p :class="$style.styleHint">当前：{{ currentStyleLabel }}</p>
+              <button :class="[$style.segBtn, canvasMode && $style.segActive]" @click="toggleCanvas">
+                Canvas 渲染 {{ canvasMode ? '开' : '关' }}
+              </button>
+              <p :class="$style.styleHint">当前：{{ currentStyleLabel }}{{ canvasMode ? '（Canvas 管线）' : '（DOM 渲染）' }}</p>
             </div>
 
             <!-- ② 音效设置：直接调用播放器里的音效弹窗 + 音量 -->
@@ -411,6 +423,7 @@ import AudioConvolution from '@renderer/components/common/SoundEffectBtn/AudioCo
 import BiquadFilter from '@renderer/components/common/SoundEffectBtn/BiquadFilter.vue'
 import PitchShifter from '@renderer/components/common/SoundEffectBtn/PitchShifter.vue'
 import AudioPanner from '@renderer/components/common/SoundEffectBtn/AudioPanner.vue'
+import CanvasLyrics from './CanvasLyrics.vue'
 import { getListMusics } from '@renderer/store/list/action'
 import { resolveQueueView } from '@renderer/core/immersiveLyric/panel/queue'
 import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
@@ -432,7 +445,7 @@ const lyricOffset = ref(0)
 
 export default {
   name: 'LatticeLyric',
-  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner },
+  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner, CanvasLyrics },
   props: {
     visible: Boolean,
   },
@@ -458,6 +471,7 @@ export default {
       { key: 'cloud', label: '云阶' },
       { key: 'chorus', label: '群唱' },
       { key: 'monet', label: '莫奈' },
+      { key: 'particle', label: '粒子' },
     ]
     const bgTypes = [
       { key: 'default', label: '默认' },
@@ -475,6 +489,8 @@ export default {
     ]
 
     const lyricStyle = ref(savedPrefs.lyricStyle ?? 'standard')
+    // Canvas 渲染管线（对齐 Folia：字形纹理 + 扫光；另加粒子聚合一档）
+    const canvasMode = ref(savedPrefs.canvasMode ?? false)
     const bgType = ref(savedPrefs.bgType ?? 'default')
     const bgPresetKey = ref(savedPrefs.bgPreset ?? 'tide')
     const lyricScale = ref(savedPrefs.lyricScale ?? 1)
@@ -490,6 +506,7 @@ export default {
       } catch (e) { /* 隐私模式等，忽略 */ }
     }
     const setLyricStyle = key => { lyricStyle.value = key; savePrefs() }
+    const toggleCanvas = () => { canvasMode.value = !canvasMode.value; savePrefs() }
     const setBgType = key => { bgType.value = key; savePrefs() }
     const setBgPreset = key => { bgPresetKey.value = key; savePrefs() }
     const shuffleBg = () => {
@@ -560,6 +577,9 @@ export default {
       if (musicInfo.lrc) return 'LRC'
       return '无歌词'
     })
+
+    // 给 canvas 渲染器用的纯行数组（timeline 本身没暴露到模板）
+    const lyricLines = computed(() => timeline.value.lines)
 
     const visibleLines = computed(() => {
       const lines = timeline.value.lines
@@ -826,6 +846,9 @@ export default {
       bgTintStyle,
       lyricScale,
       nudgeScale,
+      canvasMode,
+      toggleCanvas,
+      lyricLines,
       barExpanded,
       handleBarEnter,
       handleBarLeave,
@@ -1022,6 +1045,11 @@ export default {
   display: flex;
   overflow: hidden;
 }
+.canvasLyrics {
+  position: absolute;
+  inset: 0;
+}
+
 .lyricArea {
   position: relative;
   flex: auto;
