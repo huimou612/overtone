@@ -78,6 +78,9 @@
             :theme-base="themeBaseNow"
             :theme-word="themeWordNow"
             :theme-glow="themeGlowNow"
+            :subtitle-text="subtitleTextNow"
+            :subtitle-scale="subtitleScale"
+            :subtitle-color="subtitleColor"
             :class="$style.canvasLyrics"
           />
           <TransitionGroup
@@ -361,6 +364,10 @@
       <theme-park
         :visible="themeParkOpen"
         :initial="customTheme"
+        :style-key="lyricStyle"
+        :bg-presets="bgPresets"
+        :bg-preset-key="bgPresetKey"
+        :bg-type="bgType"
         @close="themeParkOpen = false"
         @apply="applyCustomTheme"
       />
@@ -543,8 +550,31 @@ export default {
     const applyCustomTheme = t => {
       customTheme.value = t
       bgType.value = 'custom'
+      // 设置窗口里的其它项一并应用（样式/字号/字幕/模块）
+      if (t.styleKey) lyricStyle.value = t.styleKey
+      if (t.fontScale) lyricScale.value = t.fontScale
+      if (typeof t.subtitleOn === 'boolean') subtitleOn.value = t.subtitleOn
+      if (t.subtitleMode) subtitleMode.value = t.subtitleMode
+      if (t.subtitleScale) subtitleScale.value = t.subtitleScale
+      if (t.subtitleColor) subtitleColor.value = t.subtitleColor
+      if (t.modules) uiModules.value = { ...uiModules.value, ...t.modules }
       savePrefs()
     }
+
+    // 字幕（对应 Folia 的 subtitle / translation 开关）
+    const subtitleOn = ref(savedPrefs.subtitleOn ?? true)
+    const subtitleMode = ref(savedPrefs.subtitleMode ?? 'translation')
+    const subtitleScale = ref(savedPrefs.subtitleScale ?? 0.5)
+    const subtitleColor = ref(savedPrefs.subtitleColor ?? 'rgba(255,255,255,0.62)')
+    // 模块开关：底栏/面板显示哪些部件
+    const uiModules = ref(savedPrefs.uiModules ?? { cover: true, progress: true, time: true, queue: true, volume: true })
+    const subtitleTextNow = computed(() => {
+      if (!subtitleOn.value) return ''
+      const line = timeline.value.lines[activeIndex.value]
+      if (!line) return ''
+      if (subtitleMode.value === 'romanization') return line.romanization ?? ''
+      return line.translation ?? ''
+    })
     // 应用优先级：自定义主题 > AI 主题 > 预设
     const activeBgTintOverride = computed(() => {
       if (customTheme.value) {
@@ -943,6 +973,10 @@ export default {
       themeBaseNow,
       themeWordNow,
       themeGlowNow,
+      subtitleTextNow,
+      subtitleScale,
+      subtitleColor,
+      uiModules,
       lyricScale,
       nudgeScale,
       canvasMode,
