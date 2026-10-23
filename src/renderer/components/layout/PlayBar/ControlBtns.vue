@@ -14,6 +14,13 @@
         <use xlink:href="#icon-desktop-lyric-off" />
       </svg>
     </button>
+    <button :class="$style.titleBtn" :aria-label="$t('immersive_lyric__open')" :title="$t('immersive_lyric__open')" @click="openTimeline">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" space="preserve">
+        <path d="M12 3v18" />
+        <circle cx="12" cy="8" r="1.8" />
+        <circle cx="12" cy="16" r="1.8" />
+      </svg>
+    </button>
     <common-volume-btn />
     <common-toggle-play-mode-btn />
     <common-list-add-modal v-model:show="isShowAddMusicTo" :music-info="playMusicInfo.musicInfo" />
@@ -25,6 +32,7 @@ import { ref } from '@common/utils/vueTools'
 import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktopLyric'
 import { musicInfo, playMusicInfo } from '@renderer/store/player/state'
 import { appSetting } from '@renderer/store/setting'
+import { setShowImmersiveLyric } from '@renderer/store/player/action'
 
 export default {
   setup() {
@@ -34,6 +42,8 @@ export default {
       toggleDesktopLyric,
       toggleLockDesktopLyric,
     } = useToggleDesktopLyric()
+    // 打开时间线（= 原来的沉浸式歌词窗口）
+    const openTimeline = () => { setShowImmersiveLyric(true) }
     const addMusicTo = () => {
       if (!musicInfo.id) return
       isShowAddMusicTo.value = true
@@ -45,6 +55,7 @@ export default {
       toggleDesktopLyric,
       toggleLockDesktopLyric,
       addMusicTo,
+      openTimeline,
       playMusicInfo,
     }
   },
