@@ -106,11 +106,17 @@
             <div :class="$style.emptyTitle">{{ musicInfo.name || 'Lattice' }}</div>
             <div>{{ hasRawLyric ? '歌词解析失败' : $t('immersive_lyric__no_lyric') }}</div>
           </div>
+          <!-- DOM 歌词分支的字幕（Canvas 分支由 CanvasLyrics 内部绘制，这里补齐同一份 subtitleTextNow；勿插进上面的 v-if 链中间） -->
+          <div
+            v-if="!canvasMode && subtitleTextNow"
+            :class="$style.subtitleDom"
+            :style="{ color: subtitleColor, '--sub-scale': subtitleScale, '--lyric-scale': lyricScale }"
+          >{{ subtitleTextNow }}</div>
         </div>
 
         <!-- ── 右侧常驻面板：封面 / 音效 / 播放列表 / 时间线 四个页签 ── -->
         <aside v-if="panelOpen" :class="$style.sidePanel" data-immersive-panel="open">
-          <div :class="$style.posterCard">
+          <div v-if="uiModules.cover" :class="$style.posterCard">
             <img v-if="musicInfo.pic" :class="$style.posterImg" :src="musicInfo.pic" alt="" draggable="false">
             <div v-else :class="$style.posterFallback">{{ (musicInfo.name || '?').slice(0, 1) }}</div>
             <div :class="$style.posterName">{{ musicInfo.name }}</div>
@@ -157,6 +163,7 @@
               </svg>
             </button>
             <button
+              v-if="uiModules.queue"
               :class="[$style.tabBtn, { [$style.tabActive]: panelSection === 'queue' }]"
               aria-label="播放列表" title="播放列表"
               @click="panelSection = 'queue'"
@@ -253,7 +260,7 @@
                 <span>音效设置</span>
               </button>
               <p :class="$style.fxHint">环境混响 / 均衡器 / 音调升降 / 3D 环绕</p>
-              <panel-volume />
+              <panel-volume v-if="uiModules.volume" />
               <div :class="$style.infoRow">
                 <span :class="$style.infoLabel">歌词</span>
                 <span :class="$style.infoValue">{{ lyricKindLabel }}</span>
@@ -269,7 +276,7 @@
             </div>
 
             <!-- ③ 播放队列：标题 + 简洁行（歌名 / 歌手），当前曲高亮 -->
-            <div v-else-if="panelSection === 'queue'" :class="$style.qWrap">
+            <div v-else-if="panelSection === 'queue' && uiModules.queue" :class="$style.qWrap">
               <div :class="$style.qHead">
                 <span :class="$style.qTitle">播放队列 <span :class="$style.qCount">({{ queueView.rows.length }})</span></span>
               </div>
@@ -335,7 +342,7 @@
 
         <!-- 展开态：进度 + 时间 + 面板 + 打开播放器 -->
         <template v-else>
-          <div :class="$style.seek">
+          <div v-if="uiModules.progress" :class="$style.seek">
             <common-progress-bar
               :class-name="$style.seekBar"
               on-dark
@@ -344,7 +351,7 @@
               :is-active-transition="isActiveTransition"
             />
           </div>
-          <span :class="$style.time">{{ nowPlayTimeStr }} / {{ maxPlayTimeStr }}</span>
+          <span v-if="uiModules.time" :class="$style.time">{{ nowPlayTimeStr }} / {{ maxPlayTimeStr }}</span>
           <button
             :class="[$style.iconBtn, timelineOpen && $style.iconBtnOn]"
             :aria-label="$t('timeline.title')" :title="$t('timeline.title')"
@@ -547,6 +554,15 @@ export default {
     const themeParkOpen = ref(false)
     const customTheme = ref(savedPrefs.customTheme ?? null)
     const openThemePark = () => { themeParkOpen.value = true }
+    // 字幕与模块开关的 ref 必须声明在 applyCustomTheme 之前：applyCustomTheme 会读写它们，
+    // 声明在后靠“点击时才执行”避开 TDZ 是隐患（setup 内一旦提前调用就会 ReferenceError）。
+    // 字幕（对应 Folia 的 subtitle / translation 开关）
+    const subtitleOn = ref(savedPrefs.subtitleOn ?? true)
+    const subtitleMode = ref(savedPrefs.subtitleMode ?? 'translation')
+    const subtitleScale = ref(savedPrefs.subtitleScale ?? 0.5)
+    const subtitleColor = ref(savedPrefs.subtitleColor ?? 'rgba(255,255,255,0.62)')
+    // 模块开关：底栏/面板显示哪些部件（cover=面板封面卡，progress=底栏进度，time=底栏时间，queue=面板队列页签，volume=音效页签音量）
+    const uiModules = ref(savedPrefs.uiModules ?? { cover: true, progress: true, time: true, queue: true, volume: true })
     const applyCustomTheme = t => {
       customTheme.value = t
       bgType.value = 'custom'
@@ -561,13 +577,6 @@ export default {
       savePrefs()
     }
 
-    // 字幕（对应 Folia 的 subtitle / translation 开关）
-    const subtitleOn = ref(savedPrefs.subtitleOn ?? true)
-    const subtitleMode = ref(savedPrefs.subtitleMode ?? 'translation')
-    const subtitleScale = ref(savedPrefs.subtitleScale ?? 0.5)
-    const subtitleColor = ref(savedPrefs.subtitleColor ?? 'rgba(255,255,255,0.62)')
-    // 模块开关：底栏/面板显示哪些部件
-    const uiModules = ref(savedPrefs.uiModules ?? { cover: true, progress: true, time: true, queue: true, volume: true })
     const subtitleTextNow = computed(() => {
       if (!subtitleOn.value) return ''
       const line = timeline.value.lines[activeIndex.value]
@@ -1200,6 +1209,20 @@ export default {
   align-items: center;
   text-align: center;
   gap: clamp(14px, 2.2vh, 26px);
+}
+
+/* DOM 分支字幕：与 Canvas 版同一数据源，悬在歌词区下方居中，字号按活动行字号 × subtitleScale × lyricScale */
+.subtitleDom {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  transform: translateX(-50%);
+  max-width: 72%;
+  text-align: center;
+  font-size: calc(clamp(30px, 4.6vw, 58px) * var(--sub-scale, .5) * var(--lyric-scale, 1));
+  font-weight: 500;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 .line {
