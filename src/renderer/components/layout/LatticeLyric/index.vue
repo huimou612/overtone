@@ -75,6 +75,9 @@
             :active-index="activeIndex"
             :style-name="lyricStyle"
             :scale="lyricScale"
+            :theme-base="bgType === 'ai' && aiTheme ? aiTheme.baseColor : ''"
+            :theme-word="bgType === 'ai' && aiTheme ? aiTheme.wordColor : ''"
+            :theme-glow="bgType === 'ai' && aiTheme ? aiTheme.glowColor : ''"
             :class="$style.canvasLyrics"
           />
           <TransitionGroup
@@ -180,7 +183,12 @@
               </div>
               <div :class="$style.presetHead">
                 <span>{{ bgPresetName }}</span>
-                <button :class="$style.shuffleBtn" aria-label="换一个" title="换一个" @click="shuffleBg">⤨</button>
+                <button
+                  v-if="bgType === 'ai'"
+                  :class="$style.shuffleBtn" aria-label="重新生成" title="重新生成"
+                  @click="generateAiTheme"
+                >{{ aiThemeLoading ? '…' : '⤨' }}</button>
+                <button v-else :class="$style.shuffleBtn" aria-label="换一个" title="换一个" @click="shuffleBg">⤨</button>
               </div>
               <div :class="$style.presetGrid">
                 <button
@@ -424,6 +432,7 @@ import BiquadFilter from '@renderer/components/common/SoundEffectBtn/BiquadFilte
 import PitchShifter from '@renderer/components/common/SoundEffectBtn/PitchShifter.vue'
 import AudioPanner from '@renderer/components/common/SoundEffectBtn/AudioPanner.vue'
 import CanvasLyrics from './CanvasLyrics.vue'
+import { generateThemeFromCover } from './builtinTheme.js'
 import { getListMusics } from '@renderer/store/list/action'
 import { resolveQueueView } from '@renderer/core/immersiveLyric/panel/queue'
 import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
@@ -518,12 +527,35 @@ export default {
       lyricScale.value = Math.min(1.6, Math.max(0.7, Math.round((lyricScale.value + step * 0.05) * 100) / 100))
       savePrefs()
     }
-    const bgPresetName = computed(() => (bgPresets.find(p => p.key === bgPresetKey.value) ?? bgPresets[0]).name)
-    const currentStyleLabel = computed(() => (lyricStyles.find(s => s.key === lyricStyle.value) ?? lyricStyles[0]).label)
-    const bgTintStyle = computed(() => {
+    // ── AI 主题（无 Key 时的内置生成器，移植自 Folia builtinTheme/）──────
+    // 从当前封面取色 → HSL 谐和配色 → 中文命名（潮汐/绯色 + 子夜/破晓 + Built-in）
+    const aiTheme = ref(null)
+    const aiThemeLoading = ref(false)
+    const aiThemeName = computed(() => aiTheme.value ? aiTheme.value.name : '点击生成')
+    const generateAiTheme = async() => {
+      if (aiThemeLoading.value) return
+      aiThemeLoading.value = true
+      try {
+        aiTheme.value = await generateThemeFromCover(musicInfo.pic)
+      } catch (e) { /* 封面取色失败就走默认 */ }
+      aiThemeLoading.value = false
+    }
+    watch([() => musicInfo.pic, bgType], ([pic, type]) => {
+      if (type === 'ai' && !aiTheme.value) void generateAiTheme()
+    }, { immediate: true })
+
+    // 应用到背景与歌词颜色：AI 主题优先，其次预设
+    const activeBgTint = computed(() => {
+      if (bgType.value === 'ai' && aiTheme.value) return { background: aiTheme.value.bg.tint }
       const p = bgPresets.find(x => x.key === bgPresetKey.value) ?? bgPresets[0]
       return { background: p.tint }
     })
+    const bgPresetName = computed(() => {
+      if (bgType.value === 'ai') return aiTheme.value ? aiTheme.value.name : 'AI 主题（未生成）'
+      return (bgPresets.find(p => p.key === bgPresetKey.value) ?? bgPresets[0]).name
+    })
+    const currentStyleLabel = computed(() => (lyricStyles.find(s => s.key === lyricStyle.value) ?? lyricStyles[0]).label)
+    const bgTintStyle = activeBgTint
     const barExpanded = ref(false)
     const timelineOpen = ref(false)
     // 音效设置窗口（自己做，不用 SoundEffectBtn 的弹窗：它 teleport 到 #root，会被歌词界面盖住）
@@ -844,6 +876,9 @@ export default {
       setBgPreset,
       shuffleBg,
       bgTintStyle,
+      aiThemeName,
+      generateAiTheme,
+      aiThemeLoading,
       lyricScale,
       nudgeScale,
       canvasMode,
