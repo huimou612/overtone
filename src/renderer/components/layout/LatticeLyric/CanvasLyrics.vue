@@ -98,49 +98,6 @@ export default {
 
     const easeOut = t => 1 - Math.pow(1 - t, 3)
 
-    const drawLine = (text, x, y, fontPx, opts = {}) => {
-      const {
-        alpha = 1, color = 'rgba(255,255,255,0.35)', weight = 700,
-        progress = 0, active = false,
-      } = opts
-      if (!text) return
-      const r = rasterize(text, fontPx, weight)
-      const dx = x - r.w / 2
-      const dy = y - r.h / 2
-      ctx.globalAlpha = alpha
-
-      if (!active) {
-        // 非活动行：直接染色（用 source-in 上色）
-        const tinted = tint(r, color)
-        ctx.drawImage(tinted, dx, dy)
-        ctx.globalAlpha = 1
-        return
-      }
-
-      // 活动行：底 + 扫光
-      const base = tint(r, color)
-      ctx.drawImage(base, dx, dy)
-
-      if (progress > 0) {
-        // 裁剪到 progress 位置（软边：用 12 条窄带做渐变，模拟 shader 的 smoothstep）
-        const cutW = r.w * Math.min(1, progress)
-        const bands = 14
-        ctx.save()
-        for (let i = 0; i < bands; i++) {
-          const t0 = i / bands
-          const t1 = (i + 1) / bands
-          const edge = 1 - Math.abs((t0 + t1) / 2 - 1) // 前沿最亮，尾部渐暗
-          if (cutW < r.w * t0) break
-          const bw = Math.max(1, cutW * (t1 - t0))
-          ctx.globalAlpha = alpha * (0.55 + 0.45 * edge)
-          const bright = tint(r, 'rgba(255,255,255,1)')
-          ctx.drawImage(bright, 0, 0, bw / (r.w), r.h, dx + r.w * t0, dy, bw, r.h)
-        }
-        ctx.restore()
-        ctx.globalAlpha = 1
-      }
-    }
-
     // 染色缓存：把白色字形染成目标色（同纹理同色复用）
     const tintCache = new Map()
     const tint = (raster, color) => {
@@ -160,6 +117,83 @@ export default {
       return cv
     }
 
+    // ── 逐字排版（Folia「Lattice」的核心：每个字独立定位）──────────────
+    const charCache = new Map()
+    const splitChars = text => Array.from(String(text || ''))
+
+    /** 把一行拆成字形，算出每个字的位置（基准 x + 相对 y 偏移） */
+    const layoutChars = (text, fontPx, style) => {
+      const key = `${text}|${Math.round(fontPx)}|${style}`
+      const hit = charCache.get(key)
+      if (hit) return hit
+      const chars = splitChars(text)
+      const n = chars.length
+      if (!n) return { chars: [], total: 0 }
+      // 云阶：整行从左到右逐字抬高，形成阶梯
+      const step = style === 'cloud' ? fontPx * 0.22 : 0
+      let acc = 0
+      const items = chars.map((ch, i) => {
+        const r = rasterize(ch, fontPx, 700)
+        const dx = acc
+        acc += r.w - r.pad * 2 + (style === 'cloud' ? fontPx * 0.06 : 0)
+        // 以行中心为轴：i 越大越高
+        const dy = -step * (i - (n - 1) / 2)
+        return { ch, raster: r, dx, dy, i }
+      })
+      const entry = { chars: items, total: acc }
+      if (charCache.size > 300) charCache.clear()
+      charCache.set(key, entry)
+      return entry
+    }
+
+    /** 画一行字（逐字）：progress 0~1 控制逐字填充 */
+    const drawChars = (text, cx, cy, fontPx, opts = {}) => {
+      const {
+        alpha = 1, color = 'rgba(255,255,255,0.34)', bright = 'rgba(255,255,255,1)',
+        progress = 0, style = 'standard', active = true, jitter = 0,
+      } = opts
+      const { chars, total } = layoutChars(text, fontPx, style)
+      if (!chars.length) return
+      const startX = cx - total / 2
+      const n = chars.length
+      ctx.globalAlpha = alpha
+
+      for (const it of chars) {
+        const x = startX + it.dx
+        const y = cy + it.dy
+        const r = it.raster
+        // 逐字进度：整行进度映射到每个字
+        const cp = active ? Math.max(0, Math.min(1, progress * n - it.i)) : 0
+        const wobble = jitter ? Math.sin((props.nowMs / 900) + it.i * 1.7) * jitter : 0
+
+        if (!active) {
+          ctx.drawImage(tint(r, color), x, y - r.h / 2 + wobble)
+          continue
+        }
+        // 底色
+        ctx.drawImage(tint(r, color), x, y - r.h / 2 + wobble)
+        if (cp <= 0) continue
+        // 已唱过的部分：整字高亮
+        if (cp >= 1) {
+          ctx.drawImage(tint(r, bright), x, y - r.h / 2 + wobble)
+          continue
+        }
+        // 正在唱的字：从左往右刷
+        const cut = r.w * cp
+        const bands = 8
+        for (let b = 0; b < bands; b++) {
+          const t0 = b / bands
+          if (cut <= r.w * t0) break
+          const t1 = Math.min(1, (b + 1) / bands)
+          const bw = Math.max(1, r.w * (t1 - t0))
+          ctx.globalAlpha = alpha * (0.55 + 0.45 * (1 - Math.abs((t0 + t1) / 2 - 1)))
+          ctx.drawImage(tint(r, bright), 0, 0, bw, r.h, x + r.w * t0, y - r.h / 2 + wobble, bw, r.h)
+        }
+        ctx.globalAlpha = alpha
+      }
+      ctx.globalAlpha = 1
+    }
+
     const render = () => {
       if (!ctx || !width || !height) return
       const lines = props.lines
@@ -167,13 +201,12 @@ export default {
       ctx.clearRect(0, 0, width, height)
       if (!lines.length || ai < 0) return
 
-      const baseSize = Math.min(64, Math.max(30, width * 0.036)) * props.scale
+      const baseSize = Math.min(64, Math.max(28, width * 0.034)) * props.scale
       const active = lines[ai]
       const cx = width / 2
       const cy = height / 2
       const style = props.styleName
 
-      // 进度
       const next = lines[ai + 1]
       const dur = Math.max(600, (next ? next.time : active.time + 4200) - active.time)
       const p = Math.max(0, Math.min(1, (props.nowMs - active.time) / dur))
@@ -183,7 +216,7 @@ export default {
       if (lineKey !== particleLineKey) {
         particleLineKey = lineKey
         lineStartAt = performance.now()
-        if (style === 'particle' || style === 'monet') {
+        if (style === 'particle') {
           const r = rasterize(active.text, baseSize, 700)
           particles = buildParticles(r, cx - r.w / 2, cy - r.h / 2, 'rgba(255,255,255,0.95)')
         } else {
@@ -191,62 +224,62 @@ export default {
         }
       }
 
-      // 非活动行
-      const prevAlpha = style === 'fade' ? 0.1 : 0.34
+      // 前后行：整行绘制（便宜）
+      const sideAlpha = style === 'fade' ? 0.12 : 0.32
       for (let i = ai - 1; i >= Math.max(0, ai - 2); i--) {
-        const dy = cy - baseSize * 1.9 * (ai - i)
-        const offsetX = style === 'cloud' ? (i % 2 === 0 ? width * 0.06 : -width * 0.02) : 0
-        drawLine(lines[i].text, cx + offsetX, dy, baseSize * 0.62, {
-          alpha: prevAlpha * (i === ai - 1 ? 1 : 0.6),
-          color: 'rgba(255,255,255,0.8)',
+        const dy = cy - baseSize * 1.85 * (ai - i)
+        const ox = style === 'cloud' ? -width * 0.04 * (ai - i) : 0
+        drawChars(lines[i].text, cx + ox, dy, baseSize * 0.58, {
+          alpha: sideAlpha * (i === ai - 1 ? 1 : 0.55), color: 'rgba(255,255,255,0.85)', active: false,
         })
       }
       for (let i = ai + 1; i < Math.min(lines.length, ai + 3); i++) {
-        const dy = cy + baseSize * 1.9 * (i - ai)
-        const offsetX = style === 'cloud' ? (i % 2 === 0 ? width * 0.06 : -width * 0.02) : 0
-        drawLine(lines[i].text, cx + offsetX, dy, baseSize * 0.62, {
-          alpha: prevAlpha * (i === ai + 1 ? 1 : 0.6),
-          color: 'rgba(255,255,255,0.8)',
+        const dy = cy + baseSize * 1.85 * (i - ai)
+        const ox = style === 'cloud' ? width * 0.04 * (i - ai) : 0
+        drawChars(lines[i].text, cx + ox, dy, baseSize * 0.58, {
+          alpha: sideAlpha * (i === ai + 1 ? 1 : 0.55), color: 'rgba(255,255,255,0.85)', active: false,
         })
       }
 
-      // 活动行
+      // 群唱：左右各一份错位虚影
       if (style === 'chorus') {
-        // 群唱：左右各一份错位虚影
-        for (const [ox, a] of [[-baseSize * 0.12, 0.18], [baseSize * 0.12, 0.18]]) {
-          drawLine(active.text, cx + ox, cy, baseSize, {
-            alpha: a, color: 'rgba(255,255,255,0.9)', progress: p, active: true,
+        for (const [ox, a] of [[-baseSize * 0.14, 0.16], [baseSize * 0.14, 0.16]]) {
+          drawChars(active.text, cx + ox, cy, baseSize, {
+            alpha: a, color: 'rgba(255,255,255,0.9)', progress: p, style, active: true,
           })
         }
       }
 
+      // 莫奈：三次偏移叠色 + 抖动
       if (style === 'monet') {
-        // 莫奈：多次偏移叠色，做出油画的浑浊感
-        const palette = ['rgba(255,214,170,0.55)', 'rgba(180,200,255,0.5)', 'rgba(255,180,220,0.45)']
+        const palette = ['rgba(255,214,170,0.45)', 'rgba(180,200,255,0.4)', 'rgba(255,180,220,0.38)']
         for (let k = 0; k < 3; k++) {
-          const jx = (Math.sin(props.nowMs / 1400 + k * 2.1) * baseSize * 0.06)
-          const jy = (Math.cos(props.nowMs / 1700 + k * 1.7) * baseSize * 0.05)
-          drawLine(active.text, cx + jx, cy + jy, baseSize, {
-            alpha: 0.5, color: palette[k], progress: p, active: true,
+          drawChars(active.text, cx, cy, baseSize, {
+            alpha: 0.5, color: palette[k], progress: p, style, active: true, jitter: baseSize * 0.03,
           })
         }
       }
 
-      drawLine(active.text, cx, cy, baseSize, {
-        alpha: 1, color: 'rgba(255,255,255,0.34)', progress: p, active: true,
+      // 主体
+      drawChars(active.text, cx, cy, baseSize, {
+        alpha: 1,
+        color: 'rgba(255,255,255,0.30)',
+        bright: 'rgba(255,255,255,1)',
+        progress: p,
+        style,
+        active: true,
       })
 
-      // 流光：扫光后加一条亮带
+      // 流光：进度处亮带
       if (style === 'flow' && p > 0) {
-        const r = rasterize(active.text, baseSize, 700)
-        const bandX = cx - r.w / 2 + r.w * p
-        const grad = ctx.createLinearGradient(bandX - 60, 0, bandX + 60, 0)
+        const bandX = cx - width * 0.3 + width * 0.6 * p
+        const grad = ctx.createLinearGradient(bandX - 70, 0, bandX + 70, 0)
         grad.addColorStop(0, 'rgba(180,150,255,0)')
-        grad.addColorStop(0.5, 'rgba(200,180,255,0.55)')
+        grad.addColorStop(0.5, 'rgba(200,180,255,0.5)')
         grad.addColorStop(1, 'rgba(180,150,255,0)')
-        ctx.globalAlpha = 0.8
+        ctx.globalAlpha = 0.75
         ctx.fillStyle = grad
-        ctx.fillRect(bandX - 60, cy - baseSize, 120, baseSize * 2)
+        ctx.fillRect(bandX - 70, cy - baseSize, 140, baseSize * 2)
         ctx.globalAlpha = 1
       }
 
