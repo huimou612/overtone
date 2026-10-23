@@ -150,17 +150,6 @@
                 <path d="M4 7h16M4 12h16M4 17h10" />
               </svg>
             </button>
-            <button
-              :class="[$style.tabBtn, { [$style.tabActive]: panelSection === 'timeline' }]"
-              aria-label="时间线" title="时间线"
-              @click="panelSection = 'timeline'"
-            >
-              <svg viewBox="0 0 24 24" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                <path d="M12 3v18" />
-                <circle cx="12" cy="8" r="1.7" />
-                <circle cx="12" cy="16" r="1.7" />
-              </svg>
-            </button>
           </div>
 
           <div :class="$style.panelBody">
@@ -267,21 +256,6 @@
             </div>
 
             <!-- ④ 时间线 -->
-            <div v-else :class="$style.tpWrap">
-              <div ref="tp_scroll_ref" :class="$style.tpScroll">
-                <button
-                  v-for="(row, index) in timelineRows"
-                  :key="`tp-${index}`"
-                  :ref="el => { if (index === activeIndex) tp_active_ref = el }"
-                  :class="[$style.tpRow, index === activeIndex && $style.tpRowActive]"
-                  @click="seekTo(row.time)"
-                >
-                  <span :class="$style.tpTime">{{ row.timeText }}</span>
-                  <span :class="$style.tpText">{{ row.text }}</span>
-                </button>
-              </div>
-              <button :class="$style.tpExpand" @click="openTimeline">全屏时间线</button>
-            </div>
           </div>
 
           <!-- ✕ 只收起面板，不退出歌词界面 -->
@@ -338,9 +312,15 @@
             />
           </div>
           <span :class="$style.time">{{ nowPlayTimeStr }} / {{ maxPlayTimeStr }}</span>
-          <button :class="$style.iconBtn" :aria-label="$t('immersive_lyric__panel_open')" :title="$t('immersive_lyric__panel_open')" @click="panelOpen = !panelOpen">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 0 1024 1024" space="preserve">
-              <use xlink:href="#icon-immersive" />
+          <button
+            :class="[$style.iconBtn, timelineOpen && $style.iconBtnOn]"
+            :aria-label="$t('timeline.title')" :title="$t('timeline.title')"
+            @click="toggleTimeline"
+          >
+            <svg viewBox="0 0 24 24" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path d="M12 3.5v17" />
+              <circle cx="12" cy="8" r="1.9" />
+              <circle cx="12" cy="16" r="1.9" />
             </svg>
           </button>
           <button :class="$style.openBtn" @click="openPlayer">打开播放器</button>
@@ -627,6 +607,11 @@ export default {
       autoScrollLocked = false
       window.setTimeout(() => { scrollToActive(true) }, 80)
     }
+    // 播放栏那颗按钮：开着就收起，关着就打开
+    const toggleTimeline = () => {
+      if (timelineOpen.value) timelineOpen.value = false
+      else openTimeline()
+    }
     const seekTo = time => { window.app_event.setProgress(time / 1000) }
     const handleTimelineScroll = () => {
       autoScrollLocked = true
@@ -860,6 +845,7 @@ export default {
       tp_scroll_ref,
       tp_active_ref,
       openTimeline,
+      toggleTimeline,
       seekTo,
       handleTimelineScroll,
       handleClose,
@@ -1422,6 +1408,11 @@ export default {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+}
+
+.iconBtnOn {
+  color: var(--color-primary);
+  background-color: var(--color-primary-alpha-100);
 }
 
 .iconBtn {
