@@ -4,6 +4,8 @@
       v-if="visible"
       ref="dom_root"
       :class="$style.root"
+      :data-lyric-style="lyricStyle"
+      :data-bg="bgPresetKey"
       tabindex="-1"
       data-view="lattice-stage"
     >
@@ -14,7 +16,7 @@
         :style="{ backgroundImage: `url('${musicInfo.pic}')` }"
         aria-hidden="true"
       ></div>
-      <div :class="$style.bgTint" aria-hidden="true"></div>
+      <div :class="$style.bgTint" :style="bgTintStyle" aria-hidden="true"></div>
       <canvas ref="canvas_ref" :class="$style.particles" aria-hidden="true"></canvas>
       <div :class="$style.vignette" aria-hidden="true"></div>
 
@@ -74,6 +76,7 @@
             :leave-active-class="$style.leaveActive"
             :leave-to-class="$style.leaveTo"
             :class="$style.lyricColumn"
+            :style="{ '--lyric-scale': lyricScale }"
           >
             <div
               v-for="item in visibleLines"
@@ -107,6 +110,26 @@
               <svg viewBox="0 0 24 24" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="4" />
                 <circle cx="12" cy="12" r="3.2" />
+              </svg>
+            </button>
+            <button
+              :class="[$style.tabBtn, { [$style.tabActive]: panelSection === 'bg' }]"
+              aria-label="背景" title="背景"
+              @click="panelSection = 'bg'"
+            >
+              <svg viewBox="0 0 24 24" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="3" />
+                <path d="M3 15l5-5 4 4 3-3 6 6" />
+                <circle cx="9" cy="9" r="1.4" />
+              </svg>
+            </button>
+            <button
+              :class="[$style.tabBtn, { [$style.tabActive]: panelSection === 'style' }]"
+              aria-label="歌词样式" title="歌词样式"
+              @click="panelSection = 'style'"
+            >
+              <svg viewBox="0 0 24 24" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M5 6h14M5 12h9M5 18h12" />
               </svg>
             </button>
             <button
@@ -146,6 +169,55 @@
               <div :class="$style.coverName">{{ musicInfo.name }}</div>
               <div :class="$style.coverArtist">{{ musicInfo.singer }}</div>
               <div v-if="musicInfo.album" :class="$style.coverAlbum">{{ musicInfo.album }}</div>
+            </div>
+
+            <!-- ①-B 背景类型：默认 / AI 主题 / 自定义 + 预设 -->
+            <div v-if="panelSection === 'bg'" :class="$style.bgBox">
+              <div :class="$style.segRow">
+                <button
+                  v-for="t in bgTypes" :key="t.key"
+                  :class="[$style.segBtn, bgType === t.key && $style.segActive]"
+                  @click="setBgType(t.key)"
+                >{{ t.label }}</button>
+              </div>
+              <div :class="$style.presetHead">
+                <span>{{ bgPresetName }}</span>
+                <button :class="$style.shuffleBtn" aria-label="换一个" title="换一个" @click="shuffleBg">⤨</button>
+              </div>
+              <div :class="$style.presetGrid">
+                <button
+                  v-for="p in bgPresets" :key="p.key"
+                  :class="[$style.presetItem, bgPresetKey === p.key && $style.presetActive]"
+                  :style="{ background: p.swatch }"
+                  :title="p.name"
+                  @click="setBgPreset(p.key)"
+                >
+                  <span :class="$style.presetName">{{ p.name }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- ①-C 歌词样式 -->
+            <div v-else-if="panelSection === 'style'" :class="$style.styleBox">
+              <div :class="$style.styleGrid">
+                <button
+                  v-for="st in lyricStyles" :key="st.key"
+                  :class="[$style.styleItem, lyricStyle === st.key && $style.styleActive]"
+                  @click="setLyricStyle(st.key)"
+                >
+                  <span :class="$style.styleSample" :data-sample="st.key">Aa</span>
+                  <span :class="$style.styleName">{{ st.label }}</span>
+                </button>
+              </div>
+              <div :class="$style.infoRow">
+                <span :class="$style.infoLabel">字号</span>
+                <div :class="$style.offsetCtrl">
+                  <button :class="$style.offsetBtn" @click="nudgeScale(-1)">A−</button>
+                  <button :class="$style.offsetValue">{{ Math.round(lyricScale * 100) }}%</button>
+                  <button :class="$style.offsetBtn" @click="nudgeScale(1)">A+</button>
+                </div>
+              </div>
+              <p :class="$style.styleHint">当前：{{ currentStyleLabel }}</p>
             </div>
 
             <!-- ② 音效设置：直接调用播放器里的音效弹窗 + 音量 -->
@@ -390,6 +462,71 @@ export default {
     const canvas_ref = ref(null)
     const panelOpen = ref(true)
     const panelSection = ref('cover')
+
+    // ── 歌词样式 / 背景类型（Folia 的「右侧控制面板」核心两项）──────────
+    // 存 localStorage：换歌、重开窗口都保持
+    const LS_KEY = 'lattice-panel-prefs'
+    const readPrefs = () => {
+      try { return JSON.parse(window.localStorage.getItem(LS_KEY) ?? '{}') } catch (e) { return {} }
+    }
+    const savedPrefs = readPrefs()
+
+    const lyricStyles = [
+      { key: 'standard', label: '标准' },
+      { key: 'flow', label: '流光' },
+      { key: 'fade', label: '隐现' },
+      { key: 'cloud', label: '云阶' },
+      { key: 'chorus', label: '群唱' },
+      { key: 'monet', label: '莫奈' },
+    ]
+    const bgTypes = [
+      { key: 'default', label: '默认' },
+      { key: 'ai', label: 'AI主题' },
+      { key: 'custom', label: '自定义' },
+    ]
+    // 预设：name + 两层径向渐变（tint）+ 底色，直接喂给 .bgTint
+    const bgPresets = [
+      { key: 'tide', name: '潮汐深潭', swatch: 'linear-gradient(135deg,#0b1a33,#2b5f8a)', tint: 'radial-gradient(80% 60% at 20% 20%, rgba(58,120,190,.55), rgba(58,120,190,0) 62%), radial-gradient(70% 55% at 82% 78%, rgba(20,60,110,.5), rgba(20,60,110,0) 60%), linear-gradient(140deg, rgba(8,18,36,.62), rgba(4,8,16,.72))' },
+      { key: 'monet', name: '莫奈花园', swatch: 'linear-gradient(135deg,#3c2a52,#7a5c8f)', tint: 'radial-gradient(75% 60% at 25% 25%, rgba(168,120,190,.5), rgba(168,120,190,0) 60%), radial-gradient(70% 55% at 80% 75%, rgba(120,150,210,.42), rgba(120,150,210,0) 62%), linear-gradient(140deg, rgba(40,26,56,.6), rgba(16,12,24,.7))' },
+      { key: 'ember', name: '余烬', swatch: 'linear-gradient(135deg,#3a1414,#8a3b2a)', tint: 'radial-gradient(80% 60% at 22% 20%, rgba(210,90,60,.48), rgba(210,90,60,0) 62%), radial-gradient(70% 55% at 80% 78%, rgba(120,40,40,.45), rgba(120,40,40,0) 60%), linear-gradient(140deg, rgba(34,12,12,.62), rgba(14,8,8,.74))' },
+      { key: 'aurora', name: '极光', swatch: 'linear-gradient(135deg,#062a2a,#2f8f7f)', tint: 'radial-gradient(80% 60% at 18% 22%, rgba(60,200,170,.42), rgba(60,200,170,0) 62%), radial-gradient(70% 55% at 84% 76%, rgba(80,120,220,.4), rgba(80,120,220,0) 60%), linear-gradient(140deg, rgba(6,26,26,.62), rgba(4,10,12,.74))' },
+      { key: 'dusk', name: '暮色', swatch: 'linear-gradient(135deg,#2a1a2e,#b06a5a)', tint: 'radial-gradient(80% 60% at 20% 18%, rgba(190,110,90,.45), rgba(190,110,90,0) 62%), radial-gradient(70% 55% at 82% 78%, rgba(120,80,150,.42), rgba(120,80,150,0) 60%), linear-gradient(140deg, rgba(30,16,28,.6), rgba(12,8,14,.72))' },
+      { key: 'ink', name: '水墨', swatch: 'linear-gradient(135deg,#101216,#4a4f57)', tint: 'radial-gradient(80% 60% at 22% 20%, rgba(150,155,165,.24), rgba(150,155,165,0) 62%), radial-gradient(70% 55% at 80% 78%, rgba(90,95,105,.28), rgba(90,95,105,0) 60%), linear-gradient(140deg, rgba(16,17,20,.7), rgba(8,9,12,.78))' },
+    ]
+
+    const lyricStyle = ref(savedPrefs.lyricStyle ?? 'standard')
+    const bgType = ref(savedPrefs.bgType ?? 'default')
+    const bgPresetKey = ref(savedPrefs.bgPreset ?? 'tide')
+    const lyricScale = ref(savedPrefs.lyricScale ?? 1)
+
+    const savePrefs = () => {
+      try {
+        window.localStorage.setItem(LS_KEY, JSON.stringify({
+          lyricStyle: lyricStyle.value,
+          bgType: bgType.value,
+          bgPreset: bgPresetKey.value,
+          lyricScale: lyricScale.value,
+        }))
+      } catch (e) { /* 隐私模式等，忽略 */ }
+    }
+    const setLyricStyle = key => { lyricStyle.value = key; savePrefs() }
+    const setBgType = key => { bgType.value = key; savePrefs() }
+    const setBgPreset = key => { bgPresetKey.value = key; savePrefs() }
+    const shuffleBg = () => {
+      const idx = bgPresets.findIndex(p => p.key === bgPresetKey.value)
+      bgPresetKey.value = bgPresets[(idx + 1) % bgPresets.length].key
+      savePrefs()
+    }
+    const nudgeScale = step => {
+      lyricScale.value = Math.min(1.6, Math.max(0.7, Math.round((lyricScale.value + step * 0.05) * 100) / 100))
+      savePrefs()
+    }
+    const bgPresetName = computed(() => (bgPresets.find(p => p.key === bgPresetKey.value) ?? bgPresets[0]).name)
+    const currentStyleLabel = computed(() => (lyricStyles.find(s => s.key === lyricStyle.value) ?? lyricStyles[0]).label)
+    const bgTintStyle = computed(() => {
+      const p = bgPresets.find(x => x.key === bgPresetKey.value) ?? bgPresets[0]
+      return { background: p.tint }
+    })
     const barExpanded = ref(false)
     const timelineOpen = ref(false)
     // 音效设置窗口（自己做，不用 SoundEffectBtn 的弹窗：它 teleport 到 #root，会被歌词界面盖住）
@@ -689,6 +826,21 @@ export default {
       nudgeOffset,
       panelOpen,
       panelSection,
+      lyricStyles,
+      lyricStyle,
+      setLyricStyle,
+      currentStyleLabel,
+      bgTypes,
+      bgType,
+      setBgType,
+      bgPresets,
+      bgPresetKey,
+      bgPresetName,
+      setBgPreset,
+      shuffleBg,
+      bgTintStyle,
+      lyricScale,
+      nudgeScale,
       barExpanded,
       handleBarEnter,
       handleBarLeave,
@@ -1694,4 +1846,204 @@ export default {
   color: rgba(255, 255, 255, .4);
   font-variant-numeric: tabular-nums;
 }
+
+/* ── 右侧控制面板：背景 / 歌词样式（对齐 Folia 的沉浸式设置）────────── */
+.bgBox,
+.styleBox {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 12px;
+}
+.segRow {
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .07);
+}
+.segBtn {
+  flex: 1 1 0;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, .6);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease;
+
+  &:hover { color: rgba(255, 255, 255, .85); }
+}
+.segActive {
+  background: rgba(255, 255, 255, .2);
+  color: #fff;
+  font-weight: 600;
+}
+.presetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, .78);
+}
+.shuffleBtn {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover { background: rgba(255, 255, 255, .22); }
+}
+.presetGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.presetItem {
+  position: relative;
+  height: 54px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .18s ease, transform .18s ease;
+
+  &:hover { transform: translateY(-1px); }
+}
+.presetActive {
+  border-color: rgba(255, 255, 255, .9);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .9) inset;
+}
+.presetName {
+  position: absolute;
+  left: 6px;
+  bottom: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, .92);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+}
+.styleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.styleItem {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 4px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .05);
+  color: #fff;
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease;
+
+  &:hover { background: rgba(255, 255, 255, .1); }
+}
+.styleActive {
+  border-color: var(--color-primary);
+  background: rgba(255, 255, 255, .14);
+}
+.styleSample {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+.styleName {
+  font-size: 11px;
+  opacity: .75;
+}
+.styleHint {
+  font-size: 11px;
+  opacity: .5;
+}
+
+/* 字号缩放（只作用于歌词列，不缩放面板） */
+.lyricColumn {
+  --lyric-scale: 1;
+}
+.line_active {
+  font-size: calc(clamp(30px, 4.6vw, 58px) * var(--lyric-scale, 1));
+}
+
+/* ── 歌词样式变体 ───────────────────────────────────────────── */
+/* 流光：活动行有扫光 + 更强辉光 */
+.root[data-lyric-style="flow"] {
+  .line_active {
+    text-shadow: 0 0 32px rgba(160, 130, 255, .55), 0 8px 48px rgba(120, 96, 220, .45);
+
+    :global(.fillText),
+    :deep(.fillText) {
+      background-image: linear-gradient(
+        100deg,
+        #fff 0%,
+        #d9ccff 38%,
+        #fff 50%,
+        #d9ccff 62%,
+        #fff 100%
+      );
+      background-size: 220% 100%;
+      animation: flowSheen 3.4s linear infinite;
+      -webkit-background-clip: text;
+    }
+  }
+}
+@keyframes flowSheen {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+/* 隐现：非活动行几乎隐去 */
+.root[data-lyric-style="fade"] {
+  .line_prev,
+  .line_next {
+    opacity: .16;
+    filter: blur(.4px);
+  }
+  .line_active {
+    text-shadow: 0 10px 60px rgba(0, 0, 0, .55);
+  }
+}
+
+/* 云阶：行左右错开，形成阶梯 */
+.root[data-lyric-style="cloud"] {
+  .lyricColumn { align-items: flex-start; padding-left: 8%; }
+  .line:nth-child(odd) { transform: translateX(6%); }
+  .line:nth-child(even) { transform: translateX(-2%); }
+  .line_active { transform: translateX(0); }
+}
+
+/* 群唱：活动行更大、字距拉开，其余行也偏大 */
+.root[data-lyric-style="chorus"] {
+  .line_active {
+    font-size: calc(clamp(34px, 5.4vw, 68px) * var(--lyric-scale, 1));
+    letter-spacing: .06em;
+  }
+  .line_prev,
+  .line_next {
+    font-size: clamp(18px, 2.1vw, 26px);
+    letter-spacing: .04em;
+  }
+}
+
+/* 莫奈：非活动行柔焦，整体像油画 */
+.root[data-lyric-style="monet"] {
+  .line_prev,
+  .line_next {
+    filter: blur(1.6px) saturate(1.2);
+    opacity: .3;
+  }
+  .line_active {
+    filter: saturate(1.15);
+    text-shadow: 0 0 40px rgba(200, 180, 255, .5), 0 10px 50px rgba(0, 0, 0, .5);
+  }
+}
+
 </style>
