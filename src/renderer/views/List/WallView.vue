@@ -258,7 +258,9 @@ export default {
 
     const blockW = computed(() => BLOCK_COLS * pitch.value)
     const blockH = computed(() => BLOCK_ROWS * pitch.value)
-    const blocksPerRow = computed(() => Math.max(1, Math.round(viewW.value / blockW.value) || 1))
+    // ⚠️ 用 ceil 不用 round：视口比一个块宽时（1.05 个块），round 会得到 1，
+    // 右边那 5% 就永远是黑的。ceil 保证横向一定铺满。
+    const blocksPerRow = computed(() => Math.max(1, Math.ceil(viewW.value / blockW.value) || 1))
     const blockRows = computed(() => Math.max(1, Math.ceil(Math.ceil(list.value.length / SLOTS_PER_BLOCK) / blocksPerRow.value)))
     const contentW = computed(() => blocksPerRow.value * blockW.value)
     const contentH = computed(() => blockRows.value * blockH.value)
@@ -272,8 +274,9 @@ export default {
       const bh = blockH.value
       const vw = viewW.value
       const vh = viewH.value
-      const ox = -pan.value.x
-      const oy = -pan.value.y
+      // pan = 视口左上角在画布上的坐标（不是位移），所以可见范围就是 [pan, pan+视口]
+      const ox = pan.value.x
+      const oy = pan.value.y
 
       const colFrom = Math.floor(ox / bw) - 1
       const colTo = Math.floor((ox + vw) / bw) + 1
@@ -339,13 +342,13 @@ export default {
     const clampPan = () => {
       const vw = viewW.value
       const vh = viewH.value
-      const maxX = 40
-      const minX = Math.min(maxX, vw - contentW.value - 40)
-      const maxY = 40
-      const minY = Math.min(maxY, vh - contentH.value - 40)
+      // pan = 视口左上角在画布上的坐标，所以范围是 [0, 内容-视口]；
+      // 内容比视口小时固定 0（贴左上），不会拖出黑边
+      const maxX = Math.max(0, contentW.value - vw)
+      const maxY = Math.max(0, contentH.value - vh)
       pan.value = {
-        x: Math.min(maxX, Math.max(minX, pan.value.x)),
-        y: Math.min(maxY, Math.max(minY, pan.value.y)),
+        x: Math.min(maxX, Math.max(0, pan.value.x)),
+        y: Math.min(maxY, Math.max(0, pan.value.y)),
       }
     }
 
@@ -355,7 +358,8 @@ export default {
       viewW.value = stage.clientWidth
       viewH.value = stage.clientHeight
       // 单元格大小跟窗口走：一屏大约看到 1.2 个块宽
-      pitch.value = Math.round(Math.min(96, Math.max(46, viewW.value / 12.6)))
+      // 单元尺寸：一屏大约看到 1.3 个块宽（12 格），太大会只剩几首
+      pitch.value = Math.round(Math.min(84, Math.max(44, viewW.value / 15.5)))
       clampPan()
     }
 
@@ -386,7 +390,8 @@ export default {
         // 确认在拖动后才捕获指针：保证拖出窗口/拖快时事件不丢，同时不影响点击
         dom_stage.value?.setPointerCapture?.(e.pointerId)
       }
-      pan.value = { x: dragStart.px + (e.clientX - dragStart.x), y: dragStart.py + (e.clientY - dragStart.y) }
+      // 内容跟着鼠标走：鼠标往右拖，视口原点要往左移
+      pan.value = { x: dragStart.px - (e.clientX - dragStart.x), y: dragStart.py - (e.clientY - dragStart.y) }
       clampPan()
     }
     const onStageUp = () => {
@@ -398,7 +403,9 @@ export default {
       const dx = e.shiftKey ? e.deltaY : e.deltaX
       const dy = e.shiftKey ? 0 : e.deltaY
       if (focusIndex.value !== null) clearFocus()
-      pan.value = { x: pan.value.x - dx, y: pan.value.y - dy }
+      // ⚠️ 方向：向下滚（deltaY > 0）应该看到**下面**的内容 → 视口原点下移 → pan 增大。
+      // 之前写成 pan - deltaY，结果往下滚内容反而往下走，上方露出一片黑。
+      pan.value = { x: pan.value.x + dx, y: pan.value.y + dy }
       clampPan()
     }
 
