@@ -61,7 +61,7 @@
       </div>
     </header>
 
-    <!-- 无限画布：canvas 是比视口大得多的平面，靠 translate 平移；点卡片时平移到中心并放大 -->
+    <!-- 无限画布：只渲染视口附近的卡片（虚拟化），拖动/滚轮只改视口原点 -->
     <div
       ref="dom_stage"
       :class="[$style.stage, dragging && $style.stageDrag]"
@@ -71,38 +71,36 @@
       @pointercancel="onStageUp"
       @pointerleave="onStageUp"
       @wheel.prevent="onWheel"
+      @click="onStageClick"
     >
-      <div :class="$style.canvas" :style="canvasStyle" @click="onCanvasClick">
-        <div
-          v-for="(item, index) in list"
-          :key="item.id"
-          :class="[$style.tile, {
-            [$style.tileActive]: isCurrent(index),
-            [$style.tileFocus]: focusIndex === index,
-            [$style.tileDim]: focusIndex !== null && focusIndex !== index,
-            [$style.tileDisabled]: !assertApiSupport(item.source),
-          }]"
-          :style="tileStyle(index)"
-          role="button"
-          tabindex="0"
-          :aria-label="item.name"
-          @click.stop="onTileClick(index)"
-          @dblclick.stop="onTileDbl(index)"
-          @keydown.enter="handlePlay(index)"
-          @pointermove="handleTileMove"
-          @pointerleave="handleTileLeave"
-        >
-          <img v-if="picUrl(item)" :class="$style.cover" :src="picUrl(item)" loading="lazy" alt="">
-          <div v-else :class="$style.coverFallback" :style="fallbackStyle(item)">
-            <span>{{ (item.name || '?').slice(0, 1) }}</span>
-          </div>
-          <div :class="$style.overlay">
-            <div :class="$style.name">{{ item.name }}</div>
-            <div :class="$style.singer">{{ item.singer }}</div>
-          </div>
-          <div v-if="isCurrent(index)" :class="$style.eq" aria-hidden="true">
-            <i></i><i></i><i></i>
-          </div>
+      <div
+        v-for="tile in visibleTiles"
+        :key="tile.key"
+        :class="[$style.tile, {
+          [$style.tileActive]: isCurrent(tile.index),
+          [$style.tileFocus]: focusIndex === tile.index,
+          [$style.tileDim]: focusIndex !== null && focusIndex !== tile.index,
+          [$style.tileDisabled]: !assertApiSupport(tile.source),
+        }]"
+        :style="tile.style"
+        role="button"
+        tabindex="0"
+        :aria-label="tile.name"
+        :data-tile-index="tile.index"
+        @keydown.enter="handlePlay(tile.index)"
+        @pointermove="handleTileMove"
+        @pointerleave="handleTileLeave"
+      >
+        <img v-if="tile.pic" :class="$style.cover" :src="tile.pic" loading="lazy" alt="">
+        <div v-else :class="$style.coverFallback" :style="tile.fallback">
+          <span>{{ (tile.name || '?').slice(0, 1) }}</span>
+        </div>
+        <div :class="$style.overlay">
+          <div :class="$style.name">{{ tile.name }}</div>
+          <div :class="$style.singer">{{ tile.singer }}</div>
+        </div>
+        <div v-if="isCurrent(tile.index)" :class="$style.eq" aria-hidden="true">
+          <i></i><i></i><i></i>
         </div>
       </div>
 
@@ -111,7 +109,7 @@
       <div :class="[$style.hint, focusIndex !== null && $style.hintHide]">
         拖动画布 · 滚轮平移 · 单击放大 · 双击进歌词
       </div>
-      <button v-if="focusIndex !== null" :class="$style.focusClose" aria-label="关闭" @click.stop="clearFocus">
+      <button v-if="focusIndex !== null" :class="$style.focusClose" aria-label="收回" title="收回" @click.stop="clearFocus">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 0 24 24" space="preserve">
           <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
@@ -136,22 +134,101 @@ import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
 import { useI18n } from '@root/lang'
 
 /**
- * 歌曲封面墙（Folia「海报墙」体验的 Vue 重实现）
+ * 歌曲封面墙（对齐 Folia 的 Lattice 海报墙）
  *
- * 交互对齐 Folia：整面墙是**一张可以拖着走的画布**，封面按大小不一的块密铺在上面；
- * 悬停轻微抬起 + 白描边，**单击把这张封面放大到屏幕中央**（再点空白 / ESC 收回），双击进歌词舞台。
+ * 布局照搬 Folia `components/wall` 的引擎思路：
+ *  · 一个 block = 12 列 × 8 行，内含 12 个 slot（尺寸各异、正好铺满整块）
+ *  · block 在平面上无限重复；每个 block 的模板/镜像由它自己的坐标哈希决定，所以看不出周期
+ *  · **只渲染视口附近的卡片**（虚拟化，上限 400）—— 这是 1140 首也不卡、更不会出现黑块的关键
+ *  · 选中一张时它长到 6×6 格（Folia 的 EXPANSION_SPAN）并居中，邻居压暗
  *
- * 实现要点：
- *  · 布局在 JS 里算（packLayout）：以 cell 为单位的占位图，按固定尺寸序列铺块。
- *    块大小不同才有 Folia 那种错落的马赛克感 —— 纯 CSS grid 铺不出不等大密铺。
- *  · 平移只改 canvas 的 translate，不触发重排，所以「拖着走」很廉价。
- *  · 放大只改被点那张的 scale + 把画布平移到它居中，邻居不动。
+ * 参考实现：https://github.com/chthollyphile/folia-major
+ *   src/components/wall/layout.ts、blockTemplates.ts
  */
-const TILE_PATTERN = [
-  [2, 2], [1, 1], [1, 1], [2, 1], [1, 1],
-  [1, 2], [1, 1], [2, 1], [1, 1], [1, 1],
-  [2, 2], [1, 1], [2, 1], [1, 1], [1, 2],
+
+// ── 块模板：12×8 的 12 个 slot，正好铺满、无缝隙（数据取自 Folia blockTemplates.ts）──
+const BLOCK_COLS = 12
+const BLOCK_ROWS = 8
+const SLOTS_PER_BLOCK = 12
+const EXPANSION_SPAN = 6 // 选中时放大到 6×6 格
+const MAX_RENDERED = 400
+
+const TEMPLATES = [
+  [
+    { x: 0, y: 0, cols: 3, rows: 2 },
+    { x: 3, y: 0, cols: 6, rows: 4 },
+    { x: 9, y: 0, cols: 3, rows: 2 },
+    { x: 0, y: 2, cols: 3, rows: 2 },
+    { x: 9, y: 2, cols: 3, rows: 4 },
+    { x: 0, y: 4, cols: 4, rows: 4 },
+    { x: 4, y: 4, cols: 2, rows: 2 },
+    { x: 6, y: 4, cols: 3, rows: 2 },
+    { x: 4, y: 6, cols: 2, rows: 2 },
+    { x: 6, y: 6, cols: 2, rows: 2 },
+    { x: 8, y: 6, cols: 2, rows: 2 },
+    { x: 10, y: 6, cols: 2, rows: 2 },
+  ],
+  [
+    { x: 0, y: 0, cols: 2, rows: 3 },
+    { x: 2, y: 0, cols: 2, rows: 3 },
+    { x: 4, y: 0, cols: 2, rows: 3 },
+    { x: 6, y: 0, cols: 6, rows: 4 },
+    { x: 0, y: 3, cols: 6, rows: 2 },
+    { x: 6, y: 4, cols: 2, rows: 4 },
+    { x: 8, y: 4, cols: 2, rows: 4 },
+    { x: 10, y: 4, cols: 2, rows: 2 },
+    { x: 0, y: 5, cols: 2, rows: 3 },
+    { x: 2, y: 5, cols: 2, rows: 3 },
+    { x: 4, y: 5, cols: 2, rows: 3 },
+    { x: 10, y: 6, cols: 2, rows: 2 },
+  ],
+  [
+    { x: 0, y: 0, cols: 6, rows: 4 },
+    { x: 6, y: 0, cols: 6, rows: 3 },
+    { x: 6, y: 3, cols: 4, rows: 3 },
+    { x: 10, y: 3, cols: 2, rows: 2 },
+    { x: 0, y: 4, cols: 4, rows: 2 },
+    { x: 4, y: 4, cols: 2, rows: 2 },
+    { x: 10, y: 5, cols: 2, rows: 3 },
+    { x: 0, y: 6, cols: 2, rows: 2 },
+    { x: 2, y: 6, cols: 2, rows: 2 },
+    { x: 4, y: 6, cols: 2, rows: 2 },
+    { x: 6, y: 6, cols: 2, rows: 2 },
+    { x: 8, y: 6, cols: 2, rows: 2 },
+  ],
+  [
+    { x: 0, y: 0, cols: 2, rows: 2 },
+    { x: 2, y: 0, cols: 2, rows: 2 },
+    { x: 4, y: 0, cols: 4, rows: 3 },
+    { x: 8, y: 0, cols: 2, rows: 4 },
+    { x: 10, y: 0, cols: 2, rows: 4 },
+    { x: 0, y: 2, cols: 2, rows: 3 },
+    { x: 2, y: 2, cols: 2, rows: 2 },
+    { x: 4, y: 3, cols: 4, rows: 3 },
+    { x: 2, y: 4, cols: 2, rows: 2 },
+    { x: 8, y: 4, cols: 4, rows: 4 },
+    { x: 0, y: 5, cols: 2, rows: 3 },
+    { x: 2, y: 6, cols: 6, rows: 2 },
+  ],
 ]
+
+const flipX = slots => slots.map(s => ({ ...s, x: BLOCK_COLS - s.x - s.cols }))
+const flipY = slots => slots.map(s => ({ ...s, y: BLOCK_ROWS - s.y - s.rows }))
+const REFLECTIONS = [s => s, flipX, flipY, s => flipX(flipY(s))]
+// 4 套模板 × 4 种镜像 = 16 种朝向，相邻块不会撞脸
+const ORIENTED = TEMPLATES.flatMap(t => REFLECTIONS.map(f => f(t)))
+
+// 整数哈希（同 Folia mixBlockCoords）：镜像由坐标哈希决定，避免整片墙看起来像网格
+const mixCoords = (col, row) => {
+  let v = Math.imul(col, 0x9e3779b1) ^ Math.imul(row, 0x85ebca6b)
+  v = Math.imul(v ^ (v >>> 15), 0x2c1b3c6d)
+  v ^= v >>> 12
+  return v >>> 0
+}
+const templateAt = (col, row) => {
+  const t = (((col + row * 2) % TEMPLATES.length) + TEMPLATES.length) % TEMPLATES.length
+  return ORIENTED[t * REFLECTIONS.length + (mixCoords(col, row) % REFLECTIONS.length)]
+}
 
 export default {
   name: 'SongWallView',
@@ -170,124 +247,116 @@ export default {
     const dom_stage = ref(null)
 
     // ── 画布状态 ───────────────────────────────────────────────
-    const cell = ref(190) // 单元边长（随窗口宽度调整）
-    const tiles = ref([]) // [{ x, y, w, h }] 绝对像素
-    const canvasW = ref(0)
-    const canvasH = ref(0)
+    const pitch = ref(80) // 单元格 + 间隙
+    const gap = 3
     const pan = ref({ x: 0, y: 0 })
+    const viewW = ref(0)
+    const viewH = ref(0)
     const dragging = ref(false)
     const focusIndex = ref(null)
-    const focusScale = ref(1)
     let prevPan = { x: 0, y: 0 }
 
-    /** 密铺：按占位图找第一块能放下的空位，放不下就退回 1×1 */
-    const packLayout = (count, cellSize) => {
-      const cols = Math.max(8, Math.ceil(Math.max(window.innerWidth, 900) / cellSize) + 4)
-      const rows = Math.max(6, Math.ceil(count / 3)) + 4
-      const used = Array.from({ length: rows }, () => new Array(cols).fill(false))
-      const out = []
-      let cursorRow = 0
-      let cursorCol = 0
+    const blockW = computed(() => BLOCK_COLS * pitch.value)
+    const blockH = computed(() => BLOCK_ROWS * pitch.value)
+    const blocksPerRow = computed(() => Math.max(1, Math.round(viewW.value / blockW.value) || 1))
+    const blockRows = computed(() => Math.max(1, Math.ceil(Math.ceil(list.value.length / SLOTS_PER_BLOCK) / blocksPerRow.value)))
+    const contentW = computed(() => blocksPerRow.value * blockW.value)
+    const contentH = computed(() => blockRows.value * blockH.value)
 
-      const fits = (r, c, w, h) => {
-        if (r + h > rows || c + w > cols) return false
-        for (let y = r; y < r + h; y++) for (let x = c; x < c + w; x++) if (used[y][x]) return false
-        return true
-      }
-      const occupy = (r, c, w, h) => {
-        for (let y = r; y < r + h; y++) for (let x = c; x < c + w; x++) used[y][x] = true
-      }
-      const nextFree = () => {
-        for (let r = cursorRow; r < rows; r++) {
-          for (let c = (r === cursorRow ? cursorCol : 0); c < cols; c++) {
-            if (!used[r][c]) return [r, c]
+    /** 视口附近的卡片（虚拟化核心）：只算看得见的块，最多 MAX_RENDERED 张 */
+    const visibleTiles = computed(() => {
+      const items = list.value
+      if (!items.length || !viewW.value) return []
+      const p = pitch.value
+      const bw = blockW.value
+      const bh = blockH.value
+      const vw = viewW.value
+      const vh = viewH.value
+      const ox = -pan.value.x
+      const oy = -pan.value.y
+
+      const colFrom = Math.floor(ox / bw) - 1
+      const colTo = Math.floor((ox + vw) / bw) + 1
+      const rowFrom = Math.floor(oy / bh) - 1
+      const rowTo = Math.floor((oy + vh) / bh) + 1
+      const perRow = blocksPerRow.value
+      const out = []
+      const focus = focusIndex.value
+
+      for (let row = Math.max(0, rowFrom); row <= rowTo; row++) {
+        for (let col = Math.max(0, colFrom); col <= colTo; col++) {
+          if (col >= perRow) continue
+          const blockIndex = row * perRow + col
+          if (blockIndex * SLOTS_PER_BLOCK >= items.length) continue
+          const tpl = templateAt(col, row)
+          const baseX = col * bw
+          const baseY = row * bh
+          for (let slot = 0; slot < SLOTS_PER_BLOCK; slot++) {
+            const index = blockIndex * SLOTS_PER_BLOCK + slot
+            if (index >= items.length) break
+            const s = tpl[slot]
+            const item = items[index]
+            // 画布坐标 → 舞台坐标：减去视口原点，拖动才会真的移动
+            let x = baseX + s.x * p - pan.value.x
+            let y = baseY + s.y * p - pan.value.y
+            let w = s.cols * p - gap
+            let h = s.rows * p - gap
+
+            if (focus === index) {
+              // 选中：长到 6×6 格，以原卡片中心为锚点
+              const fw = EXPANSION_SPAN * p - gap
+              const fh = EXPANSION_SPAN * p - gap
+              x -= (fw - w) / 2
+              y -= (fh - h) / 2
+              w = fw
+              h = fh
+            }
+
+            out.push({
+              key: `${index}`,
+              index,
+              name: item.name,
+              singer: item.singer,
+              source: item.source,
+              pic: item.meta?.picUrl || '',
+              fallback: fallbackStyle(item),
+              style: {
+                left: `${x}px`,
+                top: `${y}px`,
+                width: `${w}px`,
+                height: `${h}px`,
+                borderRadius: s.cols >= 4 || s.rows >= 4 ? '6px' : '3px',
+                zIndex: focus === index ? 30 : undefined,
+              },
+            })
+            if (out.length >= MAX_RENDERED) return out
           }
         }
-        return null
       }
-
-      for (let i = 0; i < count; i++) {
-        const pos = nextFree()
-        if (!pos) break
-        const [r, c] = pos
-        let [w, h] = TILE_PATTERN[i % TILE_PATTERN.length]
-        // 边界/占位不满足就降级成 1×1，保证一定能放下
-        if (!fits(r, c, w, h)) { w = 1; h = 1 }
-        occupy(r, c, w, h)
-        out.push({ x: c * cellSize, y: r * cellSize, w: w * cellSize, h: h * cellSize })
-        cursorRow = r
-        cursorCol = c + w
-      }
-
-      let maxX = 0
-      let maxY = 0
-      for (const t of out) {
-        maxX = Math.max(maxX, t.x + t.w)
-        maxY = Math.max(maxY, t.y + t.h)
-      }
-      return { out, maxX, maxY }
-    }
-
-    const rebuild = () => {
-      const stage = dom_stage.value
-      const stageW = stage ? stage.clientWidth : window.innerWidth
-      const stageH = stage ? stage.clientHeight : window.innerHeight
-      // 单元大小跟窗口走：窄窗口小一点，宽屏大一点
-      let size = Math.round(Math.min(230, Math.max(132, stageW / 6.4)))
-      let packed = packLayout(list.value.length, size)
-      // 歌少的时候画布会比视口小，右下角留一大块黑 —— 逐级放大单元直到铺满，
-      // 这样 20 首和 2000 首都像「一整面墙」
-      for (let i = 0; i < 5; i++) {
-        if (packed.maxX >= stageW * 1.12 && packed.maxY >= stageH * 1.12) break
-        if (size >= 320) break
-        size = Math.round(size * 1.16)
-        packed = packLayout(list.value.length, size)
-      }
-      cell.value = size
-      tiles.value = packed.out
-      canvasW.value = packed.maxX
-      canvasH.value = packed.maxY
-      clampPan()
-    }
-
-    // 初始视角：把画布往左上挪一点，看起来像「墙还在继续」
-    const resetPan = () => {
-      pan.value = { x: -Math.round(canvasW.value * 0.08), y: -Math.round(canvasH.value * 0.06) }
-    }
+      return out
+    })
 
     const clampPan = () => {
-      const stage = dom_stage.value
-      if (!stage) return
-      const vw = stage.clientWidth
-      const vh = stage.clientHeight
-      // 允许拖出边界，但至少留约 1/3 屏的内容可见，避免拖进空白
-      const minX = -(canvasW.value - vw * 0.34)
-      const maxX = vw * 0.66
-      const minY = -(canvasH.value - vh * 0.34)
-      const maxY = vh * 0.66
+      const vw = viewW.value
+      const vh = viewH.value
+      const maxX = 40
+      const minX = Math.min(maxX, vw - contentW.value - 40)
+      const maxY = 40
+      const minY = Math.min(maxY, vh - contentH.value - 40)
       pan.value = {
         x: Math.min(maxX, Math.max(minX, pan.value.x)),
         y: Math.min(maxY, Math.max(minY, pan.value.y)),
       }
     }
 
-    const canvasStyle = computed(() => ({
-      width: `${canvasW.value}px`,
-      height: `${canvasH.value}px`,
-      transform: `translate3d(${pan.value.x}px, ${pan.value.y}px, 0)`,
-    }))
-
-    const tileStyle = index => {
-      const t = tiles.value[index]
-      if (!t) return { display: 'none' }
-      const style = {
-        left: `${t.x}px`,
-        top: `${t.y}px`,
-        width: `${t.w}px`,
-        height: `${t.h}px`,
-      }
-      if (focusIndex.value === index) style.transform = `scale(${focusScale.value})`
-      return style
+    const measure = () => {
+      const stage = dom_stage.value
+      if (!stage) return
+      viewW.value = stage.clientWidth
+      viewH.value = stage.clientHeight
+      // 单元格大小跟窗口走：一屏大约看到 1.2 个块宽
+      pitch.value = Math.round(Math.min(96, Math.max(46, viewW.value / 12.6)))
+      clampPan()
     }
 
     // ── 平移 ───────────────────────────────────────────────────
@@ -298,7 +367,9 @@ export default {
       dragStart = { x: e.clientX, y: e.clientY, px: pan.value.x, py: pan.value.y }
       moved = false
       dragging.value = true
-      dom_stage.value?.setPointerCapture?.(e.pointerId)
+      // ⚠️ 这里**不能** setPointerCapture：一旦捕获，pointerup 会被重定向到 stage，
+      // 浏览器就不再派发卡片上的 click（实测单击完全失效）。
+      // 捕获推迟到「确认是拖动」之后再要，见 onStageMove。
     }
     const onStageMove = e => {
       if (!dragStart) return
@@ -306,11 +377,15 @@ export default {
       const dy = e.clientY - dragStart.y
       if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return
       if (!moved && focusIndex.value !== null) {
-        // 放大态下开始拖画布 → 先收回，再以当前位置为起点继续拖，避免跳一下
+        // 放大态下开始拖 → 先收回，再以当前位置继续拖，避免跳
         clearFocus()
         dragStart = { x: e.clientX, y: e.clientY, px: pan.value.x, py: pan.value.y }
       }
-      moved = true
+      if (!moved) {
+        moved = true
+        // 确认在拖动后才捕获指针：保证拖出窗口/拖快时事件不丢，同时不影响点击
+        dom_stage.value?.setPointerCapture?.(e.pointerId)
+      }
       pan.value = { x: dragStart.px + (e.clientX - dragStart.x), y: dragStart.py + (e.clientY - dragStart.y) }
       clampPan()
     }
@@ -320,38 +395,36 @@ export default {
       dragging.value = false
     }
     const onWheel = e => {
-      if (focusIndex.value !== null) return
       const dx = e.shiftKey ? e.deltaY : e.deltaX
       const dy = e.shiftKey ? 0 : e.deltaY
+      if (focusIndex.value !== null) clearFocus()
       pan.value = { x: pan.value.x - dx, y: pan.value.y - dy }
       clampPan()
     }
 
     // ── 放大 / 收回 ────────────────────────────────────────────
-    // 点画布空白（不是卡片）→ 收回放大的那张
-    const onCanvasClick = e => {
-      if (e.target === e.currentTarget) clearFocus()
-    }
     const clearFocus = () => {
       if (focusIndex.value === null) return
       focusIndex.value = null
       pan.value = { ...prevPan }
     }
     const focusTile = index => {
-      const t = tiles.value[index]
-      const stage = dom_stage.value
-      if (!t || !stage) return
-      const vw = stage.clientWidth
-      const vh = stage.clientHeight
+      if (!dom_stage.value || !list.value[index]) return
+      const p = pitch.value
+      const blockIndex = Math.floor(index / SLOTS_PER_BLOCK)
+      const slot = index % SLOTS_PER_BLOCK
+      const col = blockIndex % blocksPerRow.value
+      const row = Math.floor(blockIndex / blocksPerRow.value)
+      const s = templateAt(col, row)[slot]
+      if (!s) return
+      // 卡片中心（画布坐标）——放大是围绕这个中心长到 6×6 的
+      const cx = col * blockW.value + s.x * p + (s.cols * p - gap) / 2
+      const cy = row * blockH.value + s.y * p + (s.rows * p - gap) / 2
       prevPan = { ...pan.value }
-      // 放大到「宽、高都不超出视口」为止（留 8% 边距），再夹到 1.2~3.2 倍
-      const fit = Math.min((vw * 0.84) / t.w, (vh * 0.84) / t.h)
-      focusScale.value = Math.min(3.2, Math.max(1.2, fit))
       focusIndex.value = index
-      // 平移到这张卡片的中心
       pan.value = {
-        x: Math.round(vw / 2 - (t.x + t.w / 2)),
-        y: Math.round(vh / 2 - (t.y + t.h / 2)),
+        x: Math.round(cx - viewW.value / 2),
+        y: Math.round(cy - viewH.value / 2),
       }
     }
 
@@ -360,8 +433,9 @@ export default {
       getListMusics(id).then(l => {
         list.value = [...l]
         void nextTick(() => {
-          rebuild()
-          resetPan()
+          measure()
+          pan.value = { x: 0, y: 0 }
+          focusIndex.value = null
         })
       }).catch(() => {})
     }
@@ -370,7 +444,7 @@ export default {
       if (v) {
         load(props.listId)
         focusIndex.value = null
-        void nextTick(() => { dom_root.value?.focus() })
+        void nextTick(() => { dom_root.value?.focus(); measure() })
       } else {
         focusIndex.value = null
       }
@@ -380,11 +454,11 @@ export default {
       if (!props.listId || !ids.includes(props.listId)) return
       load(props.listId)
     }
-    // load 内 promise 已带 catch，watch immediate 回调同样安全
-    const onResize = () => { rebuild() }
+    const onResize = () => { measure() }
     onMounted(() => {
       window.app_event.on('myListUpdate', handleMyListUpdate)
       window.addEventListener('resize', onResize)
+      void nextTick(measure)
     })
     onBeforeUnmount(() => {
       window.app_event.off('myListUpdate', handleMyListUpdate)
@@ -406,8 +480,6 @@ export default {
       const item = list.value[playInfo.playIndex]
       return item ? item.name : ''
     })
-
-    const picUrl = item => item.meta?.picUrl || ''
 
     // 无封面 fallback：按歌名取一组稳定渐变，避免每次渲染变色
     const fallbackStyle = item => {
@@ -451,22 +523,34 @@ export default {
       playList(props.listId, index)
     }
 
-    // 单击 = 放大 + 播放；再点同一张 = 收回。双击 = 播放并进歌词舞台。
-    let clickTimer = null
-    const onTileClick = index => {
-      if (moved) { moved = false; return } // 刚拖过画布，不当作点击
-      if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; return } // 双击的第二下
-      clickTimer = setTimeout(() => {
-        clickTimer = null
-        if (focusIndex.value === index) { clearFocus(); return }
+    // 单击 = 放大 + 播放；再点同一张 = 收回；双击 = 进歌词舞台。
+    //
+    // ⚠️ 判定放在**舞台层**而不是卡片上：第一次点击会让卡片长到 6×6 并平移居中，
+    // 动画期间卡片已经不在鼠标下面了，第二次点击会落到空白处 —— 卡片级 dblclick 永远不触发。
+    // 这里只看「同一位置 320ms 内点了两次」，第二次落在哪都算。
+    let lastTap = { index: -1, time: 0, x: 0, y: 0 }
+    const onStageClick = e => {
+      if (moved) { moved = false; return } // 刚拖过画布，不算点击
+      const tileEl = e.target.closest ? e.target.closest('[data-tile-index]') : null
+      const index = tileEl ? Number(tileEl.dataset.tileIndex) : -1
+      const now = Date.now()
+      const near = Math.abs(e.clientX - lastTap.x) < 12 && Math.abs(e.clientY - lastTap.y) < 12
+      if (now - lastTap.time < 320 && near) {
+        const idx = index >= 0 ? index : lastTap.index
+        lastTap = { index: -1, time: 0, x: 0, y: 0 }
+        if (idx >= 0) {
+          handlePlay(idx)
+          latticeVisible.value = true
+        }
+        return
+      }
+      lastTap = { index, time: now, x: e.clientX, y: e.clientY }
+      if (index < 0) { clearFocus(); return } // 点空白 → 收回
+      if (focusIndex.value === index) clearFocus()
+      else {
         focusTile(index)
         handlePlay(index)
-      }, 210)
-    }
-    const onTileDbl = index => {
-      if (clickTimer) { clearTimeout(clickTimer); clickTimer = null }
-      handlePlay(index)
-      latticeVisible.value = true
+      }
     }
     const handleClose = () => { emit('close') }
 
@@ -476,7 +560,7 @@ export default {
     }
     // 返回加固：pointerdown 先于 click 触发，避免「窗口刚恢复焦点/悬浮物遮挡导致 click 丢失」时点不动。
     const handleBackPointerDown = e => { if (e.button === 0) handleClose() }
-    // 全局 ESC：不依赖墙本身持有焦点（窗口切换/点过其他区域后 root 会失焦，模板上的 @keydown 会失效）
+    // 全局 ESC：不依赖墙本身持有焦点
     // 三段式退出：歌词舞台 → 放大的卡片 → 墙
     const handleGlobalEsc = e => {
       if (e.key !== 'Escape' || latticeVisible.value) return
@@ -511,22 +595,18 @@ export default {
       listName,
       isCurrent,
       playingName,
-      picUrl,
       fallbackStyle,
       handlePlay,
-      onTileClick,
-      onTileDbl,
+      onStageClick,
       handleClose,
       handleBackPointerDown,
       handleEsc,
       assertApiSupport,
       // 画布
-      canvasStyle,
-      tileStyle,
+      visibleTiles,
       dragging,
       focusIndex,
       clearFocus,
-      onCanvasClick,
       onStageDown,
       onStageMove,
       onStageUp,
@@ -622,8 +702,6 @@ export default {
 .dragArea {
   flex: auto;
   min-width: 0;
-  // ⚠️ 必须留出右侧空间：拖动区会一路铺到窗口右边缘的话，右上角的窗口按钮
-  // 就落在系统拖动区里 —— 真实鼠标事件会被系统吞掉（hover/点击都不触发）。
   max-width: calc(100% - 180px);
   align-self: stretch;
   display: flex;
@@ -717,7 +795,7 @@ export default {
   text-overflow: ellipsis;
 }
 
-// ── 无限画布 ─────────────────────────────────────────────────
+// ── 画布 ─────────────────────────────────────────────────────
 .stage {
   position: relative;
   flex: auto;
@@ -728,73 +806,63 @@ export default {
 }
 .stageDrag {
   cursor: grabbing;
-
-  .canvas { transition: none; }
-}
-
-.canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  // 平移由 style 里的 translate3d 驱动；拖动时过渡置 none（见 .stageDrag）
-  transition: transform .46s cubic-bezier(.22, .61, .36, 1);
-  will-change: transform;
 }
 
 .tile {
   position: absolute;
-  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
   background-color: rgba(255, 255, 255, .06);
-  transition: transform .42s cubic-bezier(.22, .61, .36, 1), opacity .3s ease, box-shadow .3s ease;
+  // 位置/尺寸变化（选中放大）用过渡；拖动时只改 transform 的容器，不触发重排
+  transition: left .34s cubic-bezier(.22, .61, .36, 1), top .34s cubic-bezier(.22, .61, .36, 1),
+    width .34s cubic-bezier(.22, .61, .36, 1), height .34s cubic-bezier(.22, .61, .36, 1),
+    opacity .28s ease, box-shadow .28s ease;
   // 视差用的鼠标相对位置（-0.5 ~ 0.5），由 @pointermove 写入
   --mx: 0;
   --my: 0;
 
-  // Folia 的观感：卡片之间几乎没有缝，靠悬停描边区分
   &:hover {
     z-index: 5;
-    box-shadow: 0 18px 46px rgba(0, 0, 0, .6);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
     outline: 1px solid rgba(255, 255, 255, .7);
     outline-offset: -1px;
 
     .cover {
       filter: brightness(1.1);
-      transform: translate(calc(var(--mx) * 10px), calc(var(--my) * 10px)) scale(1.06);
+      transform: translate(calc(var(--mx) * 10px), calc(var(--my) * 10px)) scale(1.05);
     }
-    .coverFallback { transform: translate(calc(var(--mx) * 10px), calc(var(--my) * 10px)) scale(1.06); }
+    .coverFallback { transform: translate(calc(var(--mx) * 10px), calc(var(--my) * 10px)) scale(1.05); }
     .overlay { opacity: 1; }
   }
 }
 
-// 被点开的那张：放大 + 白描边 + 抬到最上层，邻居压暗
+// 被点开的那张：长到 6×6 格 + 白描边 + 抬到最上层，邻居压暗
 .tileFocus {
-  z-index: 20;
-  border-radius: 8px;
-  box-shadow: 0 40px 90px rgba(0, 0, 0, .72), 0 0 0 1px rgba(255, 255, 255, .85);
+  z-index: 30;
+  border-radius: 8px !important;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, .78), 0 0 0 2px rgba(255, 255, 255, .9);
   outline: none;
 
   &:hover { outline: none; }
 
   .overlay {
     opacity: 1;
-    padding: 42px 16px 14px;
-    background: linear-gradient(180deg, transparent 0%, rgba(5, 7, 10, .82) 82%);
+    padding: 52px 18px 16px;
+    background: linear-gradient(180deg, transparent 0%, rgba(5, 7, 10, .84) 84%);
   }
-  .name { font-size: 15px; }
-  .singer { font-size: 12px; margin-top: 3px; opacity: .75; }
-  .eq { right: 16px; bottom: 16px; height: 18px; }
+  .name { font-size: 16px; }
+  .singer { font-size: 12px; margin-top: 3px; opacity: .78; }
+  .eq { right: 18px; bottom: 18px; height: 20px; }
 }
 .tileDim {
-  opacity: .34;
+  opacity: .3;
   &:hover { outline: none; box-shadow: none; }
 }
 
 .tileActive {
   box-shadow: 0 0 0 2px var(--color-primary), 0 10px 30px rgba(0, 0, 0, .5);
 
-  &:hover { box-shadow: 0 0 0 2px var(--color-primary), 0 18px 46px rgba(0, 0, 0, .6); }
+  &:hover { box-shadow: 0 0 0 2px var(--color-primary), 0 16px 40px rgba(0, 0, 0, .6); }
 }
 
 .tileDisabled {
@@ -900,7 +968,7 @@ export default {
   position: absolute;
   top: 18px;
   right: 22px;
-  z-index: 22;
+  z-index: 32;
   width: 34px;
   height: 34px;
   display: flex;
@@ -917,7 +985,7 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .canvas { transition: none; }
+  .tile { transition: none; }
   .eq i { animation: none; }
   .nowDot { animation: none; }
 }
