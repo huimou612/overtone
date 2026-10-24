@@ -460,7 +460,6 @@ import { buildLyricTimeline, findActiveLineIndex } from '@renderer/core/immersiv
 import { getLineFill } from '@renderer/core/immersiveLyric/fill'
 import LyricLineView from '@renderer/components/layout/ImmersiveLyric/stage/LyricLineView.vue'
 import PanelVolume from '@renderer/components/layout/ImmersiveLyric/panel/PanelVolume.vue'
-import { openFoliaWindow } from '@renderer/utils/ipc'
 import AudioConvolution from '@renderer/components/common/SoundEffectBtn/AudioConvolution.vue'
 import BiquadFilter from '@renderer/components/common/SoundEffectBtn/BiquadFilter.vue'
 import PitchShifter from '@renderer/components/common/SoundEffectBtn/PitchShifter.vue'
@@ -470,7 +469,7 @@ import { generateThemeFromCover } from './builtinTheme.js'
 import ThemePark from './ThemePark.vue'
 import { getListMusics } from '@renderer/store/list/action'
 import { resolveQueueView } from '@renderer/core/immersiveLyric/panel/queue'
-import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
+import { openFoliaWindow, minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
 
 /**
  * 泛音统一歌词界面（Lattice）——沉浸式歌词与 Folia 舞台合并后的唯一入口
