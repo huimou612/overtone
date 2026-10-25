@@ -69,13 +69,15 @@ export default {
 // 再用 background-clip: text 把渐变裁进字形 —— 「已唱/未唱」同时可见，
 // 不需要复制一层文字节点，也不需要 CSS animation（那样暂停就不会停）。
 .fillText {
-  background-image: linear-gradient(
+  // 渐变默认值与原实现逐字节一致；舞台可通过 --fill-image 覆盖（商籁用冷暖渐变）。
+  // 用 var 而不是新增类名，是为了让「样式卡」只改变量、不动逐字渲染逻辑。
+  background-image: var(--fill-image, linear-gradient(
     90deg,
     #fff 0,
     #fff calc(var(--ilus-fill, 0) * 100%),
     rgba(255, 255, 255, .42) calc(var(--ilus-fill, 0) * 100%),
     rgba(255, 255, 255, .42) 100%
-  );
+  ));
   background-repeat: no-repeat;
   background-size: 100% 100%;
   -webkit-background-clip: text;

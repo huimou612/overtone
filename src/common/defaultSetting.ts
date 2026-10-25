@@ -44,6 +44,15 @@ const defaultSetting: LX.AppSetting = {
   'lyric.bgDepth': 50,
   /** 自定义主题的次要色（用于背景径向高光，默认白色 5% 与原有视觉一致） */
   'lyric.secondaryColor': '#ffffff',
+  // 歌词动画参数（对应「歌词动画」页签）
+  /** 逐字旋转：开启后逐字交替 ±2.4° */
+  'lyric.wordRotate': false,
+  /** 排版模式：center / left / right */
+  'lyric.alignMode': 'center',
+  /** 呼吸浮动峰值倍率（1 = 关闭） */
+  'lyric.breatheScale': 1,
+  /** 单词间距（em），0 = 不额外加宽 */
+  'lyric.wordGap': 0,
   'lyric.customThemeJson': '',
   'lyric.uiModulesJson': '',
   /** 0 = 尚未从旧 localStorage 迁移；1 = 已迁移（只跑一次，绝不重复覆盖） */

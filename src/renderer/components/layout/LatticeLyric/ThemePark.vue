@@ -95,6 +95,28 @@
                   <span :class="$style.rowLabel">行距 <b>{{ draft.lineGap.toFixed(1) }}</b></span>
                   <input type="range" min="12" max="30" :value="Math.round(draft.lineGap * 10)" :class="$style.range" @input="patch({ lineGap: +$event.target.value / 10 })">
                 </div>
+                <div :class="$style.row">
+                  <span :class="$style.rowLabel">单词间距 <b>{{ draft.wordGap.toFixed(2) }}em</b></span>
+                  <input type="range" min="0" max="50" :value="Math.round(draft.wordGap * 100)" :class="$style.range" @input="patch({ wordGap: +$event.target.value / 100 })">
+                </div>
+
+                <div :class="$style.groupTitle">动画</div>
+                <div :class="$style.row">
+                  <span :class="$style.rowLabel">排版模式</span>
+                  <div :class="$style.seg">
+                    <button v-for="a in alignModes" :key="a.key" :class="[$style.segBtn, draft.alignMode === a.key && $style.segOn]" @click="patch({ alignMode: a.key })">{{ a.label }}</button>
+                  </div>
+                </div>
+                <div :class="$style.row">
+                  <span :class="$style.rowLabel">逐字旋转</span>
+                  <button :class="[$style.switch, draft.wordRotate && $style.switchOn]" @click="patch({ wordRotate: !draft.wordRotate })">
+                    <i></i>
+                  </button>
+                </div>
+                <div :class="$style.row">
+                  <span :class="$style.rowLabel">呼吸浮动 <b>{{ draft.breatheScale.toFixed(2) }}x</b></span>
+                  <input type="range" min="100" max="130" :value="Math.round(draft.breatheScale * 100)" :class="$style.range" @input="patch({ breatheScale: +$event.target.value / 100 })">
+                </div>
               </div>
 
               <!-- ② 歌词样式 -->
@@ -242,6 +264,10 @@ const DEFAULT_DRAFT = {
   subtitleMode: 'translation',
   subtitleScale: 0.5,
   subtitleColor: '#b9c2d6',
+  wordRotate: false,
+  alignMode: 'center',
+  breatheScale: 1,
+  wordGap: 0,
   modules: { cover: true, progress: true, time: true, queue: true, volume: true },
 }
 
@@ -259,6 +285,11 @@ export default {
     lineGap: { type: Number, default: 1.3 },
     bgDepth: { type: Number, default: 50 },
     secondaryColor: { type: String, default: '#ffffff' },
+    // 歌词动画参数
+    wordRotate: { type: Boolean, default: false },
+    alignMode: { type: String, default: 'center' },
+    breatheScale: { type: Number, default: 1 },
+    wordGap: { type: Number, default: 0 },
     // 父级执行「恢复默认」后 +1，本窗口据此把草稿重新对齐到父级真实值
     resetToken: { type: Number, default: 0 },
   },
@@ -277,6 +308,11 @@ export default {
       { key: 'subtitle', label: '字幕' },
       { key: 'modules', label: '模块' },
     ]
+    const alignModes = [
+      { key: 'center', label: '居中' },
+      { key: 'left', label: '左对齐' },
+      { key: 'right', label: '右对齐' },
+    ]
     const lyricStyles = [
       { key: 'standard', label: '标准', desc: '平整排布，逐字扫光' },
       { key: 'flow', label: '流光', desc: '前沿带一条亮带' },
@@ -285,6 +321,7 @@ export default {
       { key: 'chorus', label: '群唱', desc: '左右虚影，紫调' },
       { key: 'monet', label: '莫奈', desc: '多层叠色，柔焦' },
       { key: 'particle', label: '粒子', desc: '散点聚合成字' },
+      { key: 'sonnet', label: '商籁', desc: '冷白转暖橙，光丝掠过' },
     ]
     const bgTypes = [
       { key: 'preset', label: '预设' },
@@ -370,6 +407,10 @@ export default {
         lineGap: props.lineGap ?? props.initial?.lineGap ?? DEFAULT_DRAFT.lineGap,
         bgDepth: props.bgDepth ?? props.initial?.bgDepth ?? DEFAULT_DRAFT.bgDepth,
         secondaryColor: props.secondaryColor || props.initial?.secondaryColor || DEFAULT_DRAFT.secondaryColor,
+        wordRotate: props.wordRotate ?? props.initial?.wordRotate ?? DEFAULT_DRAFT.wordRotate,
+        alignMode: props.alignMode || props.initial?.alignMode || DEFAULT_DRAFT.alignMode,
+        breatheScale: props.breatheScale ?? props.initial?.breatheScale ?? DEFAULT_DRAFT.breatheScale,
+        wordGap: props.wordGap ?? props.initial?.wordGap ?? DEFAULT_DRAFT.wordGap,
       }
       dirty.value = false
       openSnapshot = JSON.parse(JSON.stringify(draft.value))
@@ -498,6 +539,7 @@ export default {
       sections,
       sectionKey,
       lyricStyles,
+      alignModes,
       bgTypes,
       subtitleModes,
       moduleList,

@@ -47,6 +47,14 @@ declare global {
       'lyric.bgDepth': number
       /** 自定义主题次要色 */
       'lyric.secondaryColor': string
+      /** 逐字旋转开关 */
+      'lyric.wordRotate': boolean
+      /** 排版模式：center / left / right */
+      'lyric.alignMode': string
+      /** 呼吸浮动峰值倍率（1 = 关闭） */
+      'lyric.breatheScale': number
+      /** 单词间距（em） */
+      'lyric.wordGap': number
       /** 自定义主题（JSON 字符串，空串表示未设置） */
       'lyric.customThemeJson': string
       /** 模块开关（JSON 字符串，空串表示用默认） */

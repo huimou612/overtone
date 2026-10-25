@@ -6,6 +6,9 @@
       :class="$style.root"
       :style="stageVars"
       :data-lyric-style="lyricStyle"
+      :data-align="alignMode"
+      :data-breathe="breatheScale > 1.001 ? 'on' : 'off'"
+      :data-word-rotate="wordRotate ? 'on' : 'off'"
       :data-bg="bgPresetKey"
       tabindex="-1"
       data-view="lattice-stage"
@@ -375,6 +378,10 @@
         :line-gap="lineGap"
         :bg-depth="bgDepth"
         :secondary-color="secondaryColor"
+        :word-rotate="wordRotate"
+        :align-mode="alignMode"
+        :breathe-scale="breatheScale"
+        :word-gap="wordGap"
         :reset-token="themeParkResetToken"
         @close="themeParkOpen = false"
         @apply="applyCustomTheme"
@@ -518,6 +525,7 @@ export default {
       { key: 'chorus', label: '群唱' },
       { key: 'monet', label: '莫奈' },
       { key: 'particle', label: '粒子' },
+      { key: 'sonnet', label: '商籁' },
     ]
     const bgTypes = [
       { key: 'default', label: '默认' },
@@ -609,6 +617,10 @@ export default {
         'lyric.lineGap': lineGap.value,
         'lyric.bgDepth': bgDepth.value,
         'lyric.secondaryColor': secondaryColor.value,
+        'lyric.wordRotate': wordRotate.value,
+        'lyric.alignMode': alignMode.value,
+        'lyric.breatheScale': breatheScale.value,
+        'lyric.wordGap': wordGap.value,
       })
       try {
         window.localStorage.setItem(LS_KEY, JSON.stringify({
@@ -647,6 +659,11 @@ export default {
     const lineGap = ref(appSetting['lyric.lineGap'])
     const bgDepth = ref(appSetting['lyric.bgDepth'])
     const secondaryColor = ref(appSetting['lyric.secondaryColor'])
+    // 歌词动画参数（商籁 / 逐字旋转 / 排版 / 呼吸 / 间距）
+    const wordRotate = ref(appSetting['lyric.wordRotate'])
+    const alignMode = ref(appSetting['lyric.alignMode'])
+    const breatheScale = ref(appSetting['lyric.breatheScale'])
+    const wordGap = ref(appSetting['lyric.wordGap'])
 
     /**
      * 背景深度 0/50/100 的视觉定义（务必与 defaultSetting 注释一致）：
@@ -668,6 +685,10 @@ export default {
         '--bg-vig': String(clamp01(0.7 * factor)),
         '--bg-vig-top': String(clamp01(0.5 * factor)),
         '--bg-vig-bot': String(clamp01(0.6 * factor)),
+        // 歌词动画参数
+        '--word-rot': '2.4deg',
+        '--breathe': String(Number(breatheScale.value) || 1),
+        '--word-gap': `${Number(wordGap.value) || 0}em`,
       }
     })
     const applyCustomTheme = t => {
@@ -707,6 +728,10 @@ export default {
       if (Number.isFinite(t.lineGap)) lineGap.value = t.lineGap
       if (Number.isFinite(t.bgDepth)) bgDepth.value = t.bgDepth
       if (typeof t.secondaryColor === 'string' && t.secondaryColor) secondaryColor.value = t.secondaryColor
+      if (typeof t.wordRotate === 'boolean') wordRotate.value = t.wordRotate
+      if (typeof t.alignMode === 'string' && t.alignMode) alignMode.value = t.alignMode
+      if (Number.isFinite(t.breatheScale)) breatheScale.value = t.breatheScale
+      if (Number.isFinite(t.wordGap)) wordGap.value = t.wordGap
       savePrefs()
     }
 
@@ -754,6 +779,10 @@ export default {
       'lyric.subtitleColor',
       'lyric.customThemeJson',
       'lyric.uiModulesJson',
+      'lyric.wordRotate',
+      'lyric.alignMode',
+      'lyric.breatheScale',
+      'lyric.wordGap',
     ]
     const DEFAULT_UI_MODULES = { cover: true, progress: true, time: true, queue: true, volume: true }
 
@@ -779,6 +808,10 @@ export default {
       subtitleMode.value = patch['lyric.subtitleMode']
       subtitleScale.value = patch['lyric.subtitleScale']
       subtitleColor.value = patch['lyric.subtitleColor']
+      wordRotate.value = patch['lyric.wordRotate']
+      alignMode.value = patch['lyric.alignMode']
+      breatheScale.value = patch['lyric.breatheScale']
+      wordGap.value = patch['lyric.wordGap']
       customTheme.value = null
       uiModules.value = { ...DEFAULT_UI_MODULES }
 
@@ -1224,6 +1257,10 @@ export default {
       lineGap,
       bgDepth,
       secondaryColor,
+      wordRotate,
+      alignMode,
+      breatheScale,
+      wordGap,
       lyricScale,
       nudgeScale,
       lyricLines,
@@ -1491,13 +1528,16 @@ export default {
   max-width: 100%;
   // 行距：由设置项 lyric.lineGap 驱动，缺省 1.3 = 项目原有视觉
   line-height: var(--lyric-gap, 1.3);
+  // 单词间距：由 lyric.wordGap 驱动，缺省 0 = 不加宽
+  letter-spacing: var(--word-gap, 0);
   transition: opacity .32s ease, transform .32s ease, font-size .32s ease;
 }
 .line_active {
   font-size: clamp(30px, 4.6vw, 58px);
   // 字重：由 lyric.fontWeight 驱动，缺省 700 = 项目原有视觉
   font-weight: var(--lyric-weight, 700);
-  letter-spacing: .01em;
+  // 单词间距：这里必须也用变量，否则 .line_active 的 .01em 会把 .line 上的 var 覆盖掉
+  letter-spacing: var(--word-gap, .01em);
   color: rgba(255, 255, 255, .96);
   text-shadow: 0 6px 40px rgba(120, 96, 220, .35);
   padding-bottom: 12px;
@@ -2516,6 +2556,95 @@ export default {
     filter: saturate(1.15);
     text-shadow: 0 0 40px rgba(200, 180, 255, .5), 0 10px 50px rgba(0, 0, 0, .5);
   }
+}
+
+// ── 商籁（sonnet）：冷白→暖橙的分段着色 + 多层辉光 + 斜向光丝 ──────────
+// 纯 CSS 实现：文字渐变靠 background-clip:text，辉光靠多层 text-shadow，
+// 光丝是 ::after 上的一个旋转渐变 + screen 混合，不需要 WebGL。
+.root[data-lyric-style="sonnet"] {
+  .line_prev,
+  .line_next {
+    opacity: .38;
+    filter: blur(.4px);
+  }
+
+  .line_active {
+    // 冷白 → 暖橙 → 珊瑚，跨字渐变；光晕分三层由近到远衰减
+    text-shadow:
+      0 0 14px rgba(255, 196, 160, .55),
+      0 0 38px rgba(255, 146, 108, .34),
+      0 0 86px rgba(255, 120, 92, .20);
+
+    // 逐字渐变走变量：LyricLineView 的 .fillText 用 var(--fill-image, 默认渐变)，
+    // 变量定义在这里，但里面的 --ilus-fill 会在每个字自己的 span 上解析。
+    // （早先想用 :deep(.fillText) 覆盖，编译后得到 `.fillText, :deep(.xxx)` 这种无效选择器，
+    //   永远不匹配——所以改成变量，只改变量不动逐字渲染。）
+    --fill-image: linear-gradient(
+      100deg,
+      #eef2ff 0,
+      #ffd9c2 calc(var(--ilus-fill, 0) * 55%),
+      #ff9a76 calc(var(--ilus-fill, 0) * 100%),
+      rgba(255, 255, 255, .30) calc(var(--ilus-fill, 0) * 100%),
+      rgba(255, 255, 255, .30) 100%
+    );
+
+    // 斜向光丝：一道细亮线缓慢掠过，screen 混合让它像光而不是白条
+    // 光丝必须又细又淡：整块铺开会在暗背景上糊成一条灰白板，反而盖住文字
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -16%;
+      bottom: -4%;
+      background: linear-gradient(
+        104deg,
+        transparent 46.5%,
+        rgba(255, 236, 222, .16) 48.6%,
+        rgba(255, 255, 255, .30) 49.6%,
+        rgba(255, 226, 210, .14) 50.8%,
+        transparent 53%
+      );
+      mix-blend-mode: screen;
+      transform: rotate(-5deg);
+      filter: blur(.6px);
+      pointer-events: none;
+      animation: sonnetStreak 6.4s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes sonnetStreak {
+  0%, 100% { opacity: .18; transform: rotate(-5deg) translateX(-10%); }
+  50%      { opacity: .55; transform: rotate(-5deg) translateX(10%); }
+}
+
+// ── 通用参数：排版模式 / 呼吸浮动 / 逐字旋转 ─────────────────────────
+.root[data-align="left"] {
+  .lyricColumn { align-items: flex-start; text-align: left; padding-left: 7%; }
+}
+.root[data-align="right"] {
+  .lyricColumn { align-items: flex-end; text-align: right; padding-right: 7%; }
+}
+
+.root[data-breathe="on"] .line_active {
+  animation: lyricBreathe 4.6s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes lyricBreathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(var(--breathe, 1)); }
+}
+
+// 逐字旋转：相邻字反向微旋，读起来像手写摆动的排印。
+// 注意：这里不能用 :deep(.word)——本项目的 module 样式链不会处理 :deep()，
+// 会原样输出成无效选择器；而 span 是真实标签，直接用元素选择器即可命中。
+.root[data-word-rotate="on"] .line_active p > span {
+  display: inline-block;
+  transform: rotate(calc(var(--word-rot, 2.4deg) * -1));
+}
+.root[data-word-rotate="on"] .line_active p > span:nth-child(even) {
+  transform: rotate(var(--word-rot, 2.4deg));
 }
 
 </style>
