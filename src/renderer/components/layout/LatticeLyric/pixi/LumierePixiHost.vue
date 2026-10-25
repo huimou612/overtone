@@ -116,16 +116,19 @@ export default {
     }
 
     const start = async() => {
-      const pixi = await loadPixi()
-      if (disposed) return
-
-      // 能力探测先行：没有 WebGL 就不要创建 Pixi，避免把「不支持」误报成「初始化失败」
+      // 能力探测必须排在 loadPixi() 之前：
+      //   ① 没有 WebGL 时根本不需要把 Pixi 拉起来（省一次 1MB 级模块加载）；
+      //   ② 打包产物若漏带 node_modules/pixi.js，先 loadPixi 会抛错，
+      //      于是「设备不支持 WebGL」会被误报成「Pixi 初始化失败」。
       const caps = getGraphicsCapabilities()
       if (!hasAnyWebGL()) {
         if (canvas_ref.value) canvas_ref.value.dataset.pixiState = 'unsupported'
         emit('status', { state: 'unsupported', tier: caps.tier, reason: caps.error })
         return
       }
+
+      const pixi = await loadPixi()
+      if (disposed) return
 
       const el = canvas_ref.value
       const box = el?.parentElement
