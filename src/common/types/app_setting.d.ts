@@ -19,6 +19,42 @@ declare global {
       'common.fontSize': number
 
       /**
+       * 渲染显卡偏好（Windows）：auto 自动 / high-performance 高性能 / low-power 省电
+       */
+      'common.gpuPreference': 'auto' | 'high-performance' | 'low-power'
+
+      /** 沉浸式歌词样式卡 key：standard/flow/fade/cloud/chorus/monet/particle */
+      'lyric.styleKey': string
+      /** 歌词字号倍率 */
+      'lyric.fontScale': number
+      /** 背景类型：default/ai/custom */
+      'lyric.bgType': string
+      /** 预设背景 key */
+      'lyric.bgPresetKey': string
+      /** 是否显示字幕 */
+      'lyric.subtitleOn': boolean
+      /** 字幕模式：translation/romanization */
+      'lyric.subtitleMode': string
+      /** 字幕字号倍率 */
+      'lyric.subtitleScale': number
+      /** 字幕颜色 */
+      'lyric.subtitleColor': string
+      /** 活动行字重 400~800 */
+      'lyric.fontWeight': number
+      /** 歌词行距（line-height 倍数） */
+      'lyric.lineGap': number
+      /** 背景深度 0~100 */
+      'lyric.bgDepth': number
+      /** 自定义主题次要色 */
+      'lyric.secondaryColor': string
+      /** 自定义主题（JSON 字符串，空串表示未设置） */
+      'lyric.customThemeJson': string
+      /** 模块开关（JSON 字符串，空串表示用默认） */
+      'lyric.uiModulesJson': string
+      /** 迁移标记：0 未迁移 / 1 已从 localStorage 迁移 */
+      'lyric.prefsVersion': number
+
+      /**
        * 是否以全屏启动
        */
       'common.startInFullscreen': boolean

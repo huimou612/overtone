@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { encodePath } from '@common/utils/electron'
 
 // ── Folia 视觉窗口（路线 B 阶段一）────────────────────────────────
@@ -22,10 +22,11 @@ export const createWindow = () => {
     browserWindow!.focus()
     return
   }
-  const winURL = process.env.NODE_ENV !== 'production'
-    ? 'http://localhost:9090'
+  // 同 winMain：用 app.isPackaged，避免 process.env.NODE_ENV 被编译期折叠
+  const winURL = app.isPackaged
     // 生产：CopyPlugin 把 folia-viewer 产物复制到 dist/folia/（userApi.html 同一先例）
-    : `file://${join(encodePath(__dirname), 'folia', 'index.html')}`
+    ? `file://${join(encodePath(__dirname), 'folia', 'index.html')}`
+    : 'http://localhost:9090'
 
   browserWindow = new BrowserWindow({
     width: 1100,
@@ -44,6 +45,12 @@ export const createWindow = () => {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false, // preload 需要require('electron')，沙箱化会限制；未开放任何 Node 给页面
+      // ⚠️ 生产环境用 file:// 加载 folia 页面，而 Vite 产物是 <script type="module">。
+      // Chromium 对 file:// 下的 ES module 按 CORS 拒绝（origin 为 null），
+      // 表现就是窗口打开但整页空白（Elements 里 html/head/body 全空）。
+      // 该窗口只加载打包进 asar 的本地页面、不加载任何远程内容，故关闭 webSecurity 换取可用；
+      // dev 走 http://localhost:9090 不需要这一项。
+      webSecurity: !app.isPackaged,
       webgl: true,
       spellcheck: false,
       backgroundThrottling: false,

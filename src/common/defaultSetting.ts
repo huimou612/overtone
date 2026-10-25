@@ -20,6 +20,34 @@ const defaultSetting: LX.AppSetting = {
   'common.controlBtnPosition': isMac ? 'left' : 'right',
   'common.playBarProgressStyle': 'mini',
   'common.transparentWindow': !isMac,
+  // 渲染显卡偏好（Windows 专用，见 src/main/modules/gpuPreference.ts）
+  'common.gpuPreference': 'auto',
+
+  // ── 沉浸式歌词视觉控制台（原 localStorage 'lattice-panel-prefs'）─────────
+  // ⚠️ 只放原始类型：主进程 mergeSetting 会跳过非原始类型（见 src/main/utils/index.ts
+  //    checkPrimitiveType），对象/数组放进 appSetting 会被静默丢弃、也进不了导出。
+  //    因此自定义主题与模块开关用 JSON 字符串承载。
+  'lyric.styleKey': 'standard',
+  'lyric.fontScale': 1,
+  'lyric.bgType': 'default',
+  'lyric.bgPresetKey': 'tide',
+  'lyric.subtitleOn': true,
+  'lyric.subtitleMode': 'translation',
+  'lyric.subtitleScale': 0.5,
+  'lyric.subtitleColor': 'rgba(255,255,255,0.62)',
+  // 以下四项对应「通用/背景」里此前只改配置、不影响渲染的控件（S1 接通）
+  /** 活动行字重（400~800）；非活动行自动取其 -200，下限 300 */
+  'lyric.fontWeight': 700,
+  /** 歌词行距（line-height 倍数），1.3 为项目原有视觉 */
+  'lyric.lineGap': 1.3,
+  /** 背景深度 0~100：50 = 原有暗角强度，0 = 无暗角，100 = 最强 */
+  'lyric.bgDepth': 50,
+  /** 自定义主题的次要色（用于背景径向高光，默认白色 5% 与原有视觉一致） */
+  'lyric.secondaryColor': '#ffffff',
+  'lyric.customThemeJson': '',
+  'lyric.uiModulesJson': '',
+  /** 0 = 尚未从旧 localStorage 迁移；1 = 已迁移（只跑一次，绝不重复覆盖） */
+  'lyric.prefsVersion': 0,
   'common.splashEnable': true,
   'common.splashMinMs': 1400,
   'common.splashImage': '',

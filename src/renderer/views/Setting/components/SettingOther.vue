@@ -7,6 +7,18 @@ dd
       svg-icon(class="help-icon" name="help-circle-outline" :aria-label="$t('setting__other_transparent_window_tip')")
 
 dd
+  h3#other_gpu
+    | {{ $t('setting__other_gpu') }}
+    svg-icon(class="help-icon" name="help-circle-outline" :aria-label="$t('setting__other_gpu_tip')")
+  div
+    base-selection.gap-left(
+      v-model="gpuPreference"
+      :list="gpuPreferenceList"
+      item-key="id"
+      item-name="label"
+      @change="updateSetting({'common.gpuPreference': $event})")
+
+dd
   h3#other_tray_theme {{ $t('setting__other_tray_theme') }}
   div
     base-checkbox.gap-left(
@@ -92,6 +104,14 @@ export default {
   },
   setup() {
     const t = useI18n()
+
+    // 渲染显卡偏好（Windows 专用；其他平台不显示该项）
+    const gpuPreferenceList = computed(() => [
+      { id: 'auto', label: t('setting__other_gpu_auto') },
+      { id: 'high-performance', label: t('setting__other_gpu_high') },
+      { id: 'low-power', label: t('setting__other_gpu_low') },
+    ])
+    const gpuPreference = computed(() => appSetting['common.gpuPreference'] ?? 'auto')
 
     const trayThemeList = computed(() => {
       return [
@@ -213,6 +233,8 @@ export default {
     }
 
     return {
+      gpuPreference,
+      gpuPreferenceList,
       appSetting,
       updateSetting,
       trayThemeList,

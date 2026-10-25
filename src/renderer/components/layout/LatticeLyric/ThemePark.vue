@@ -9,6 +9,7 @@
             <span :class="$style.headerSub">实时预览</span>
           </div>
           <div :class="$style.headerActions">
+            <button :class="$style.headerBtn" title="把歌词视觉设置恢复到出厂默认值" @click="requestResetDefaults">恢复默认</button>
             <button v-if="dirty" :class="$style.headerBtn" @click="resetDraft">放弃更改</button>
             <button :class="[$style.headerBtn, $style.headerBtnPrimary]" @click="save">保存并应用</button>
             <button :class="$style.closeBtn" aria-label="关闭" @click="$emit('close')">
@@ -23,20 +24,18 @@
           <!-- ── 左：实时预览 ── -->
           <section :class="$style.preview">
             <div :class="$style.previewStage" :style="previewBg">
-              <canvas-lyrics
-                :lines="previewLines"
-                :now-ms="previewNow"
-                :active-index="previewActive"
-                :style-name="draft.styleKey"
-                :scale="draft.fontScale"
-                :theme-base="draftBase"
-                :theme-word="draftWord"
-                :theme-glow="draftGlow"
-                :subtitle-text="draft.subtitleOn ? previewSubtitle : ''"
-                :subtitle-scale="draft.subtitleScale"
-                :subtitle-color="draft.subtitleColor"
-                :class="$style.previewCanvas"
-              />
+              <div :class="$style.previewLyrics" :style="previewLyricStyle">
+                <div
+                  v-for="(line, i) in previewLines" :key="i"
+                  :class="[$style.previewLine, i === previewActive && $style.previewLineActive]"
+                  :style="i === previewActive ? previewActiveStyle : null"
+                >{{ line.text }}</div>
+                <div
+                  v-if="draft.subtitleOn && previewSubtitle"
+                  :class="$style.previewSubtitle"
+                  :style="{ color: draft.subtitleColor, fontSize: (draft.subtitleScale * 22) + 'px' }"
+                >{{ previewSubtitle }}</div>
+              </div>
               <div :class="$style.previewTag">
                 {{ styleLabel }} · {{ Math.round(draft.fontScale * 100) }}%
               </div>
@@ -101,7 +100,7 @@
               <!-- ② 歌词样式 -->
               <div v-else-if="sectionKey === 'style'" :class="$style.stack">
                 <div :class="$style.groupTitle">样式</div>
-                <p :class="$style.hint">全部走 Canvas 渲染：字形纹理 + 逐字扫光 + 双层辉光。</p>
+                <p :class="$style.hint">样式作用于主界面歌词：字体粗细、辉光与扫光节奏。</p>
                 <div :class="$style.styleGrid">
                   <button
                     v-for="st in lyricStyles" :key="st.key"
@@ -210,13 +209,12 @@
 
 <script>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
-import CanvasLyrics from './CanvasLyrics.vue'
 
 /**
  * 歌词设置窗口 —— 布局对齐 Folia 设置弹窗（左实时预览 + 右侧栏分页）
  *
  * 五个分区：通用 / 歌词样式 / 背景 / 字幕 / 模块。
- * 预览挂的是真渲染器（CanvasLyrics），改任何一项立刻反映。
+ * 预览用 DOM 渲染（Canvas 管线已移除），改颜色/字号/样式立刻反映。
  */
 const LS_THEMES = 'lattice-themes'
 
@@ -231,12 +229,12 @@ const DEFAULT_DRAFT = {
   name: '',
   backgroundColor: '#141824',
   primaryColor: '#9aa8c8',
-  secondaryColor: '#3c3452',
+  secondaryColor: '#ffffff',
   accentColor: '#7c60dc',
-  bgDepth: 55,
+  bgDepth: 50,
   fontScale: 1,
-  fontWeight: 600,
-  lineGap: 2,
+  fontWeight: 700,
+  lineGap: 1.3,
   styleKey: 'standard',
   bgType: 'preset',
   bgPreset: 'tide',
@@ -249,7 +247,6 @@ const DEFAULT_DRAFT = {
 
 export default {
   name: 'ThemePark',
-  components: { CanvasLyrics },
   props: {
     visible: Boolean,
     initial: { type: Object, default: null },
@@ -257,8 +254,15 @@ export default {
     bgPresets: { type: Array, default: () => [] },
     bgPresetKey: { type: String, default: 'tide' },
     bgType: { type: String, default: 'preset' },
+    // S1：四个此前只存在草稿里的控件，改由父级（appSetting）驱动
+    fontWeight: { type: Number, default: 700 },
+    lineGap: { type: Number, default: 1.3 },
+    bgDepth: { type: Number, default: 50 },
+    secondaryColor: { type: String, default: '#ffffff' },
+    // 父级执行「恢复默认」后 +1，本窗口据此把草稿重新对齐到父级真实值
+    resetToken: { type: Number, default: 0 },
   },
-  emits: ['close', 'apply'],
+  emits: ['close', 'apply', 'reset-defaults'],
   setup(props, { emit }) {
     const draft = ref({ ...DEFAULT_DRAFT })
     const savedThemes = ref([])
@@ -330,18 +334,59 @@ export default {
       return `0${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')} / 03:12`
     })
 
+    /**
+     * 用父级（appSetting 驱动）的真实值重置草稿。
+     * 只读 props，不自己维护一份默认值 —— 默认值只有 @common/defaultSetting 一个来源。
+     */
+    /**
+     * 父级 bgType → 窗口内部 bgType。
+     * 父级：default | ai | custom；窗口：preset | ai | custom。
+     * 之前直接把父级值塞进草稿，导致 'default' 在窗口里既没有分段高亮、
+     * 又让 `v-if="bgType === 'preset'"` 为假 —— 默认背景下显示的是取色器而不是预设列表。
+     */
+    const mapBgTypeFromParent = value => {
+      if (value === 'custom') return 'custom'
+      if (value === 'ai') return 'ai'
+      return 'preset'
+    }
+
+    /**
+     * 打开时的快照：「放弃更改」回到这里，而不是回到出厂默认。
+     * 深拷贝：draft 里有 modules 这类对象，浅拷贝会让快照被后续编辑改到。
+     */
+    let openSnapshot = null
+
+    const syncDraftFromProps = () => {
+      draft.value = {
+        ...DEFAULT_DRAFT,
+        ...(props.initial || {}),
+        styleKey: props.styleKey || (props.initial?.styleKey) || 'standard',
+        // 边界映射（唯一一处）：父级的 'default' 在本窗口叫 'preset'。
+        // 只在父子交界做映射，不全局替换字符串，父级数据契约保持不变。
+        bgType: mapBgTypeFromParent(props.bgType),
+        bgPreset: props.bgPresetKey || 'tide',
+        // 父级当前值优先于主题里存的值：避免「面板改了、窗口还显示旧值」
+        fontWeight: props.fontWeight ?? props.initial?.fontWeight ?? DEFAULT_DRAFT.fontWeight,
+        lineGap: props.lineGap ?? props.initial?.lineGap ?? DEFAULT_DRAFT.lineGap,
+        bgDepth: props.bgDepth ?? props.initial?.bgDepth ?? DEFAULT_DRAFT.bgDepth,
+        secondaryColor: props.secondaryColor || props.initial?.secondaryColor || DEFAULT_DRAFT.secondaryColor,
+      }
+      dirty.value = false
+      openSnapshot = JSON.parse(JSON.stringify(draft.value))
+    }
+
+    const requestResetDefaults = () => { emit('reset-defaults') }
+
+    // 父级恢复默认后，草稿与预览一起回到默认（不关闭窗口）
+    watch(() => props.resetToken, () => {
+      if (props.visible) syncDraftFromProps()
+    })
+
     watch(() => props.visible, v => {
       if (v) {
         clockStart = performance.now()
         if (!clockRaf) clockRaf = requestAnimationFrame(tick)
-        draft.value = {
-          ...DEFAULT_DRAFT,
-          ...(props.initial || {}),
-          styleKey: props.styleKey || (props.initial?.styleKey) || 'standard',
-          bgType: props.bgType || 'preset',
-          bgPreset: props.bgPresetKey || 'tide',
-        }
-        dirty.value = false
+        syncDraftFromProps()
         try { savedThemes.value = JSON.parse(window.localStorage.getItem(LS_THEMES) ?? '[]') } catch (e) { savedThemes.value = [] }
       } else {
         cancelAnimationFrame(clockRaf)
@@ -357,7 +402,13 @@ export default {
       draft.value = { ...draft.value, modules: { ...draft.value.modules, [k]: !draft.value.modules[k] } }
       dirty.value = true
     }
-    const resetDraft = () => { draft.value = { ...DEFAULT_DRAFT }; dirty.value = false; activeSavedIndex.value = -1 }
+    // 「放弃更改」= 丢弃未提交编辑，回到打开设置窗口时的状态（不是出厂默认）
+    const resetDraft = () => {
+      if (!openSnapshot) return
+      draft.value = JSON.parse(JSON.stringify(openSnapshot))
+      dirty.value = false
+      activeSavedIndex.value = -1
+    }
 
     // ── 颜色工具 ──
     const normalizeHex = (v, fallback) => {
@@ -392,9 +443,21 @@ export default {
           `linear-gradient(140deg, ${rgba(draft.value.backgroundColor, 0.6 + d * 0.15)}, ${rgba(draft.value.backgroundColor, Math.min(0.95, 0.8 + d * 0.15))})`,
       }
     })
-    const draftBase = computed(() => (draft.value.bgType === 'preset' ? '' : rgba(draft.value.primaryColor, 0.55)))
-    const draftWord = computed(() => (draft.value.bgType === 'preset' ? '' : lighten(draft.value.primaryColor, 0.7)))
-    const draftGlow = computed(() => (draft.value.bgType === 'preset' ? '' : draft.value.accentColor))
+    // DOM 预览：整体字号/字重，以及当前行的字色 + 辉光
+    const previewLyricStyle = computed(() => ({
+      fontSize: (18 * draft.value.fontScale) + 'px',
+      fontWeight: String(draft.value.fontWeight),
+      // 行距跟随草稿，与舞台的 --lyric-gap 同一语义
+      lineHeight: String(draft.value.lineGap),
+    }))
+    const previewActiveStyle = computed(() => {
+      const color = draft.value.bgType === 'preset' ? '#ffffff' : lighten(draft.value.primaryColor, 0.75)
+      const glow = draft.value.accentColor
+      return {
+        color,
+        textShadow: `0 0 12px ${glow}, 0 0 28px ${glow}`,
+      }
+    })
     const styleLabel = computed(() => (lyricStyles.find(s => s.key === draft.value.styleKey) ?? lyricStyles[0]).label)
 
     // ── 保存 ──
@@ -405,11 +468,15 @@ export default {
         swatch: `linear-gradient(135deg, ${draft.value.primaryColor}, ${draft.value.accentColor})`,
         savedAt: Date.now(),
       }
-      const list = [...savedThemes.value]
-      if (activeSavedIndex.value >= 0) list[activeSavedIndex.value] = entry
-      else { list.push(entry); activeSavedIndex.value = list.length - 1 }
-      savedThemes.value = list
-      try { window.localStorage.setItem(LS_THEMES, JSON.stringify(list)) } catch (e) { /* 忽略 */ }
+      // 只有「自定义背景」才把当前配色存进「我的主题」列表。
+      // 预设/AI 只是切换背景，不该在用户主题列表里堆出「我的歌词主题」垃圾条目。
+      if (draft.value.bgType === 'custom') {
+        const list = [...savedThemes.value]
+        if (activeSavedIndex.value >= 0) list[activeSavedIndex.value] = entry
+        else { list.push(entry); activeSavedIndex.value = list.length - 1 }
+        savedThemes.value = list
+        try { window.localStorage.setItem(LS_THEMES, JSON.stringify(list)) } catch (e) { /* 忽略 */ }
+      }
       dirty.value = false
       emit('apply', entry)
     }
@@ -449,9 +516,9 @@ export default {
       previewTimeText,
       previewBg,
       styleLabel,
-      draftBase,
-      draftWord,
-      draftGlow,
+      previewLyricStyle,
+      previewActiveStyle,
+      requestResetDefaults,
       save,
       savedThemes,
       activeSavedIndex,
@@ -527,7 +594,30 @@ export default {
 
 .preview { flex: 1 1 50%; min-width: 0; display: flex; flex-flow: column nowrap; border-right: 1px solid rgba(255,255,255,.07); }
 .previewStage { position: relative; flex: auto; min-height: 0; overflow: hidden; }
-.previewCanvas { position: absolute; inset: 0; }
+.previewLyrics {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 24px;
+  text-align: center;
+  pointer-events: none;
+}
+.previewLine {
+  color: rgba(255, 255, 255, .42);
+  line-height: 1.45;
+  transition: color .25s ease, text-shadow .25s ease;
+}
+.previewLineActive {
+  color: #fff;
+}
+.previewSubtitle {
+  margin-top: 6px;
+  opacity: .85;
+}
 .previewTag {
   position: absolute; left: 14px; top: 12px;
   padding: 4px 10px; border-radius: 999px;

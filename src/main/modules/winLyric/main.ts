@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { debounce, getPlatform, isLinux, isWin } from '@common/utils'
 import { initWindowSize, minHeight, minWidth } from './utils'
 import { mainSend } from '@common/mainIpc'
@@ -143,7 +143,8 @@ export const createWindow = () => {
     },
   })
 
-  const winURL = process.env.NODE_ENV !== 'production' ? 'http://localhost:9081/lyric.html' : `file://${path.join(encodePath(__dirname), 'lyric.html')}`
+  // 同 winMain：用 app.isPackaged 判断，避免 DefinePlugin 折叠后走错分支
+  const winURL = app.isPackaged ? `file://${path.join(encodePath(__dirname), 'lyric.html')}` : 'http://localhost:9081/lyric.html'
   void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
 
   winEvent()

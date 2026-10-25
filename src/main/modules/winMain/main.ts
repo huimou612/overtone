@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, session } from 'electron'
+import { app, BrowserWindow, dialog, session } from 'electron'
 import path from 'node:path'
 import { createTaskBarButtons, getWindowSizeInfo } from './utils'
 import { getOSVersion, getPlatform, isLinux, isMac, isWin } from '@common/utils'
@@ -131,7 +131,11 @@ export const createWindow = () => {
   }
   browserWindow = new BrowserWindow(options)
 
-  const winURL = process.env.NODE_ENV !== 'production' ? 'http://localhost:9080' : `file://${path.join(encodePath(__dirname), 'index.html')}`
+  // ⚠️ 不能用 process.env.NODE_ENV 判断：DefinePlugin 把 'process.env' 整个替换成对象后，
+  // 这句在打包产物里被折叠成 `true ? 'http://localhost:9080' : 0`（实测），
+  // 导致安装版去连 dev server，dev server 没起就只剩 chrome-error 空白页。
+  // app.isPackaged 是运行时属性，不参与编译期常量折叠，dev/打包两条路都可靠。
+  const winURL = app.isPackaged ? `file://${path.join(encodePath(__dirname), 'index.html')}` : 'http://localhost:9080'
   void browserWindow.loadURL(winURL + `?os=${getPlatform()}&osver=${encodeURIComponent(getOSVersion())}&dt=${global.envParams.cmdParams.dt}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
 
   winEvent()

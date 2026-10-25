@@ -77,3 +77,8 @@ slice/
 
 # 本地验收截图（体积大，不进仓库）
 notes/preview/
+
+# Folia 逆向实验产物（不入库：各 1.1 万文件）
+/folia-pack2/
+/folia-viewer-pack/
+/folia-pack2.zip

@@ -4,6 +4,7 @@
       v-if="visible"
       ref="dom_root"
       :class="$style.root"
+      :style="stageVars"
       :data-lyric-style="lyricStyle"
       :data-bg="bgPresetKey"
       tabindex="-1"
@@ -68,23 +69,16 @@
       <!-- 主区：居中歌词 + 右侧常驻面板 -->
       <div :class="$style.mainArea">
         <div :class="$style.lyricArea">
-          <canvas-lyrics
-            v-if="canvasMode && lyricLines.length"
-            :lines="lyricLines"
-            :now-ms="effectiveNowMs"
-            :active-index="activeIndex"
-            :style-name="lyricStyle"
-            :scale="lyricScale"
-            :theme-base="themeBaseNow"
-            :theme-word="themeWordNow"
-            :theme-glow="themeGlowNow"
-            :subtitle-text="subtitleTextNow"
-            :subtitle-scale="subtitleScale"
-            :subtitle-color="subtitleColor"
-            :class="$style.canvasLyrics"
+          <!-- S1 验证：流光卡临时挂 Pixi 光柱，证明 Pixi/WebGL 链路通。
+               S2 会把它换成 lumiere 的真实运行时（光柱 + 体积光 + 线条画 + 文字）。 -->
+          <lumiere-pixi-host
+            v-if="lyricStyle === 'flow'"
+            :color="beamColor"
+            :class="$style.pixiLayer"
+            @status="onPixiStatus"
           />
           <TransitionGroup
-            v-else-if="visibleLines.length"
+            v-if="visibleLines.length"
             tag="div"
             :enter-from-class="$style.enterFrom"
             :enter-active-class="$style.enterActive"
@@ -106,11 +100,19 @@
             <div :class="$style.emptyTitle">{{ musicInfo.name || 'Lattice' }}</div>
             <div>{{ hasRawLyric ? '歌词解析失败' : $t('immersive_lyric__no_lyric') }}</div>
           </div>
+          <!-- GPU 能力提示：只在流光卡且不可用时出现，明确说明「已回退文字样式」 -->
+          <div v-if="gpuHint" :class="$style.gpuHint" role="status">{{ gpuHint }}</div>
+          <!-- 字幕：当前行下方的小字 -->
+          <div
+            v-if="subtitleTextNow"
+            :class="$style.subtitleDom"
+            :style="{ color: subtitleColor, '--sub-scale': subtitleScale, '--lyric-scale': lyricScale }"
+          >{{ subtitleTextNow }}</div>
         </div>
 
         <!-- ── 右侧常驻面板：封面 / 音效 / 播放列表 / 时间线 四个页签 ── -->
         <aside v-if="panelOpen" :class="$style.sidePanel" data-immersive-panel="open">
-          <div :class="$style.posterCard">
+          <div v-if="uiModules.cover" :class="$style.posterCard">
             <img v-if="musicInfo.pic" :class="$style.posterImg" :src="musicInfo.pic" alt="" draggable="false">
             <div v-else :class="$style.posterFallback">{{ (musicInfo.name || '?').slice(0, 1) }}</div>
             <div :class="$style.posterName">{{ musicInfo.name }}</div>
@@ -157,6 +159,7 @@
               </svg>
             </button>
             <button
+              v-if="uiModules.queue"
               :class="[$style.tabBtn, { [$style.tabActive]: panelSection === 'queue' }]"
               aria-label="播放列表" title="播放列表"
               @click="panelSection = 'queue'"
@@ -184,7 +187,9 @@
                   @click="setBgType(t.key)"
                 >{{ t.label }}</button>
               </div>
-              <div v-if="bgType === 'custom'" :class="$style.tpEntry">
+              <!-- 主题公园入口：不再只在「自定义」时出现。
+                   应用预设后 bgType 会变成 default，若入口跟着隐藏，用户就再也打不开歌词设置窗口了。 -->
+              <div :class="$style.tpEntry">
                 <button :class="$style.tpOpenBtn" @click="openThemePark">
                   <svg viewBox="0 0 24 24" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                     <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
@@ -236,10 +241,7 @@
                   <button :class="$style.offsetBtn" @click="nudgeScale(1)">A+</button>
                 </div>
               </div>
-              <button :class="[$style.segBtn, canvasMode && $style.segActive]" @click="toggleCanvas">
-                Canvas 渲染 {{ canvasMode ? '开' : '关' }}
-              </button>
-              <p :class="$style.styleHint">当前：{{ currentStyleLabel }}{{ canvasMode ? '（Canvas 管线）' : '（DOM 渲染）' }}</p>
+              <p :class="$style.styleHint">当前：{{ currentStyleLabel }}</p>
             </div>
 
             <!-- ② 音效设置：直接调用播放器里的音效弹窗 + 音量 -->
@@ -253,7 +255,7 @@
                 <span>音效设置</span>
               </button>
               <p :class="$style.fxHint">环境混响 / 均衡器 / 音调升降 / 3D 环绕</p>
-              <panel-volume />
+              <panel-volume v-if="uiModules.volume" />
               <div :class="$style.infoRow">
                 <span :class="$style.infoLabel">歌词</span>
                 <span :class="$style.infoValue">{{ lyricKindLabel }}</span>
@@ -269,7 +271,7 @@
             </div>
 
             <!-- ③ 播放队列：标题 + 简洁行（歌名 / 歌手），当前曲高亮 -->
-            <div v-else-if="panelSection === 'queue'" :class="$style.qWrap">
+            <div v-else-if="panelSection === 'queue' && uiModules.queue" :class="$style.qWrap">
               <div :class="$style.qHead">
                 <span :class="$style.qTitle">播放队列 <span :class="$style.qCount">({{ queueView.rows.length }})</span></span>
               </div>
@@ -335,7 +337,7 @@
 
         <!-- 展开态：进度 + 时间 + 面板 + 打开播放器 -->
         <template v-else>
-          <div :class="$style.seek">
+          <div v-if="uiModules.progress" :class="$style.seek">
             <common-progress-bar
               :class-name="$style.seekBar"
               on-dark
@@ -344,7 +346,7 @@
               :is-active-transition="isActiveTransition"
             />
           </div>
-          <span :class="$style.time">{{ nowPlayTimeStr }} / {{ maxPlayTimeStr }}</span>
+          <span v-if="uiModules.time" :class="$style.time">{{ nowPlayTimeStr }} / {{ maxPlayTimeStr }}</span>
           <button
             :class="[$style.iconBtn, timelineOpen && $style.iconBtnOn]"
             :aria-label="$t('timeline.title')" :title="$t('timeline.title')"
@@ -356,6 +358,7 @@
               <circle cx="12" cy="16" r="1.9" />
             </svg>
           </button>
+          <button :class="$style.openBtn" @click="handleOpenFolia">Folia 窗口</button>
           <button :class="$style.openBtn" @click="openPlayer">打开播放器</button>
         </template>
       </footer>
@@ -368,8 +371,14 @@
         :bg-presets="bgPresets"
         :bg-preset-key="bgPresetKey"
         :bg-type="bgType"
+        :font-weight="fontWeight"
+        :line-gap="lineGap"
+        :bg-depth="bgDepth"
+        :secondary-color="secondaryColor"
+        :reset-token="themeParkResetToken"
         @close="themeParkOpen = false"
         @apply="applyCustomTheme"
+        @reset-defaults="resetLyricVisual"
       />
 
       <!-- ── 音效设置窗口 ── -->
@@ -456,12 +465,14 @@ import AudioConvolution from '@renderer/components/common/SoundEffectBtn/AudioCo
 import BiquadFilter from '@renderer/components/common/SoundEffectBtn/BiquadFilter.vue'
 import PitchShifter from '@renderer/components/common/SoundEffectBtn/PitchShifter.vue'
 import AudioPanner from '@renderer/components/common/SoundEffectBtn/AudioPanner.vue'
-import CanvasLyrics from './CanvasLyrics.vue'
 import { generateThemeFromCover } from './builtinTheme.js'
 import ThemePark from './ThemePark.vue'
+import LumierePixiHost from './pixi/LumierePixiHost.vue'
 import { getListMusics } from '@renderer/store/list/action'
+import { appSetting, updateSetting } from '@renderer/store/setting'
+import defaultSetting from '@common/defaultSetting'
 import { resolveQueueView } from '@renderer/core/immersiveLyric/panel/queue'
-import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
+import { minWindow, maxWindowToggle, closeWindow, openFoliaWindow } from '@renderer/utils/ipc'
 
 /**
  * 泛音统一歌词界面（Lattice）——沉浸式歌词与 Folia 舞台合并后的唯一入口
@@ -480,7 +491,7 @@ const lyricOffset = ref(0)
 
 export default {
   name: 'LatticeLyric',
-  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner, CanvasLyrics, ThemePark },
+  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner, ThemePark, LumierePixiHost },
   props: {
     visible: Boolean,
   },
@@ -492,12 +503,12 @@ export default {
     const panelSection = ref('cover')
 
     // ── 歌词样式 / 背景类型（Folia 的「右侧控制面板」核心两项）──────────
-    // 存 localStorage：换歌、重开窗口都保持
+    // 第二阶段起以 appSetting 为权威来源（可随备份导出、可跨端同步），
+    // 旧版本写在 localStorage 的 'lattice-panel-prefs' 只做一次性迁移与回滚镜像。
     const LS_KEY = 'lattice-panel-prefs'
-    const readPrefs = () => {
-      try { return JSON.parse(window.localStorage.getItem(LS_KEY) ?? '{}') } catch (e) { return {} }
+    const readLegacyPrefs = () => {
+      try { return JSON.parse(window.localStorage.getItem(LS_KEY) ?? '{}') ?? {} } catch (e) { return {} }
     }
-    const savedPrefs = readPrefs()
 
     const lyricStyles = [
       { key: 'standard', label: '标准' },
@@ -523,33 +534,166 @@ export default {
       { key: 'ink', name: '水墨', swatch: 'linear-gradient(135deg,#101216,#4a4f57)', tint: 'radial-gradient(80% 60% at 22% 20%, rgba(150,155,165,.24), rgba(150,155,165,0) 62%), radial-gradient(70% 55% at 80% 78%, rgba(90,95,105,.28), rgba(90,95,105,0) 60%), linear-gradient(140deg, rgba(16,17,20,.7), rgba(8,9,12,.78))' },
     ]
 
-    const lyricStyle = ref(savedPrefs.lyricStyle ?? 'standard')
-    // Canvas 渲染管线（对齐 Folia：字形纹理 + 扫光；另加粒子聚合一档）
-    const canvasMode = ref(savedPrefs.canvasMode ?? false)
-    const bgType = ref(savedPrefs.bgType ?? 'default')
-    const bgPresetKey = ref(savedPrefs.bgPreset ?? 'tide')
-    const lyricScale = ref(savedPrefs.lyricScale ?? 1)
+    // ── 一次性迁移：localStorage → appSetting ─────────────────────────────
+    // 三条硬规则：
+    //  ① 只在 'lyric.prefsVersion' < 1 时执行，跑完立刻写 1，重复启动不会再动用户设置；
+    //  ② 只搬「旧配置里确实存在且合法」的值（不拿默认值去覆盖）；
+    //  ③ 目标项若已不是默认值（用户在本版本改过），一律跳过，绝不覆盖。
+    // 旧 localStorage 数据不删除，保留作回滚与降级兼容。
+    const STYLE_KEYS = ['standard', 'flow', 'fade', 'cloud', 'chorus', 'monet', 'particle']
+    const BG_TYPES = ['default', 'ai', 'custom']
+    const isFiniteInRange = (v, min, max) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max
+    const parseJsonOrNull = (text) => {
+      if (typeof text !== 'string' || !text) return null
+      try { const v = JSON.parse(text); return v && typeof v === 'object' ? v : null } catch (e) { return null }
+    }
 
+    const migrateLegacyPrefs = () => {
+      if ((appSetting['lyric.prefsVersion'] ?? 0) >= 1) return
+      const old = readLegacyPrefs()
+      const patch = {}
+      const take = (key, value, valid, fallback) => {
+        if (!valid(value)) return
+        // 目标已有非默认值 → 说明用户在本版本设置过，跳过
+        if (appSetting[key] !== fallback) return
+        patch[key] = value
+      }
+      take('lyric.styleKey', old.lyricStyle, v => STYLE_KEYS.includes(v), 'standard')
+      take('lyric.bgType', old.bgType, v => BG_TYPES.includes(v), 'default')
+      take('lyric.bgPresetKey', old.bgPreset, v => bgPresets.some(p => p.key === v), 'tide')
+      take('lyric.fontScale', old.lyricScale, v => isFiniteInRange(v, 0.5, 2), 1)
+      take('lyric.subtitleOn', old.subtitleOn, v => typeof v === 'boolean', true)
+      take('lyric.subtitleMode', old.subtitleMode, v => v === 'translation' || v === 'romanization', 'translation')
+      take('lyric.subtitleScale', old.subtitleScale, v => isFiniteInRange(v, 0.2, 1.5), 0.5)
+      take('lyric.subtitleColor', old.subtitleColor, v => typeof v === 'string' && v.length > 0, 'rgba(255,255,255,0.62)')
+      take('lyric.customThemeJson', old.customTheme, v => !!v && typeof v === 'object', '')
+      take('lyric.uiModulesJson', old.uiModules, v => !!v && typeof v === 'object', '')
+      // 旧版把字重/行距/背景深度/次要色存在 customTheme 里，一并迁移（不覆盖用户新值）
+      take('lyric.fontWeight', old.customTheme?.fontWeight, v => isFiniteInRange(v, 100, 900), 700)
+      take('lyric.lineGap', old.customTheme?.lineGap, v => isFiniteInRange(v, 0.8, 3), 1.3)
+      take('lyric.bgDepth', old.customTheme?.bgDepth, v => isFiniteInRange(v, 0, 100), 50)
+      take('lyric.secondaryColor', old.customTheme?.secondaryColor, v => typeof v === 'string' && v.length > 0, '#ffffff')
+      // 对象字段要转成 JSON 字符串（mergeSetting 只接受原始类型）
+      if (patch['lyric.customThemeJson'] !== undefined) patch['lyric.customThemeJson'] = JSON.stringify(patch['lyric.customThemeJson'])
+      if (patch['lyric.uiModulesJson'] !== undefined) patch['lyric.uiModulesJson'] = JSON.stringify(patch['lyric.uiModulesJson'])
+      patch['lyric.prefsVersion'] = 1
+      updateSetting(patch)
+      // 迁移结果直接回填到内存里的 appSetting，避免等主进程往返才生效
+      Object.assign(appSetting, patch)
+      if (Object.keys(patch).length > 1) console.info('[Lattice] 已从旧 localStorage 迁移视觉配置:', Object.keys(patch))
+    }
+    migrateLegacyPrefs()
+
+    const customThemeFromSetting = () => parseJsonOrNull(appSetting['lyric.customThemeJson'])
+    const uiModulesFromSetting = () => parseJsonOrNull(appSetting['lyric.uiModulesJson'])
+
+    const lyricStyle = ref(appSetting['lyric.styleKey'])
+    const bgType = ref(appSetting['lyric.bgType'])
+    const bgPresetKey = ref(appSetting['lyric.bgPresetKey'])
+    const lyricScale = ref(appSetting['lyric.fontScale'])
+
+    // 写设置：appSetting 为权威来源（随备份导出/同步），localStorage 仅作回滚镜像
     const savePrefs = () => {
+      updateSetting({
+        'lyric.styleKey': lyricStyle.value,
+        'lyric.fontScale': lyricScale.value,
+        'lyric.bgType': bgType.value,
+        'lyric.bgPresetKey': bgPresetKey.value,
+        'lyric.subtitleOn': subtitleOn.value,
+        'lyric.subtitleMode': subtitleMode.value,
+        'lyric.subtitleScale': subtitleScale.value,
+        'lyric.subtitleColor': subtitleColor.value,
+        'lyric.customThemeJson': customTheme.value ? JSON.stringify(customTheme.value) : '',
+        'lyric.uiModulesJson': JSON.stringify(uiModules.value),
+        'lyric.fontWeight': fontWeight.value,
+        'lyric.lineGap': lineGap.value,
+        'lyric.bgDepth': bgDepth.value,
+        'lyric.secondaryColor': secondaryColor.value,
+      })
       try {
         window.localStorage.setItem(LS_KEY, JSON.stringify({
           lyricStyle: lyricStyle.value,
           bgType: bgType.value,
           bgPreset: bgPresetKey.value,
           lyricScale: lyricScale.value,
+          subtitleOn: subtitleOn.value,
+          subtitleMode: subtitleMode.value,
+          subtitleScale: subtitleScale.value,
+          subtitleColor: subtitleColor.value,
+          customTheme: customTheme.value,
+          uiModules: uiModules.value,
         }))
       } catch (e) { /* 隐私模式等，忽略 */ }
     }
     const setLyricStyle = key => { lyricStyle.value = key; savePrefs() }
-    const toggleCanvas = () => { canvasMode.value = !canvasMode.value; savePrefs() }
 
     // ── 主题公园（自定义主题编辑器，移植自 Folia ThemePark）─────────────
     const themeParkOpen = ref(false)
-    const customTheme = ref(savedPrefs.customTheme ?? null)
+    // 恢复默认后 +1，通知设置窗口重新同步草稿（窗口内不自己猜默认值）
+    const themeParkResetToken = ref(0)
+    const customTheme = ref(customThemeFromSetting())
     const openThemePark = () => { themeParkOpen.value = true }
+    // 字幕与模块开关的 ref 必须声明在 applyCustomTheme 之前：applyCustomTheme 会读写它们，
+    // 声明在后靠“点击时才执行”避开 TDZ 是隐患（setup 内一旦提前调用就会 ReferenceError）。
+    // 字幕（对应 Folia 的 subtitle / translation 开关）
+    const subtitleOn = ref(appSetting['lyric.subtitleOn'])
+    const subtitleMode = ref(appSetting['lyric.subtitleMode'])
+    const subtitleScale = ref(appSetting['lyric.subtitleScale'])
+    const subtitleColor = ref(appSetting['lyric.subtitleColor'])
+    // 模块开关：底栏/面板显示哪些部件（cover=面板封面卡，progress=底栏进度，time=底栏时间，queue=面板队列页签，volume=音效页签音量）
+    const uiModules = ref(uiModulesFromSetting() ?? { cover: true, progress: true, time: true, queue: true, volume: true })
+    // S1：把「字重 / 行距 / 背景深度 / 次要色」四个此前只存不用的控件接通到渲染
+    const fontWeight = ref(appSetting['lyric.fontWeight'])
+    const lineGap = ref(appSetting['lyric.lineGap'])
+    const bgDepth = ref(appSetting['lyric.bgDepth'])
+    const secondaryColor = ref(appSetting['lyric.secondaryColor'])
+
+    /**
+     * 背景深度 0/50/100 的视觉定义（务必与 defaultSetting 注释一致）：
+     *   0   = 无暗角，背景最亮
+     *   50  = 项目原有暗角强度（等价于旧 CSS 里的 .7 / .5 / .6 透明度）
+     *   100 = 暗角拉满（三处 alpha 全部 1.0，四周压到最暗）
+     * 换算：factor = depth / 50，各 alpha = min(1, 原值 × factor)
+     */
+    const stageVars = computed(() => {
+      const weight = Number(fontWeight.value) || 700
+      const dimWeight = Math.max(300, weight - 200)
+      const depth = Math.min(100, Math.max(0, Number(bgDepth.value) || 0))
+      const factor = depth / 50
+      const clamp01 = v => Math.max(0, Math.min(1, v))
+      return {
+        '--lyric-weight': String(weight),
+        '--lyric-weight-dim': String(dimWeight),
+        '--lyric-gap': String(Number(lineGap.value) || 1.3),
+        '--bg-vig': String(clamp01(0.7 * factor)),
+        '--bg-vig-top': String(clamp01(0.5 * factor)),
+        '--bg-vig-bot': String(clamp01(0.6 * factor)),
+      }
+    })
     const applyCustomTheme = t => {
-      customTheme.value = t
-      bgType.value = 'custom'
+      /**
+       * 背景类型分派（S3）：窗口内部用 preset/ai/custom，父级用 default/ai/custom。
+       * 之前这里无条件 `bgType='custom'` + 不写 bgPresetKey，
+       * 导致「在窗口里选预设 → 应用」后舞台仍然是自定义背景（预设被吞掉）。
+       *
+       * 映射方向与 ThemePark.mapBgTypeFromParent 相反，且只在这一处做：
+       *   preset → default（并写回 bgPresetKey）
+       *   ai     → ai（沿用现有 AI 背景机制）
+       *   custom → custom（写入当前激活的自定义主题）
+       */
+      const targetBgType = t.bgType === 'preset' ? 'default' : (t.bgType === 'ai' ? 'ai' : 'custom')
+
+      if (targetBgType === 'custom') {
+        // 只有自定义背景才替换「当前激活的主题」
+        customTheme.value = t
+      }
+      // 预设/AI：保留已有的 customTheme 不覆盖 —— 切回「自定义」时用户还能看到上次的主题；
+      // activeBgTint 本身按 bgType 分派，所以它不会影响预设渲染。
+      // 用户保存的主题列表在 ThemePark 的 localStorage('lattice-themes')，这里从不触碰。
+
+      bgType.value = targetBgType
+      if (targetBgType === 'default' && t.bgPreset) bgPresetKey.value = t.bgPreset
+
       // 设置窗口里的其它项一并应用（样式/字号/字幕/模块）
       if (t.styleKey) lyricStyle.value = t.styleKey
       if (t.fontScale) lyricScale.value = t.fontScale
@@ -558,28 +702,107 @@ export default {
       if (t.subtitleScale) subtitleScale.value = t.subtitleScale
       if (t.subtitleColor) subtitleColor.value = t.subtitleColor
       if (t.modules) uiModules.value = { ...uiModules.value, ...t.modules }
+      // S1：四个新控件也随「应用」一起落到舞台
+      if (Number.isFinite(t.fontWeight)) fontWeight.value = t.fontWeight
+      if (Number.isFinite(t.lineGap)) lineGap.value = t.lineGap
+      if (Number.isFinite(t.bgDepth)) bgDepth.value = t.bgDepth
+      if (typeof t.secondaryColor === 'string' && t.secondaryColor) secondaryColor.value = t.secondaryColor
       savePrefs()
     }
 
-    // 字幕（对应 Folia 的 subtitle / translation 开关）
-    const subtitleOn = ref(savedPrefs.subtitleOn ?? true)
-    const subtitleMode = ref(savedPrefs.subtitleMode ?? 'translation')
-    const subtitleScale = ref(savedPrefs.subtitleScale ?? 0.5)
-    const subtitleColor = ref(savedPrefs.subtitleColor ?? 'rgba(255,255,255,0.62)')
-    // 模块开关：底栏/面板显示哪些部件
-    const uiModules = ref(savedPrefs.uiModules ?? { cover: true, progress: true, time: true, queue: true, volume: true })
+    // GPU 渲染状态（来自 LumierePixiHost 的 status 事件）：
+    //   idle       还没试
+    //   unsupported 设备没有 WebGL —— 与渲染失败是两件事
+    //   error       有 WebGL 但 Pixi 没建起来（驱动/参数问题，值得反馈）
+    //   ready       真正在跑
+    const pixiStatus = ref({ state: 'idle', tier: '', reason: null })
+    const onPixiStatus = payload => { pixiStatus.value = payload }
+    const gpuHint = computed(() => {
+      if (lyricStyle.value !== 'flow') return ''
+      switch (pixiStatus.value.state) {
+        case 'unsupported':
+          return '当前设备未提供 WebGL，GPU 歌词特效不可用，已回退到文字样式'
+        case 'error':
+          return `GPU 渲染初始化失败（${pixiStatus.value.reason ?? '未知原因'}），已回退到文字样式`
+        default:
+          return ''
+      }
+    })
+
+    /**
+     * 恢复默认：只重置「歌词视觉」白名单，绝不碰音源/播放/网络/主题等其他设置。
+     *
+     * 白名单 = 下列 14 个键，**不含 `lyric.prefsVersion`**：
+     *   它是「是否已从旧 localStorage 迁移过」的标记，重置成 0 会让下次启动
+     *   重新把旧 localStorage 的值搬回来，等于把用户刚重置的设置又覆盖掉。
+     *
+     * 默认值直接取自 @common/defaultSetting，不在这里手抄第二份，
+     * 避免以后改默认值时两处不一致。
+     */
+    const LYRIC_VISUAL_KEYS = [
+      'lyric.styleKey',
+      'lyric.fontScale',
+      'lyric.fontWeight',
+      'lyric.lineGap',
+      'lyric.bgType',
+      'lyric.bgPresetKey',
+      'lyric.bgDepth',
+      'lyric.secondaryColor',
+      'lyric.subtitleOn',
+      'lyric.subtitleMode',
+      'lyric.subtitleScale',
+      'lyric.subtitleColor',
+      'lyric.customThemeJson',
+      'lyric.uiModulesJson',
+    ]
+    const DEFAULT_UI_MODULES = { cover: true, progress: true, time: true, queue: true, volume: true }
+
+    const resetLyricVisual = () => {
+      const patch = {}
+      for (const key of LYRIC_VISUAL_KEYS) patch[key] = defaultSetting[key]
+
+      // ① 持久化（主进程合并后广播；失败也只是 unhandled rejection，不会中断界面）
+      updateSetting(patch)
+      // ② 立即回填内存态，不等 IPC 往返
+      Object.assign(appSetting, patch)
+
+      // ③ 同步舞台运行时状态
+      lyricStyle.value = patch['lyric.styleKey']
+      lyricScale.value = patch['lyric.fontScale']
+      fontWeight.value = patch['lyric.fontWeight']
+      lineGap.value = patch['lyric.lineGap']
+      bgType.value = patch['lyric.bgType']
+      bgPresetKey.value = patch['lyric.bgPresetKey']
+      bgDepth.value = patch['lyric.bgDepth']
+      secondaryColor.value = patch['lyric.secondaryColor']
+      subtitleOn.value = patch['lyric.subtitleOn']
+      subtitleMode.value = patch['lyric.subtitleMode']
+      subtitleScale.value = patch['lyric.subtitleScale']
+      subtitleColor.value = patch['lyric.subtitleColor']
+      customTheme.value = null
+      uiModules.value = { ...DEFAULT_UI_MODULES }
+
+      // ④ 设置窗口草稿重新同步
+      themeParkResetToken.value += 1
+
+      // ⑤ localStorage 镜像跟着写一份（旧版本回滚时看到的是默认值，不是历史脏值）
+      savePrefs()
+    }
+
     const subtitleTextNow = computed(() => {
       if (!subtitleOn.value) return ''
       const line = timeline.value.lines[activeIndex.value]
       if (!line) return ''
       if (subtitleMode.value === 'romanization') return line.romanization ?? ''
       return line.translation ?? ''
+      // 注意：两者都为空时返回 ''，模板的 v-if 会让整个字幕节点不渲染（不出现空行）
     })
     // 应用优先级：自定义主题 > AI 主题 > 预设
     const activeBgTintOverride = computed(() => {
       if (customTheme.value) {
         return {
-          background: 'radial-gradient(80% 60% at 22% 18%, rgba(255,255,255,.05), rgba(255,255,255,0) 62%),' +
+          // 次要色以 5% 透明度做左上角高光：默认 #ffffff → #ffffff0d，与原视觉完全一致
+          background: `radial-gradient(80% 60% at 22% 18%, ${secondaryColor.value}0d, ${secondaryColor.value}00 62%),` +
             `linear-gradient(140deg, ${customTheme.value.backgroundColor}cc, ${customTheme.value.backgroundColor}f2)`,
         }
       }
@@ -642,6 +865,15 @@ export default {
       return ''
     })
 
+    // 光柱颜色：自定义主题的强调色 → 归一化到 0~1（S2 接 builtinTheme 封面取色）
+    const beamColor = computed(() => {
+      const hex = (bgType.value === 'custom' && customTheme.value)
+        ? customTheme.value.accentColor
+        : '#b89cff'
+      const n = parseInt(String(hex).slice(1), 16)
+      return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255, 1]
+    })
+
     const bgTintStyle = activeBgTint
     const barExpanded = ref(false)
     const timelineOpen = ref(false)
@@ -687,6 +919,8 @@ export default {
       lrc: musicInfo.lrc,
       lxlrc: musicInfo.lxlrc,
       tlrc: musicInfo.tlrc,
+      // 罗马音：播放器状态里的字段名是 rlrc（musicInfo.rlyric 是音源层的叫法）
+      rlrc: musicInfo.rlrc,
     }))
     const activeIndex = computed(() => findActiveLineIndex(timeline.value.lines, effectiveNowMs.value))
     const keyPrefix = computed(() => musicInfo.id ?? 'none')
@@ -808,6 +1042,8 @@ export default {
       emit('close')
       setShowPlayerDetail(true)
     }
+    // Folia 视觉窗口入口（此前 openFoliaWindow 只有 IPC 定义、没有任何 UI 调用，窗口无从打开）
+    const handleOpenFolia = () => { openFoliaWindow() }
 
     // 底部播放条：悬停展开（离开留 180ms 缓冲，避免抖动）
     const handleBarEnter = () => {
@@ -936,6 +1172,7 @@ export default {
       playNext,
       playPrev,
       openPlayer,
+      handleOpenFolia,
       progress,
       nowPlayTimeStr,
       maxPlayTimeStr,
@@ -963,6 +1200,12 @@ export default {
       setBgPreset,
       shuffleBg,
       bgTintStyle,
+      beamColor,
+      gpuHint,
+      stageVars,
+      resetLyricVisual,
+      themeParkResetToken,
+      onPixiStatus,
       aiThemeName,
       generateAiTheme,
       aiThemeLoading,
@@ -977,10 +1220,12 @@ export default {
       subtitleScale,
       subtitleColor,
       uiModules,
+      fontWeight,
+      lineGap,
+      bgDepth,
+      secondaryColor,
       lyricScale,
       nudgeScale,
-      canvasMode,
-      toggleCanvas,
       lyricLines,
       barExpanded,
       handleBarEnter,
@@ -1067,9 +1312,10 @@ export default {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  // 背景深度：三个 alpha 由 lyric.bgDepth 换算（50 = 原有 .7/.5/.6，0 = 全透明，100 = 全 1）
   background:
-    radial-gradient(120% 90% at 50% 45%, rgba(0, 0, 0, 0) 42%, rgba(6, 5, 12, .7) 100%),
-    linear-gradient(180deg, rgba(6, 5, 12, .5), rgba(6, 5, 12, 0) 26%, rgba(6, 5, 12, 0) 68%, rgba(6, 5, 12, .6));
+    radial-gradient(120% 90% at 50% 45%, rgba(0, 0, 0, 0) 42%, rgba(6, 5, 12, var(--bg-vig, .7)) 100%),
+    linear-gradient(180deg, rgba(6, 5, 12, var(--bg-vig-top, .5)), rgba(6, 5, 12, 0) 26%, rgba(6, 5, 12, 0) 68%, rgba(6, 5, 12, var(--bg-vig-bot, .6)));
 }
 
 // ── 右上角窗口控制（靠近才出现）─────────────────────────────────
@@ -1178,6 +1424,30 @@ export default {
   display: flex;
   overflow: hidden;
 }
+.gpuHint {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  max-width: 82%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  color: rgba(255, 255, 255, .55);
+  background: rgba(0, 0, 0, .35);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.pixiLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .canvasLyrics {
   position: absolute;
   inset: 0;
@@ -1202,15 +1472,31 @@ export default {
   gap: clamp(14px, 2.2vh, 26px);
 }
 
+/* DOM 分支字幕：与 Canvas 版同一数据源，悬在歌词区下方居中，字号按活动行字号 × subtitleScale × lyricScale */
+.subtitleDom {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  transform: translateX(-50%);
+  max-width: 72%;
+  text-align: center;
+  font-size: calc(clamp(30px, 4.6vw, 58px) * var(--sub-scale, .5) * var(--lyric-scale, 1));
+  font-weight: 500;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
 .line {
   position: relative;
   max-width: 100%;
-  line-height: 1.3;
+  // 行距：由设置项 lyric.lineGap 驱动，缺省 1.3 = 项目原有视觉
+  line-height: var(--lyric-gap, 1.3);
   transition: opacity .32s ease, transform .32s ease, font-size .32s ease;
 }
 .line_active {
   font-size: clamp(30px, 4.6vw, 58px);
-  font-weight: 700;
+  // 字重：由 lyric.fontWeight 驱动，缺省 700 = 项目原有视觉
+  font-weight: var(--lyric-weight, 700);
   letter-spacing: .01em;
   color: rgba(255, 255, 255, .96);
   text-shadow: 0 6px 40px rgba(120, 96, 220, .35);
@@ -1230,7 +1516,8 @@ export default {
 .line_prev,
 .line_next {
   font-size: clamp(15px, 1.7vw, 22px);
-  font-weight: 500;
+  // 非活动行比活动行轻 200，下限 300；缺省 500 = 项目原有视觉
+  font-weight: var(--lyric-weight-dim, 500);
   color: rgba(255, 255, 255, .34);
   :global(.fillText),
   :deep(.fillText) {

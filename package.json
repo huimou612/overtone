@@ -190,6 +190,7 @@
     "music-metadata": "^11.15.0",
     "needle": "github:lyswhut/needle#93299ac841b7e9a9f82ca7279b88aaaeda404060",
     "node-id3": "^0.2.9",
+    "pixi.js": "^8.14.1",
     "sortablejs": "^1.15.7",
     "tunnel": "^0.0.6",
     "undici": "^7.29.1",

@@ -50,6 +50,11 @@ export interface ImmersiveLyricLine {
   /** 有逐字时间戳才非空；没有就是 null —— 界面据此决定「整句」还是「逐字」，绝不伪造 */
   words: ImmersiveLyricWord[] | null
   translation: string | null
+  /**
+   * 罗马音（来自 rlrc）。与 translation 同源同格式：都是 `[mm:ss.mmm]内容` 的 LRC 行，
+   * 由音源侧用同一段代码拼出来（见 common/utils/lyricUtils/kg.js）。没有就是 null。
+   */
+  romanization?: string | null
 }
 
 export interface ImmersiveLyricTimeline {
@@ -202,6 +207,7 @@ const buildLines = (
   parsed: ParsedLyric,
   withWords: boolean,
   translation?: Map<string, string>,
+  romanization?: Map<string, string>,
 ): ImmersiveLyricLine[] => [...parsed.lines].map(([key, raw]) => {
   const time = raw.time + parsed.offset
   const words = withWords ? parseWords(raw.content, time) : null
@@ -210,6 +216,7 @@ const buildLines = (
     text: raw.content.replace(WORD_TAG_ALL_RXP, ''),
     words,
     translation: translation?.get(key) ?? null,
+    romanization: romanization?.get(key) ?? null,
   }
 }).sort((a, b) => a.time - b.time)
 
@@ -221,14 +228,22 @@ export const buildLyricTimeline = (lyricInfo: {
   lrc?: string | null
   lxlrc?: string | null
   tlrc?: string | null
+  /** 罗马音歌词（播放器状态里的 musicInfo.rlrc），格式与 tlrc 一致 */
+  rlrc?: string | null
 }): ImmersiveLyricTimeline => {
   const translationParsed = parseLyric(lyricInfo.tlrc ?? null)
   const translationById = new Map<string, string>()
   for (const [key, raw] of translationParsed.lines) translationById.set(key, raw.content)
 
+  // 罗马音：解析规则与翻译**完全相同**（同一个 parseLyric、同一套 key 匹配），
+  // 不引入新的时间戳规则，也不改 lrc/lxlrc/tlrc 的任何语义。
+  const romanizationParsed = parseLyric(lyricInfo.rlrc ?? null)
+  const romanizationById = new Map<string, string>()
+  for (const [key, raw] of romanizationParsed.lines) romanizationById.set(key, raw.content)
+
   const lxlrcParsed = parseLyric(lyricInfo.lxlrc ?? null)
   if (lxlrcParsed.lines.size) {
-    const lines = buildLines(lxlrcParsed, true, translationById)
+    const lines = buildLines(lxlrcParsed, true, translationById, romanizationById)
     return {
       lines,
       offset: lxlrcParsed.offset,
@@ -240,7 +255,7 @@ export const buildLyricTimeline = (lyricInfo: {
   const lrcParsed = parseLyric(lyricInfo.lrc ?? null)
   if (lrcParsed.lines.size) {
     return {
-      lines: buildLines(lrcParsed, false, translationById),
+      lines: buildLines(lrcParsed, false, translationById, romanizationById),
       offset: lrcParsed.offset,
       hasWordTiming: false,
       source: 'lrc',

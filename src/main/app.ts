@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, renameSync } from 'fs'
 import { app, shell, screen, nativeTheme, dialog } from 'electron'
 import { URL_SCHEME_RXP } from '@common/constants'
 import { getProxy, getTheme, initHotKey, initSetting, parseEnvParams } from './utils'
+import { applyGpuPreference, logGpuState } from './modules/gpuPreference'
 import { navigationUrlWhiteList } from '@common/config'
 import defaultSetting from '@common/defaultSetting'
 import { isExistWindow as isExistMainWindow, showWindow as showMainWindow } from './modules/winMain'
@@ -117,6 +118,7 @@ export const applyElectronEnvParams = () => {
 
   app.commandLine.appendSwitch('--disable-gpu-sandbox')
 
+
   // 动态壁纸（阶段 7.2）：壁纸视频走 file:// 协议，Chromium 默认把 file:// 当跨源上下文，
   // 静音 autoplay 也会被拦（表现为「挂出了 <video> 但一直 paused」）。
   // 显式放开到「无需用户手势」，配合视频元素的 muted + autoplay 即可自动循环播放。
@@ -145,6 +147,10 @@ export const setUserDataPath = () => {
   global.lxOldDataPath = userDataPath
   global.lxDataPath = path.join(userDataPath, 'OvertoneData')
   if (!existsSync(global.lxDataPath)) mkdirSync(global.lxDataPath)
+
+  // 渲染显卡偏好：必须在这里读（lxDataPath 就绪，store 能打开），
+  // 且必须在 app ready / 首个窗口创建之前加开关，GPU 进程才吃得到。
+  logGpuState(applyGpuPreference())
 }
 
 export const registerDeeplink = (startApp: () => void) => {
