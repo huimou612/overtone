@@ -112,20 +112,29 @@ lineCount / demo），CDP 可直接核对同步状态。
 - 小改动可只 patch 未压缩的 `dist/renderer.js`（`minimize=false`，源码字面量原样保留）
   再重新 pack，省掉整轮 webpack；改完务必 `node --check dist/renderer.js` 且源码同步修改。
 
-## 0.4.0 构建与版本状态（2026-11-10 体检）
-- 源码版本 `package.json` = 0.4.0；新增 `npm run build:folia`
-  （`build-config/build-folia.cjs`）：只增量重建 renderer，关闭 Terser / source map，
-  不清 `dist/` 与 `build/`，产出 `dist/renderer.js` 后再同步进 `app.asar`。
-- 官方 `npm run pack` 会先 `del.sync(['dist/**', 'build/**'])` 再并行跑
-  main / renderer / renderer-lyric / renderer-scripts 四套 webpack 并对整棵
-  React + three + pixi 树做 Terser 压缩。本机耗时极长，且会清掉桌面正式版正在使用的
-  `dist/` 和已有安装包 —— 执行前必须先备份这两个目录。
-- 当前 `dist/` 累积了历次构建的 1944 个 js chunk / 18 个 css（增量构建不清目录），
-  打进 asar 后 96MB（0.3.0 原包仅 41MB）。出 0.4.0 安装包前建议先做一次干净全量构建。
-- 安装包仍只有 0.1.0 / 0.2.0 / 0.3.0（最新 2026-10-25），`build/latest.yml` 仍指向
-  0.3.0；0.4.0 安装包与 GitHub Release 尚未生成。
-- 桌面正式版是热替换 `app.asar` 落地，包内 `/package.json` 版本仍为 0.3.0，
-  应用「关于」页显示 0.3.0；出 0.4.0 安装包时一并统一。
+## 0.4.0 发版状态（2026-11-10 晚，已发布）
+- `npm run build:clean`（`build-config/build-clean.cjs`）：用**目录重命名**代替逐文件删除
+  （Windows 实时防护下逐个删 5845 个文件要 20+ 分钟，webpack 还没跑就卡死），
+  再并行重建 main / renderer / renderer-lyric / renderer-scripts 四套产物，关 Terser / source map。
+  实测 `BUILD_OK 507s warnings=0`。
+- 干净产物：`dist` 从 85.5MB / 5929 文件压到 **43.1MB / 2031 文件**（0 个 source map，3 个 css）。
+- 安装包：`build/overtone-v0.4.0-x64-Setup.exe` 127,634,703 B；`latest.yml` 已更新到
+  version 0.4.0，sha512 与安装包实测一致；blockmap 同批生成。
+- 桌面正式版：用干净 dist + 0.4.0 `package.json` 重打 `app.asar`
+  （91.63MB → **48.27MB**，2150 entries），`app.asar.unpacked` 一并同步，
+  包内版本号已是 0.4.0；应用重启验证可正常加载（7 个进程 + 主窗口）。
+- GitHub Release：`https://github.com/huimou612/overtone/releases/tag/v0.4.0`
+  已正式发布，资产含安装包 / blockmap / latest.yml；tag `v0.4.0` 指向 `87c173e5`。
+- README：`docs/screenshots/` 9 张桌面端实拍截图（共 1.08MB），首页新增
+  「v0.4.0 · 真实界面」章节；另在工作区单独提取了一份 README 与自包含 HTML 画廊。
+- 回滚：`resources/app.asar.before-040-20261110`（发版前正式版 asar）、
+  `F:/workbuddy/2026-10-12-13-28-07/backup-0.4.0-20261110/`（dist / 三个旧安装包 / asar 全量备份）。
+- ⚠️ 官方 `npm run pack` 仍会 `del.sync(['dist/**', 'build/**'])` 清掉现有产物，
+  以后要跑它务必先备份；日常增量用 `npm run build:folia`，
+  发版用 `npm run build:clean` + `npm run pack:win:setup:x64`。
+- 踩坑：GitHub 资产上传走 Windows Schannel 时可能报 `CRYPT_E_REVOCATION_OFFLINE`，
+  `curl.exe` 加 `--ssl-no-revoke` 即可；后台启动的 GUI 进程会被会话清理，
+  应用本身可正常启动，双击桌面图标即可。
 
 ## 回滚
 - 本轮修复前：`resources/app.asar.before-lyric-fix-20261110`
