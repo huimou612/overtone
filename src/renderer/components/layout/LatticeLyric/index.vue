@@ -87,7 +87,7 @@
             @status="onPixiStatus"
           />
           <TransitionGroup
-            v-if="visibleLines.length"
+            v-else-if="visibleLines.length"
             tag="div"
             :enter-from-class="$style.enterFrom"
             :enter-active-class="$style.enterActive"
