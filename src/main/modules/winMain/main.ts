@@ -120,7 +120,11 @@ export const createWindow = () => {
       nodeIntegration: true,
       sandbox: false,
       enableWebSQL: false,
-      webgl: false,
+      // Folia 视觉覆盖层（React 岛）挂在主窗口内，3D / pixi / paper-shaders
+      // 样式需要 WebGL 上下文；关掉会让 getContext 返回 null，Chromium 报
+      // "disabled by enterprise policy or commandline switch"，three.js 初始化
+      // 抛错并把整棵 React 树清空。主窗口本来就有 GPU 加速，保持开启。
+      webgl: true,
       spellcheck: false, // 禁用拼写检查器
     },
   }

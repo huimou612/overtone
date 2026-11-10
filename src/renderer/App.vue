@@ -24,8 +24,9 @@
     <layout-sync-auth-code-modal />
     <layout-play-detail />
   </div>
-  <!-- 统一歌词界面（沉浸式歌词 + Lattice 合并）：不只属于封面墙，全屏展示，
-       所以挂在 #container 之外（#root 下），和 layout-app-background 同一层思路 -->
+  <!-- 统一歌词界面（沉浸式歌词 + Lattice + Folia 视觉）：全屏展示，
+       挂在 #container 之外（#root 下），和 layout-app-background 同一层思路。
+       Folia 视觉现在是这个画面内部的一层，不再另开覆盖层。 -->
   <lattice-lyric :visible="isShowImmersiveLyric" @close="setShowImmersiveLyric(false)" />
 </template>
 
@@ -35,13 +36,17 @@ import { onMounted } from '@common/utils/vueTools'
 // import '@common/utils/effects/snow.min'
 import { isPersonalMode } from '@renderer/store'
 import { isShowImmersiveLyric } from '@renderer/store/player/state'
-import { setShowImmersiveLyric } from '@renderer/store/player/action'
+import { setShowImmersiveLyric, setShowFolia, setFoliaVisualOn } from '@renderer/store/player/action'
 import LatticeLyric from './components/layout/LatticeLyric/index.vue'
 import useApp from '@renderer/core/useApp'
 
 useApp()
 
 onMounted(() => {
+  // 自动化验证钩子：直接切换「统一沉浸歌词画面」与画面内 Folia 视觉层
+  window.__overtoneImmersive = visible => { setShowImmersiveLyric(visible) }
+  window.__overtoneFolia = visible => { setFoliaVisualOn(visible) }
+  window.__overtoneFoliaEntry = visible => { setShowFolia(visible) }
   document.getElementById('root').style.display = 'block'
 
   // const styles = getComputedStyle(document.documentElement)

@@ -49,11 +49,15 @@
           <span :class="$style.titleCount">{{ list.length }} {{ $t('wall__song_count') }}</span>
         </div>
       </div>
-      <button :class="$style.latticeBtn" :aria-label="$t('wall__open')" :title="'Lattice 歌词'" @click="openLattice">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="15px" viewBox="0 0 24 24" space="preserve">
-          <use xlink:href="#icon-wall" />
+      <!-- 沉浸歌词 + Folia 视觉已合并成同一个画面，只留一个入口 -->
+      <button :class="$style.latticeBtn" aria-label="沉浸歌词" title="沉浸歌词（画面内可切换 Folia 视觉）" @click="openLattice">
+        <svg viewBox="0 0 24 24" height="15px" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <path d="M17.5 14l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" />
         </svg>
-        <span>Lattice</span>
+        <span>沉浸歌词</span>
       </button>
       <div v-if="playingName" :class="$style.nowPlaying">
         <span :class="$style.nowDot"></span>
@@ -115,8 +119,6 @@
         </svg>
       </button>
     </div>
-      <!-- Folia 风格歌词舞台：在同一窗口内覆盖显示，不再弹独立窗口 -->
-      <lattice-stage :visible="latticeVisible" @close="latticeVisible = false" />
     </div>
   </Teleport>
 </template>
@@ -126,10 +128,10 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from '@common/utils/
 import { nextTick } from 'vue'
 import { getListMusics } from '@renderer/store/list/action'
 import { defaultList, loveList, tempList, userLists } from '@renderer/store/list/state'
-import { playMusicInfo, playInfo } from '@renderer/store/player/state'
+import { playMusicInfo, playInfo, isShowImmersiveLyric } from '@renderer/store/player/state'
+import { setShowFolia, setShowImmersiveLyric } from '@renderer/store/player/action'
 import { playList } from '@renderer/core/player'
 import { assertApiSupport } from '@renderer/store/utils'
-import LatticeStage from '@renderer/components/layout/LatticeLyric/index.vue'
 import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
 import { useI18n } from '@root/lang'
 
@@ -232,7 +234,6 @@ const templateAt = (col, row) => {
 
 export default {
   name: 'SongWallView',
-  components: { LatticeStage },
   props: {
     visible: Boolean,
     listId: {
@@ -547,7 +548,7 @@ export default {
         lastTap = { index: -1, time: 0, x: 0, y: 0 }
         if (idx >= 0) {
           handlePlay(idx)
-          latticeVisible.value = true
+          setShowImmersiveLyric(true)
         }
         return
       }
@@ -568,9 +569,9 @@ export default {
     // 返回加固：pointerdown 先于 click 触发，避免「窗口刚恢复焦点/悬浮物遮挡导致 click 丢失」时点不动。
     const handleBackPointerDown = e => { if (e.button === 0) handleClose() }
     // 全局 ESC：不依赖墙本身持有焦点
-    // 三段式退出：歌词舞台 → 放大的卡片 → 墙
+    // 三段式退出：歌词舞台 → 放大的卡片 → 墙（舞台打开时把 Esc 让给它）
     const handleGlobalEsc = e => {
-      if (e.key !== 'Escape' || latticeVisible.value) return
+      if (e.key !== 'Escape' || isShowImmersiveLyric.value) return
       if (focusIndex.value !== null) { clearFocus(); return }
       handleClose()
     }
@@ -579,15 +580,12 @@ export default {
       else window.removeEventListener('keydown', handleGlobalEsc)
     }, { immediate: true })
 
-    // 点 Lattice：在当前窗口内切到 Folia 风格歌词舞台（不再开独立窗口）
-    const latticeVisible = ref(false)
-    const openLattice = () => { latticeVisible.value = true }
-    // 墙关闭时一并收起舞台，避免下次打开残留
-    watch(() => props.visible, v => { if (!v) latticeVisible.value = false })
+    // 统一入口：Lattice 沉浸歌词与 Folia 视觉现在是同一个画面，
+    // 由 App.vue 的全局实例承载（这里不再挂第二份舞台组件）。
+    const openLattice = () => { setShowFolia(true) }
 
     return {
       openLattice,
-      latticeVisible,
       handleTileMove,
       handleTileLeave,
       winCtrlOn,

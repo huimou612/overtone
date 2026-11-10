@@ -1,9 +1,10 @@
 {
   "name": "overtone",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "泛音 —— 带 AI 音源分离与智能歌词处理的本地音乐播放器",
   "main": "./dist/main.js",
   "scripts": {
+    "build:folia": "node build-config/build-folia.cjs",
     "test": "npm run test:lxlrc && npm run test:ai && npm run test:analysis && npm run test:immersive && npm run test:panel && npm run test:folia",
     "test:lxlrc": "node build-config/test-lxlrc.cjs",
     "test:ai": "node build-config/test-ai-service.cjs",
@@ -171,7 +172,13 @@
     "webpack-cli": "^7.2.3",
     "webpack-dev-server": "5.2.6",
     "webpack-hot-middleware": "github:lyswhut/webpack-hot-middleware#329c4375134b89d39da23a56a94db651247c74a1",
-    "webpack-merge": "^6.0.1"
+    "webpack-merge": "^6.0.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/react-window": "^1.8.8",
+    "@types/three": "^0.186.0"
   },
   "dependencies": {
     "@simonwep/pickr": "1.9.1",
@@ -197,7 +204,23 @@
     "utf-8-validate": "^6.0.6",
     "vue": "~3.3.13",
     "vue-router": "~4.5.1",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "@applemusic-like-lyrics/ttml": "^1.0.1",
+    "@chenglou/pretext": "^0.0.9",
+    "@paper-design/shaders": "0.0.80",
+    "@paper-design/shaders-react": "0.0.80",
+    "@react-three/fiber": "^9.8.2",
+    "@xmldom/xmldom": "^0.9.12",
+    "framer-motion": "^13.4.3",
+    "i18next": "^26.4.2",
+    "lucide-react": "^1.48.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-i18next": "^17.0.15",
+    "react-window": "^2.5.0",
+    "three": "^0.186.1",
+    "twgl.js": "^7.0.0",
+    "zustand": "^5.0.15"
   },
   "overrides": {
     "got": "^11",

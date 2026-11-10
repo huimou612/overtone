@@ -33,6 +33,7 @@
       </div>
       <div v-if="list" :class="$style.list" :style="listStyle">
         <ul ref="dom_list" @mouseleave="selectIndex = -1">
+          <li v-if="!list.length" :class="$style.tipEmpty">输入关键词，联想搜索记忆与热搜词</li>
           <li
             v-for="(item, index) in list"
             :key="item"
@@ -304,6 +305,12 @@ export default {
         border-bottom-left-radius: 3px;
         border-bottom-right-radius: 3px;
       }
+    }
+    .tipEmpty {
+      cursor: default;
+      color: var(--color-font-label);
+      font-size: 12px;
+      &:hover { background-color: transparent; }
     }
   }
 }

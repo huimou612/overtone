@@ -1,0 +1,21 @@
+/* folia visual overlay styles.
+   Extracted from the folia-lyrics-lab index.css: the Tailwind import plus the
+   overlay-scoped base only. The lab's global html/body/#root rules were dropped
+   so nothing here can restyle Overtone's own page. */
+
+@import "tailwindcss";
+
+.folia-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  isolation: isolate;
+  background-color: #07070a;
+  color: #e4e4e7;
+  font-family: 'Inter', system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+}
+
+.folia-overlay.is-daylight {
+  background-color: #f4f1ea;
+}

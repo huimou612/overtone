@@ -30,8 +30,10 @@ module.exports = {
       '@lyric': path.join(__dirname, '../../src/renderer-lyric'),
       '@static': path.join(__dirname, '../../src/static'),
       '@common': path.join(__dirname, '../../src/common'),
+      // folia visual subsystem (React island): its sources use the '@/...' alias
+      '@': path.join(__dirname, '../../src/renderer/folia'),
     },
-    extensions: ['.tsx', '.ts', '.js', '.json', '.node'],
+    extensions: ['.tsx', '.ts', '.js', '.mjs', '.json', '.node'],
   },
   module: {
     rules: [

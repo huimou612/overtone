@@ -9,6 +9,24 @@
         </router-link>
       </li>
     </ul>
+    <!-- 沉浸歌词（含 Folia 视觉）：常驻入口，打开的是同一个统一画面 -->
+    <ul :class="$style.list" role="toolbar">
+      <li :class="$style.navItem" role="presentation">
+        <button
+          :class="$style.link"
+          role="tab"
+          aria-selected="false"
+          aria-label="Folia 沉浸歌词"
+          title="Folia 沉浸歌词（视觉已合并在同一画面）"
+          @click="openFolia"
+        >
+          <svg viewBox="0 0 24 24" :height="iconSize" :width="iconSize" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+            <path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" />
+          </svg>
+        </button>
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -18,6 +36,7 @@ import { useI18n } from '@root/lang'
 import { ref, computed } from '@common/utils/vueTools'
 import { useIconSize } from '@renderer/utils/compositions/useIconSize'
 import { wallOpenRequest } from '@renderer/store/songWall'
+import { setShowFolia } from '@renderer/store/player/action'
 
 export default {
   name: 'NavBar',
@@ -97,10 +116,15 @@ export default {
         },
       ].filter(m => m.enable)
     })
+    // 常驻侧栏入口：打开统一沉浸歌词画面并直接切到 Folia 视觉层，不依赖播放状态
+    const openFolia = () => { setShowFolia(true) }
+
     return {
       appSetting,
       menus,
       dom_menu,
+      iconSize,
+      openFolia,
     }
   },
 }

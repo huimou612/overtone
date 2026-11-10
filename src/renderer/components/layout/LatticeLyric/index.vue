@@ -72,6 +72,12 @@
       <!-- 主区：居中歌词 + 右侧常驻面板 -->
       <div :class="$style.mainArea">
         <div :class="$style.lyricArea">
+          <!-- Folia 视觉：作为「歌词样式」原地渲染在本画面里，不另开覆盖层。
+               顶栏 / 侧栏 / 底栏仍是 Lattice 的，两者共处同一个画面。 -->
+          <div v-if="foliaOn" :class="$style.foliaLayer">
+            <folia-viewer embedded :visible="foliaOn" @close="setFoliaVisualOn(false)" />
+          </div>
+          <template v-else>
           <!-- S1 验证：流光卡临时挂 Pixi 光柱，证明 Pixi/WebGL 链路通。
                S2 会把它换成 lumiere 的真实运行时（光柱 + 体积光 + 线条画 + 文字）。 -->
           <lumiere-pixi-host
@@ -111,6 +117,7 @@
             :class="$style.subtitleDom"
             :style="{ color: subtitleColor, '--sub-scale': subtitleScale, '--lyric-scale': lyricScale }"
           >{{ subtitleTextNow }}</div>
+          </template>
         </div>
 
         <!-- ── 右侧常驻面板：封面 / 音效 / 播放列表 / 时间线 四个页签 ── -->
@@ -171,6 +178,17 @@
                 <path d="M4 7h16M4 12h16M4 17h10" />
               </svg>
             </button>
+            <button
+              :class="[$style.tabBtn, { [$style.tabActive]: foliaOn }]"
+              :aria-label="foliaOn ? '切回歌词' : 'Folia 视觉'"
+              :title="foliaOn ? '切回普通歌词样式' : 'Folia 视觉（在当前画面切换）'"
+              @click="toggleFoliaVisual"
+            >
+              <svg viewBox="0 0 24 24" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+                <path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" />
+              </svg>
+            </button>
           </div>
 
           <div :class="$style.panelBody">
@@ -181,8 +199,80 @@
               <div v-if="musicInfo.album" :class="$style.coverAlbum">{{ musicInfo.album }}</div>
             </div>
 
-            <!-- ①-B 背景类型：默认 / AI 主题 / 自定义 + 预设 -->
-            <div v-if="panelSection === 'bg'" :class="$style.bgBox">
+            <!-- ①-B 背景：Folia 开启时，直接对齐 Folia「歌词样式 → 背景」面板的六种背景类型 -->
+            <div v-if="panelSection === 'bg' && foliaOn" :class="$style.bgBox">
+              <div :class="$style.bgCard">
+                <div :class="$style.bgCardHead">
+                  <span>背景</span>
+                  <button :class="$style.bgReset" title="恢复默认背景" @click="resetFoliaBg">默认</button>
+                </div>
+                <p :class="$style.bgCardHint">调整播放页背景、透明窗口和几何范围。</p>
+                <div :class="$style.fieldLabel">背景类型</div>
+                <div :class="$style.bgModeGrid">
+                  <button
+                    v-for="m in foliaBgModes" :key="m.id"
+                    :class="[$style.bgModeBtn, foliaBgMode === m.id && $style.bgModeActive, !isFoliaBgAvailable(m.id) && $style.bgModeDisabled]"
+                    :disabled="!isFoliaBgAvailable(m.id)"
+                    :title="m.desc"
+                    @click="setFoliaBgMode(m.id)"
+                  >{{ m.label }}</button>
+                </div>
+                <p :class="$style.bgCardHint">{{ foliaBgDesc }}</p>
+              </div>
+
+              <!-- 莫奈：来源（封面 / 自定义图片）、上传、布局（半屏渐变 / 全屏叠色） -->
+              <div v-if="foliaBgMode === 'monet'" :class="$style.bgCard">
+                <div :class="$style.bgCardHead"><span>莫奈背景</span></div>
+                <p :class="$style.bgCardHint">调整莫奈背景图片来源、布局和层后处理。</p>
+                <div :class="$style.fieldLabel">背景来源</div>
+                <div :class="$style.segRow">
+                  <button
+                    v-for="s in monetSources" :key="s.id"
+                    :class="[$style.segBtn, monetSource === s.id && $style.segActive]"
+                    @click="setMonetSource(s.id)"
+                  >{{ s.label }}</button>
+                </div>
+                <div :class="$style.bgBtnRow">
+                  <button :class="$style.bgActionBtn" @click="pickMonetImage">上传背景图</button>
+                  <button :class="$style.bgActionBtn" :disabled="!hasMonetImage" @click="clearMonetImage">清空背景图</button>
+                  <input ref="monetFileRef" type="file" accept="image/png,image/jpeg,image/webp,image/gif" :class="$style.hiddenFile" @change="onMonetFileChange">
+                </div>
+                <p :class="$style.bgCardHint">{{ hasMonetImage ? '当前：' + monetImageName : '未上传图片，使用当前歌曲封面' }}</p>
+                <div :class="$style.fieldLabel">布局模式</div>
+                <div :class="$style.segRow">
+                  <button
+                    v-for="l in monetLayouts" :key="l.id"
+                    :class="[$style.segBtn, monetLayout === l.id && $style.segActive]"
+                    @click="setMonetLayout(l.id)"
+                  >{{ l.label }}</button>
+                </div>
+              </div>
+
+              <!-- 通用：封面取色 / 几何层 / 暗角 / 不透明度 -->
+              <div v-if="foliaBgMode === 'common'" :class="$style.bgCard">
+                <div :class="$style.bgCardHead"><span>通用背景</span></div>
+                <label :class="$style.checkRow"><input type="checkbox" :checked="commonUseCover" @change="setCommonCover($event.target.checked)"> 封面取色</label>
+                <label :class="$style.checkRow"><input type="checkbox" :checked="!commonDisableGeometric" @change="setCommonGeometric($event.target.checked)"> 几何氛围层</label>
+                <label :class="$style.checkRow"><input type="checkbox" :checked="!commonDisableVignette" @change="setCommonVignette($event.target.checked)"> 暗角</label>
+                <div :class="$style.fieldLabel">不透明度 <small>{{ Math.round(commonOpacity * 100) }}%</small></div>
+                <input type="range" min="0" max="1" step="0.05" :value="commonOpacity" :class="$style.rangeInput" @input="setCommonOpacity(Number($event.target.value))">
+              </div>
+
+              <!-- 布局与对齐：整屏样式缩放进歌词区，解决莫奈左栏歌词被裁掉 -->
+              <div :class="$style.bgCard">
+                <div :class="$style.bgCardHead"><span>布局与对齐</span></div>
+                <p :class="$style.bgCardHint">Folia 样式按整屏视口设计，嵌入歌词区时按比例缩放对齐，避免左侧歌词被裁掉。</p>
+                <div :class="$style.segRow">
+                  <button :class="[$style.segBtn, foliaFit && $style.segActive]" @click="setFoliaFit(true)">自适应铺满</button>
+                  <button :class="[$style.segBtn, !foliaFit && $style.segActive]" @click="setFoliaFit(false)">原始尺寸</button>
+                </div>
+                <p :class="$style.bgCardHint">{{ fitScaleText }}</p>
+                <p v-if="foliaBgMode === 'sora' || (foliaMode === 'still' || foliaMode === 'fume')" :class="$style.bgCardHint">提示：静止 / 浮名样式使用自带背景，背景类型不随之改变。</p>
+              </div>
+            </div>
+
+            <!-- Folia 关闭时：保留原来的传统预设 + 主题公园 -->
+            <div v-else-if="panelSection === 'bg'" :class="$style.bgBox">
               <div :class="$style.segRow">
                 <button
                   v-for="t in bgTypes" :key="t.key"
@@ -245,6 +335,25 @@
                 </div>
               </div>
               <p :class="$style.styleHint">当前：{{ currentStyleLabel }}</p>
+
+              <!-- Folia 视觉开启后，视觉模式直接在这里切，不用另开设置台 -->
+              <div v-if="foliaOn" :class="$style.foliaModeBox">
+                <div :class="$style.foliaModeHead">
+                  <span>Folia 视觉效果</span>
+                  <small>{{ foliaModeLabel }}</small>
+                </div>
+                <div :class="$style.foliaModeGrid">
+                  <button
+                    v-for="m in foliaModes"
+                    :key="m.id"
+                    :class="[$style.foliaModeBtn, foliaMode === m.id && $style.foliaModeActive, !isFoliaModeAvailable(m.id) && $style.foliaModeDisabled]"
+                    :disabled="!isFoliaModeAvailable(m.id)"
+                    :title="m.en"
+                    @click="setFoliaMode(m.id)"
+                  >{{ m.label }}</button>
+                </div>
+                <p :class="$style.foliaModeHint">未启用 WebGL 时 3D / 着色器样式会置灰</p>
+              </div>
             </div>
 
             <!-- ② 音效设置：直接调用播放器里的音效弹窗 + 音量 -->
@@ -361,7 +470,7 @@
               <circle cx="12" cy="16" r="1.9" />
             </svg>
           </button>
-          <button :class="$style.openBtn" @click="handleOpenFolia">Folia 窗口</button>
+          <button :class="$style.openBtn" @click="toggleFoliaVisual">{{ foliaOn ? '切回歌词' : 'Folia 视觉' }}</button>
           <button :class="$style.openBtn" @click="openPlayer">打开播放器</button>
         </template>
       </footer>
@@ -459,9 +568,15 @@
 
 <script>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
-import { musicInfo, isPlay, playInfo, playMusicInfo } from '@renderer/store/player/state'
+import { musicInfo, isPlay, playInfo, playMusicInfo, isFoliaVisualOn } from '@renderer/store/player/state'
 import { togglePlay, playNext, playPrev, playList } from '@renderer/core/player'
-import { setShowPlayerDetail, getList } from '@renderer/store/player/action'
+import { setShowPlayerDetail, getList, setFoliaVisualOn } from '@renderer/store/player/action'
+import FoliaViewer from '@renderer/components/layout/FoliaViewer.vue'
+import { FOLIA_VISUALIZER_MODES } from '@renderer/folia/lab/foliaModes'
+import { useVisualizerSettingsStore, handleSetVisualizerMode } from '@renderer/folia/stores/useVisualizerSettingsStore'
+import { useVisualizerAssetStore } from '@renderer/folia/stores/useVisualizerAssetStore'
+import { useThemeSettingsStore } from '@renderer/folia/stores/useThemeSettingsStore'
+import { hasWebGL, isModeAvailable, WEBGL_BACKGROUNDS } from '@renderer/folia/stage/webglSupport'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 import useImmersiveClock from '@renderer/components/layout/ImmersiveLyric/stage/useImmersiveClock'
 import { buildLyricTimeline, findActiveLineIndex } from '@renderer/core/immersiveLyric/timeline'
@@ -479,7 +594,7 @@ import { getListMusics } from '@renderer/store/list/action'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import defaultSetting from '@common/defaultSetting'
 import { resolveQueueView } from '@renderer/core/immersiveLyric/panel/queue'
-import { minWindow, maxWindowToggle, closeWindow, openFoliaWindow } from '@renderer/utils/ipc'
+import { minWindow, maxWindowToggle, closeWindow } from '@renderer/utils/ipc'
 
 /**
  * 泛音统一歌词界面（Lattice）——沉浸式歌词与 Folia 舞台合并后的唯一入口
@@ -496,9 +611,43 @@ import { minWindow, maxWindowToggle, closeWindow, openFoliaWindow } from '@rende
 // 时间轴偏移在会话内保留（关掉再开不丢），默认 0
 const lyricOffset = ref(0)
 
+// ── Folia「歌词样式 → 背景」面板的六种背景类型 ─────────────────────────
+// id 与 folia/components/visualizer/backgrounds/*/entry.tsx 的注册 id 一一对应。
+const FOLIA_BACKGROUND_MODES = [
+  { id: 'common', label: '通用', desc: '封面取色 + 几何氛围层（纯 DOM，最轻量）' },
+  { id: 'monet', label: '莫奈', desc: '整幅画面被斜线分成两种印象派处理' },
+  { id: 'nomand', label: '漫游', desc: '主题色像素抖动 / 半色调画像' },
+  { id: 'latent', label: '隐现', desc: '上层像素点阵 + 下层流体（默认）' },
+  { id: 'url', label: '嵌入', desc: '用网页作为背景画面' },
+  { id: 'sora', label: '空', desc: '纯色底 + 稀疏星点，几乎不抢歌词' },
+]
+const FOLIA_MONET_SOURCES = [
+  { id: 'cover-derived', label: '封面' },
+  { id: 'uploaded-global', label: '自定义图片' },
+]
+const FOLIA_MONET_LAYOUTS = [
+  { id: 'half-pane-gradient', label: '半屏渐变' },
+  { id: 'full-overlay', label: '全屏叠色' },
+]
+const MONET_BG_LS_KEY = 'folia-monet-bg'
+const FOLIA_FIT_LS_KEY = 'folia-embedded-fit'
+
+// Folia 源码里的 visualizerImageAsset 是 lab shim（上传永远返回 false），
+// 所以自定义背景图由宿主这边直接以 data URL 落到 asset store 并做本地持久化。
+const restoreMonetImage = () => {
+  try {
+    const raw = window.localStorage.getItem(MONET_BG_LS_KEY)
+    if (!raw) return
+    const image = JSON.parse(raw)
+    if (image && typeof image.url === 'string' && image.url.startsWith('data:image/')) {
+      useVisualizerAssetStore.setState({ monetBackgroundImage: image })
+    }
+  } catch (e) { /* 数据损坏就当没上传过 */ }
+}
+
 export default {
   name: 'LatticeLyric',
-  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner, ThemePark, LumierePixiHost },
+  components: { LyricLineView, PanelVolume, AudioConvolution, BiquadFilter, PitchShifter, AudioPanner, ThemePark, LumierePixiHost, FoliaViewer },
   props: {
     visible: Boolean,
   },
@@ -508,6 +657,104 @@ export default {
     const canvas_ref = ref(null)
     const panelOpen = ref(true)
     const panelSection = ref('cover')
+
+    // ── Folia 视觉：本画面内的一个「歌词样式」，共用 store 里的开关 ──────
+    // 所有旧入口（侧栏 ✦ / 封面墙 / 顶栏）最终都落到 isFoliaVisualOn，
+    // 所以这里和它们永远同步，不会出现「又开了一个界面」。
+    const foliaOn = isFoliaVisualOn
+    const toggleFoliaVisual = () => { setFoliaVisualOn(!foliaOn.value) }
+
+    // 视觉模式由 Folia 的 zustand store 单一持有；Vue 侧订阅它的变化，
+    // 点击时直接调导出的 action（React 岛会同步重渲染）。
+    const foliaModes = FOLIA_VISUALIZER_MODES
+    const foliaMode = ref(useVisualizerSettingsStore.getState().visualizerMode)
+    const unsubFolia = useVisualizerSettingsStore.subscribe(state => { foliaMode.value = state.visualizerMode })
+    const foliaModeLabel = computed(() => foliaModes.find(m => m.id === foliaMode.value)?.label ?? String(foliaMode.value))
+    const isFoliaModeAvailable = id => isModeAvailable(id)
+    const setFoliaMode = id => { if (isModeAvailable(id)) handleSetVisualizerMode(id) }
+
+    // ── Folia 背景：六种模式 / 莫奈来源与布局 / 通用参数，全部写回 zustand store ──
+    // Vue 与 React 岛在同一个 renderer bundle 里，直接共用 store，无需 IPC 或事件桥。
+    restoreMonetImage()
+    const foliaBgModes = FOLIA_BACKGROUND_MODES
+    const monetSources = FOLIA_MONET_SOURCES
+    const monetLayouts = FOLIA_MONET_LAYOUTS
+    const bgSettings = () => useVisualizerSettingsStore.getState()
+    const foliaBgMode = ref(bgSettings().visualizerBackgroundMode ?? 'latent')
+    const monetTuning = ref({ ...(bgSettings().monetBackgroundTuning ?? {}) })
+    const hasMonetImage = ref(Boolean(useVisualizerAssetStore.getState().monetBackgroundImage))
+    const monetImageName = ref(useVisualizerAssetStore.getState().monetBackgroundImage?.name ?? '')
+    const commonOpacity = ref(bgSettings().backgroundOpacity ?? 1)
+    const commonDisableGeometric = ref(Boolean(bgSettings().disableVisualizerGeometricBackground))
+    const commonDisableVignette = ref(Boolean(bgSettings().disableVisualizerVignette))
+    const commonUseCover = ref(Boolean(useThemeSettingsStore.getState().useCoverColorBg))
+    const foliaFit = ref(window.localStorage.getItem(FOLIA_FIT_LS_KEY) !== 'off')
+    window.__overtoneFoliaFit = foliaFit.value
+
+    const unsubFoliaBg = useVisualizerSettingsStore.subscribe(state => {
+      foliaBgMode.value = state.visualizerBackgroundMode ?? 'latent'
+      monetTuning.value = { ...(state.monetBackgroundTuning ?? {}) }
+      commonOpacity.value = state.backgroundOpacity ?? 1
+      commonDisableGeometric.value = Boolean(state.disableVisualizerGeometricBackground)
+      commonDisableVignette.value = Boolean(state.disableVisualizerVignette)
+    })
+    const unsubAssets = useVisualizerAssetStore.subscribe(state => {
+      hasMonetImage.value = Boolean(state.monetBackgroundImage)
+      monetImageName.value = state.monetBackgroundImage?.name ?? ''
+    })
+
+    const monetSource = computed(() => monetTuning.value.backgroundSource === 'uploaded-global' ? 'uploaded-global' : 'cover-derived')
+    const monetLayout = computed(() => monetTuning.value.backgroundLayout === 'half-pane-gradient' ? 'half-pane-gradient' : 'full-overlay')
+    const foliaBgDesc = computed(() => foliaBgModes.find(m => m.id === foliaBgMode.value)?.desc ?? '')
+    const fitScaleText = computed(() => foliaFit.value ? '当前：按窗口比例自动缩放对齐（推荐）' : '当前：原始尺寸，窄窗口下歌词可能被裁切')
+    const isFoliaBgAvailable = id => hasWebGL() || !WEBGL_BACKGROUNDS.has(id)
+    const setFoliaBgMode = id => { if (isFoliaBgAvailable(id)) bgSettings().handleSetVisualizerBackgroundMode(id) }
+    const patchMonet = patch => { bgSettings().handleSetMonetBackgroundTuning?.(patch) }
+
+    const monetFileRef = ref(null)
+    const pickMonetImage = () => monetFileRef.value?.click()
+    const onMonetFileChange = e => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        const url = String(reader.result ?? '')
+        const image = { id: `custom-${Date.now()}`, name: file.name, url }
+        useVisualizerAssetStore.setState({ monetBackgroundImage: image })
+        try { window.localStorage.setItem(MONET_BG_LS_KEY, JSON.stringify(image)) } catch (err) { /* 超出配额则仅本次会话有效 */ }
+        patchMonet({ backgroundSource: 'uploaded-global' })
+      }
+      reader.readAsDataURL(file)
+      e.target.value = ''
+    }
+    const clearMonetImage = () => {
+      useVisualizerAssetStore.setState({ monetBackgroundImage: null })
+      try { window.localStorage.removeItem(MONET_BG_LS_KEY) } catch (err) { /* 忽略 */ }
+      patchMonet({ backgroundSource: 'cover-derived' })
+    }
+    const setMonetSource = id => {
+      if (id === 'uploaded-global' && !hasMonetImage.value) { pickMonetImage(); return }
+      patchMonet({ backgroundSource: id })
+    }
+    const setMonetLayout = id => { patchMonet({ backgroundLayout: id }) }
+    const setCommonCover = v => { useThemeSettingsStore.getState().setUseCoverColorBg(v); commonUseCover.value = v }
+    const setCommonGeometric = v => { bgSettings().handleToggleDisableVisualizerGeometricBackground(!v) }
+    const setCommonVignette = v => { bgSettings().handleToggleDisableVisualizerVignette(!v) }
+    const setCommonOpacity = v => { bgSettings().handleSetBackgroundOpacity(v) }
+    const setFoliaFit = v => {
+      foliaFit.value = v
+      window.__overtoneFoliaFit = v
+      try { window.localStorage.setItem(FOLIA_FIT_LS_KEY, v ? 'on' : 'off') } catch (err) { /* 忽略 */ }
+      window.dispatchEvent(new Event('resize'))
+    }
+    const resetFoliaBg = () => {
+      bgSettings().handleResetVisualizerBackgroundMode?.()
+      bgSettings().handleResetMonetBackgroundTuning?.()
+      setFoliaFit(true)
+    }
+
+    // Folia 舞台读取这个全局量，保证视觉歌词与宿主「时间轴偏移」一致
+    watch(lyricOffset, v => { window.__overtoneLyricOffsetMs = v }, { immediate: true })
 
     // ── 歌词样式 / 背景类型（Folia 的「右侧控制面板」核心两项）──────────
     // 第二阶段起以 appSetting 为权威来源（可随备份导出、可跨端同步），
@@ -1075,9 +1322,6 @@ export default {
       emit('close')
       setShowPlayerDetail(true)
     }
-    // Folia 视觉窗口入口（此前 openFoliaWindow 只有 IPC 定义、没有任何 UI 调用，窗口无从打开）
-    const handleOpenFolia = () => { openFoliaWindow() }
-
     // 底部播放条：悬停展开（离开留 180ms 缓冲，避免抖动）
     const handleBarEnter = () => {
       if (barLeaveTimer) { window.clearTimeout(barLeaveTimer); barLeaveTimer = null }
@@ -1184,6 +1428,9 @@ export default {
       window.app_event.on('downloadListUpdate', handleQueueUpdate)
     })
     onBeforeUnmount(() => {
+      unsubFolia?.()
+      unsubFoliaBg?.()
+      unsubAssets?.()
       window.removeEventListener('keydown', handleGlobalEsc)
       window.removeEventListener('resize', handleResize)
       window.app_event.off('myListUpdate', handleQueueUpdate)
@@ -1205,7 +1452,43 @@ export default {
       playNext,
       playPrev,
       openPlayer,
-      handleOpenFolia,
+      toggleFoliaVisual,
+      setFoliaVisualOn,
+      foliaOn,
+      foliaModes,
+      foliaMode,
+      foliaModeLabel,
+      isFoliaModeAvailable,
+      setFoliaMode,
+      foliaBgModes,
+      foliaBgMode,
+      foliaBgDesc,
+      isFoliaBgAvailable,
+      setFoliaBgMode,
+      monetSources,
+      monetLayouts,
+      monetSource,
+      monetLayout,
+      hasMonetImage,
+      monetImageName,
+      monetFileRef,
+      pickMonetImage,
+      onMonetFileChange,
+      clearMonetImage,
+      setMonetSource,
+      setMonetLayout,
+      commonOpacity,
+      commonUseCover,
+      commonDisableGeometric,
+      commonDisableVignette,
+      setCommonCover,
+      setCommonGeometric,
+      setCommonVignette,
+      setCommonOpacity,
+      foliaFit,
+      fitScaleText,
+      setFoliaFit,
+      resetFoliaBg,
       progress,
       nowPlayTimeStr,
       maxPlayTimeStr,
@@ -1482,6 +1765,14 @@ export default {
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: none;
+}
+
+/* Folia 视觉层：只占歌词区，顶栏 / 侧栏 / 底栏都留在同一个画面里 */
+.foliaLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -2475,6 +2766,157 @@ export default {
 .styleHint {
   font-size: 11px;
   opacity: .5;
+}
+
+/* ── Folia 背景面板（对齐「歌词样式 → 背景」的六种背景类型）─────────── */
+.bgCard {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .045);
+}
+.bgCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, .92);
+}
+.bgReset {
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, .6);
+  font-size: 11px;
+  cursor: pointer;
+
+  &:hover { color: #fff; border-color: rgba(255, 255, 255, .4); }
+}
+.bgCardHint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: .52;
+}
+.fieldLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255, 255, 255, .62);
+
+  small { opacity: .7; }
+}
+.bgModeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.bgModeBtn {
+  padding: 8px 0;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .05);
+  color: rgba(255, 255, 255, .75);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease;
+
+  &:hover { background: rgba(255, 255, 255, .12); }
+}
+.bgModeActive {
+  border-color: var(--color-primary);
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+.bgModeDisabled { opacity: .38; cursor: not-allowed; }
+.bgBtnRow { display: flex; gap: 6px; }
+.bgActionBtn {
+  flex: 1 1 0;
+  padding: 8px 4px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .82);
+  font-size: 11px;
+  cursor: pointer;
+
+  &:hover { background: rgba(255, 255, 255, .14); }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+}
+.hiddenFile { display: none; }
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, .78);
+  cursor: pointer;
+
+  input { accent-color: var(--color-primary); }
+}
+.rangeInput { width: 100%; accent-color: var(--color-primary); }
+
+/* ── Folia 视觉模式（歌词样式面板内直接切换）───────────────────────── */
+.foliaModeBox {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+.foliaModeHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, .9);
+  small {
+    font-size: 11px;
+    font-weight: 400;
+    color: rgba(180, 155, 255, .95);
+  }
+}
+.foliaModeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.foliaModeBtn {
+  padding: 7px 2px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .78);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+  &:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+}
+.foliaModeActive {
+  border-color: rgba(180, 155, 255, .65);
+  background: rgba(180, 155, 255, .24);
+  color: #fff;
+}
+.foliaModeDisabled {
+  opacity: .35;
+  cursor: not-allowed;
+  &:hover { background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .78); }
+}
+.foliaModeHint {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, .42);
 }
 
 /* 字号缩放（只作用于歌词列，不缩放面板） */

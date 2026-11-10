@@ -7,6 +7,8 @@ import {
   statusText,
   isShowPlayerDetail,
   isShowImmersiveLyric,
+  isShowFolia,
+  isFoliaVisualOn,
   isShowPlayComment,
   isShowLrcSelectContent,
   playInfo,
@@ -64,6 +66,29 @@ export const setShowPlayerDetail = (val: boolean) => {
 
 export const setShowImmersiveLyric = (val: boolean) => {
   isShowImmersiveLyric.value = val
+  // 画面关掉时把旧的 Folia 入口标记一起收起；视觉层由 Lattice 自己的 v-if 卸载，
+  // isFoliaVisualOn 保留用户上次的选择，下次打开还是同一套样式。
+  if (!val) isShowFolia.value = false
+}
+
+/** 画面内切换「歌词样式 ⇄ Folia 视觉效果」，不新开任何界面。 */
+export const setFoliaVisualOn = (val: boolean) => {
+  isFoliaVisualOn.value = val
+}
+
+/**
+ * 兼容入口：侧栏 ✦、封面墙、歌词页里所有旧的「打开 Folia 视觉」按钮，
+ * 现在统一落到同一个沉浸歌词画面并开启视觉层，不再弹第二个界面。
+ */
+export const setShowFolia = (val: boolean) => {
+  isShowFolia.value = val
+  if (val) {
+    isFoliaVisualOn.value = true
+    isShowImmersiveLyric.value = true
+  } else {
+    isFoliaVisualOn.value = false
+    isShowImmersiveLyric.value = false
+  }
 }
 
 export const setShowPlayComment = (val: boolean) => {

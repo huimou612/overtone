@@ -39,6 +39,12 @@ export const isShowPlayerDetail = ref(false)
 // 沉浸式歌词：独立的展示模式，与普通歌词页并存，不与 `isShowPlayerDetail` 互斥
 export const isShowImmersiveLyric = ref(false)
 
+// Folia 视觉：原本是独立的全屏 React 覆盖层，现已合并进统一沉浸歌词画面。
+// isFoliaVisualOn = 该画面内「歌词样式 → Folia 视觉效果」的开关；
+// isShowFolia = 旧的兼容入口标记，setShowFolia(true) 会打开同一个画面并开启视觉。
+export const isShowFolia = ref(false)
+export const isFoliaVisualOn = ref(false)
+
 export const isShowPlayComment = ref(false)
 
 export const isShowLrcSelectContent = ref(false)
