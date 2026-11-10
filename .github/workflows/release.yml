@@ -6,6 +6,11 @@ on:
       - master
   # 支持在 Actions 页面手动触发一次完整打包，便于不打标签也能验证构建
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: 仅验证四平台构建（跳过发布，不创建/覆盖任何 Release）
+        type: boolean
+        default: false
 
 # 打包流程要用 GITHUB_TOKEN 创建 Release 并上传各平台安装包。
 # 本仓库由 API 创建，默认工作流权限为 read，缺少此项会在「Release」步骤
@@ -85,11 +90,26 @@ jobs:
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_BUILD: ${{ inputs.force_build == true && '1' || '0' }}
         run: |
           set -euo pipefail
 
           VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}"
+
+          # 软件内「检查更新」弹窗读的是 publish/version.json（另一套版本源），
+          # 与 package.json / Release 的 latest.yml 不一致时会显示旧版本号。
+          VI=$(node -p "require('./publish/version.json').version" 2>/dev/null || echo missing)
+          if [ "$VI" != "$VERSION" ]; then
+            echo "::warning title=版本源不一致::package.json=${VERSION}，publish/version.json=${VI}。运行 npm run version:sync 后再推送，否则软件内「检查更新」会显示旧版本。"
+          fi
+
+          # 手动触发的验证构建：只跑四平台打包，绝不碰已发布的 Release / tag。
+          if [ "$FORCE_BUILD" = "1" ]; then
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=构建验证模式::手动触发，四平台只构建不发布（Release job 会被跳过）。"
+            exit 0
+          fi
 
           # 取不到（404）说明这个 tag 还没有 release，可以建；
           # 取到 true 说明只是草稿，也可以覆盖；取到 false 就是已发布 —— 必须让路。
@@ -244,6 +264,12 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Build src code
+        env:
+          # macOS runner 内存最小（7GB）：Folia 加入后四套 webpack 并行 +
+          # Terser 多 worker 会打出 ERR_WORKER_OUT_OF_MEMORY（CI #79 / #80）。
+          # 改为串行构建并把 Node 堆上限提到 4GB；其他平台保持并行不动。
+          OVERTONE_BUILD_SERIAL: '1'
+          NODE_OPTIONS: '--max-old-space-size=4096'
         run: |
           git status --porcelain
           npm run build
@@ -333,6 +359,8 @@ jobs:
   Release:
     name: Release
     needs: [Windows, Windows_7, Mac, Linux]
+    # 手动「仅验证构建」时不发布，避免覆盖已发布的 v0.4.0 Release / tag。
+    if: needs.Guard.outputs.should_release == 'true' && inputs.force_build != true
     runs-on: ubuntu-latest
     steps:
       - name: Check out git repository

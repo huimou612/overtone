@@ -41,44 +41,34 @@ function build() {
     process.exit()
   }
 
-  Promise.all([
-    pack(mainConfig).then(result => {
-      results += result + '\n\n'
-      spinners.succeed('main', { text: 'main build success!' })
-    }).catch(err => {
-      spinners.fail('main', { text: 'main build fail :(' })
-      console.log(`\n  ${errorLog}failed to build main process`)
-      console.error(`\n${err}\n`)
-      process.exit(1)
-    }),
-    pack(rendererConfig).then(result => {
-      results += result + '\n\n'
-      spinners.succeed('renderer', { text: 'renderer build success!' })
-    }).catch(err => {
-      spinners.fail('renderer', { text: 'renderer build fail :(' })
-      console.log(`\n  ${errorLog}failed to build renderer process`)
-      console.error(`\n${err}\n`)
-      process.exit(1)
-    }),
-    pack(rendererLyricConfig).then(result => {
-      results += result + '\n\n'
-      spinners.succeed('renderer-lyric', { text: 'renderer-lyric build success!' })
-    }).catch(err => {
-      spinners.fail('renderer-lyric', { text: 'renderer-lyric build fail :(' })
-      console.log(`\n  ${errorLog}failed to build renderer-lyric process`)
-      console.error(`\n${err}\n`)
-      process.exit(1)
-    }),
-    pack(rendererScriptConfig).then(result => {
-      results += result + '\n\n'
-      spinners.succeed('renderer-scripts', { text: 'renderer-scripts build success!' })
-    }).catch(err => {
-      spinners.fail('renderer-scripts', { text: 'renderer-scripts build fail :(' })
-      console.log(`\n  ${errorLog}failed to build renderer-scripts process`)
-      console.error(`\n${err}\n`)
-      process.exit(1)
-    }),
-  ]).then(handleSuccess)
+  // Folia 加入后 renderer 体积暴涨，四套 webpack + Terser 多 worker 并行时
+  // macOS runner（7GB）会打出 ERR_WORKER_OUT_OF_MEMORY（见 CI #79 / #80）。
+  // CI 上用 OVERTONE_BUILD_SERIAL=1 改为串行，内存峰值降到约 1/4；本地仍默认并行。
+  const targets = [
+    { key: 'main', config: mainConfig, label: 'main process' },
+    { key: 'renderer', config: rendererConfig, label: 'renderer process' },
+    { key: 'renderer-lyric', config: rendererLyricConfig, label: 'renderer-lyric process' },
+    { key: 'renderer-scripts', config: rendererScriptConfig, label: 'renderer-scripts process' },
+  ]
+  const runOne = ({ key, config, label }) => pack(config).then(result => {
+    results += `${result}\n\n`
+    spinners.succeed(key, { text: `${key} build success!` })
+  }).catch(err => {
+    spinners.fail(key, { text: `${key} build fail :(` })
+    console.log(`\n  ${errorLog}failed to build ${label}`)
+    console.error(`\n${err}\n`)
+    process.exit(1)
+  })
+
+  if (process.env.OVERTONE_BUILD_SERIAL === '1') {
+    console.log('[pack] 串行构建（OVERTONE_BUILD_SERIAL=1），降低内存峰值')
+    void (async() => {
+      for (const target of targets) await runOne(target)
+      handleSuccess()
+    })()
+  } else {
+    Promise.all(targets.map(runOne)).then(handleSuccess)
+  }
 }
 
 function pack(config) {
@@ -125,7 +115,12 @@ function runPack(config) {
   })
 }
 
-if (isMainThread) build()
+if (isMainThread) {
+  // 每次构建都把 package.json 版本同步到 publish/version.json，
+  // 避免「软件已是新版、检查更新却显示旧版」这种双版本源不同步。
+  require('./sync-version-info.cjs')()
+  build()
+}
 else {
   parentPort.once('message', ({ port, config }) => {
     // assert(port instanceof MessagePort)
