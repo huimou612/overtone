@@ -141,3 +141,37 @@ lineCount / demo），CDP 可直接核对同步状态。
 - 0.3.0 打包前：`resources/app.asar.pre-fusion-20261109`
 - 最初原版：`resources/app.asar.folia-backup`
 把对应备份改名回 `app.asar` 即可（改名前先关掉 overtone.exe）。
+
+
+## 0.4.0 收尾（2026-11-11，已验证）
+
+### CI 构建
+- 截图里失败的 `#79` / `#80` 是 Mac runner `ERR_WORKER_OUT_OF_MEMORY`，
+  已加 `NODE_OPTIONS=--max-old-space-size=4096` 与 `OVERTONE_BUILD_SERIAL=1` 串行构建。
+- Guard 判定「版本已发布」导致跳过打包，已加 `workflow_dispatch.force_build`。
+- 修复后 `#81` / `#82` / `#83` 连续三次 **success**。
+
+### 软件内「最新版本 0.2」根因与修复
+- 双更新机制：`electron-updater` 读 Release 的 `latest.yml`，版本提示读 `publish/version.json`。
+- `publish/version.json` 原本还是 `0.2.0`（已同步到 `0.4.0` 并补 history）。
+- 客户端走 jsDelivr 不带分支的 `/gh/user/repo/publish/version.json`，CDN 缓存的是旧 commit 快照，
+  实测仍返回 **0.2.0**；带 `@master` 的同一文件返回 **0.4.0**，这就是显示错版本的原因。
+- 修复：三个 jsDelivr 镜像显式 `@master` 且排到 raw 前面，超时 10s→6s、重试 3→2；
+  `version:purge` 调 `purge.jsdelivr.net` 清缓存；`bustCache` 带 `_t` 参数。
+- 源码 `src/renderer/utils/update.js` 与产物 `dist/renderer.js`、正式版 `app.asar` 三处已同步
+  （asar 内 `@master/publish/version.json` 出现 3 次，版本号 0.4.0）。
+- 线上实测：`raw.githubusercontent.com` → 0.4.0，`cdn.jsdelivr.net/gh/...@master` → 0.4.0。
+
+### Release 资产
+- 主安装包首次上传被中断，资产停在 `starter`；已删除旧资产并补传完成。
+- `overtone-v0.4.0-x64-Setup.exe` **127,629,843 B / state uploaded**，
+  与 `latest.yml` 的 size 一致；`latest.yml`、`.blockmap` 均为 `uploaded`。
+
+### 仓库整理
+- 根目录临时 `*.log`、`folia-pack2.zip` 与 `build/win-unpacked.old-*`、
+  `build/win-unpacked.tmp.old-*`（约 779MB 残留）移到
+  `F:/workbuddy/2026-10-12-13-28-07/repo-cleanup-20261111/`，可原样回滚，未直接删除。
+- `dist` 保留：这是 `build:clean` 后的干净产物（43.1MB / 2031 文件），不是残留。
+- 恢复 `slice/lattice-lyrics/`：NOTICE 与 `docs/development/09-*` 都引用它，删了会变死链。
+- 单独提取的 `README-泛音-v0.4.0.md` 与自包含 `泛音-v0.4.0-界面展示.html` 入库到仓库根目录，
+  截图引用 `docs/screenshots/` 相对路径可直接显示。

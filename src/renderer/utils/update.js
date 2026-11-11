@@ -3,6 +3,12 @@ import pkg from '../../../package.json'
 
 // 版本检查源。
 //
+// 国内环境下 raw.githubusercontent.com 经常不可达，客户端会 fallback 到 jsdelivr。
+// jsdelivr 对不带分支的 /gh/user/repo/publish/version.json 会缓存旧的 commit 快照，
+// 0.4.0 发版后仍返回 0.2.0（软件显示「最新版本 0.2」的直接原因）。
+// 因此：① 显式写 @master（可 purge、实测立刻拿到新版本）；② 三个 CDN 镜像放前面，
+// raw 放最后，避免国内用户先等一个必然超时的源；③ 缩短超时与重试次数。
+//
 // 注意：这里原先沿用了上游 LX Music 的版本源（npm 包 lx-music-desktop-version-info、
 // gitee 镜像、cdn.stsky.cn 等），合并到本项目后必须全部剔除 —— 否则本软件会把
 // 上游的版本号当成「新版」，把用户引到 LX Music 的发布页去，属于明确的品牌串味。
@@ -14,10 +20,10 @@ const author = pkg.author.name
 const name = pkg.name
 
 const address = [
+  [`https://cdn.jsdelivr.net/gh/${author}/${name}@master/publish/version.json`, 'direct'],
+  [`https://fastly.jsdelivr.net/gh/${author}/${name}@master/publish/version.json`, 'direct'],
+  [`https://gcore.jsdelivr.net/gh/${author}/${name}@master/publish/version.json`, 'direct'],
   [`https://raw.githubusercontent.com/${author}/${name}/master/publish/version.json`, 'direct'],
-  [`https://cdn.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  [`https://fastly.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  [`https://gcore.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
 ]
 
 // 缓存穿透：版本源（raw.githubusercontent / jsdelivr）都会带缓存，
@@ -27,11 +33,11 @@ const bustCache = url => `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}
 const request = async(url, retryNum = 0) => {
   return new Promise((resolve, reject) => {
     httpGet(bustCache(url), {
-      timeout: 10000,
+      timeout: 6000,
       headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
     }, (err, resp, body) => {
       if (err || resp.statusCode != 200) {
-        ++retryNum >= 3
+        ++retryNum >= 2
           ? reject(err || new Error(resp.statusMessage || resp.statusCode))
           : request(url, retryNum).then(resolve).catch(reject)
       } else resolve(body)

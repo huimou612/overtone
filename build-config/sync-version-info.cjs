@@ -14,6 +14,7 @@
  */
 const fs = require('fs')
 const path = require('path')
+const https = require('https')
 
 const root = path.resolve(__dirname, '..')
 const pkgPath = path.join(root, 'package.json')
@@ -21,7 +22,24 @@ const infoPath = path.join(root, 'publish', 'version.json')
 
 const REPO = 'huimou612/overtone'
 
+/**
+ * 刷新 jsdelivr 的 @master 缓存。
+ * 软件内版本检查优先走三个 jsdelivr 镜像，若不清缓存，发版后可能继续读到旧版本号。
+ * best-effort：无网络 / 超时都不影响构建。
+ */
+function purgeCdn() {
+  const target = `/gh/${REPO}@master/publish/version.json`
+  const req = https.request({ host: 'purge.jsdelivr.net', path: target, timeout: 5000 }, res => {
+    res.resume()
+    console.log(`[version:sync] CDN purge ${target} -> ${res.statusCode}`)
+  })
+  req.on('error', err => console.warn('[version:sync] CDN purge 跳过：', err.message))
+  req.on('timeout', () => req.destroy())
+  req.end()
+}
+
 function sync() {
+  const forcePurge = process.argv.includes('--purge')
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
   const version = pkg.version
   let info = { version: '0.0.0', desc: '', history: [] }
@@ -34,6 +52,7 @@ function sync() {
 
   if (info.version === version) {
     console.log(`[version:sync] 版本源已是 ${version}，无需改动`)
+    if (forcePurge) purgeCdn()
     return false
   }
 
@@ -54,6 +73,7 @@ function sync() {
   fs.mkdirSync(path.dirname(infoPath), { recursive: true })
   fs.writeFileSync(infoPath, `${JSON.stringify(next, null, 2)}\n`, 'utf8')
   console.log(`[version:sync] ${info.version || '(空)'} → ${version}，旧版本已归档到 history`)
+  purgeCdn()
   return true
 }
 

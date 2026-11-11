@@ -7,6 +7,7 @@
     "build:clean": "node build-config/build-clean.cjs",
     "build:folia": "node build-config/build-folia.cjs",
     "version:sync": "node build-config/sync-version-info.cjs",
+    "version:purge": "node build-config/sync-version-info.cjs --purge",
     "test": "npm run test:lxlrc && npm run test:ai && npm run test:analysis && npm run test:immersive && npm run test:panel && npm run test:folia",
     "test:lxlrc": "node build-config/test-lxlrc.cjs",
     "test:ai": "node build-config/test-ai-service.cjs",

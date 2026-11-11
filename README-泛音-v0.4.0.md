@@ -1,0 +1,441 @@
+<p align="center"><a href="https://github.com/huimou612/overtone"><img width="200" src="./doc/images/icon.png" alt="Overtone logo"></a></p>
+
+<h1 align="center">泛音 · Overtone</h1>
+
+<p align="center">
+  <a href="https://github.com/huimou612/overtone/releases"><img src="https://img.shields.io/github/release/huimou612/overtone" alt="Release version"></a>
+  <a href="https://github.com/huimou612/overtone/blob/master/LICENSE"><img src="https://img.shields.io/github/license/huimou612/overtone" alt="License"></a>
+  <a href="https://electronjs.org/releases/stable"><img src="https://img.shields.io/github/package-json/dependency-version/huimou612/overtone/dev/electron/master" alt="Electron version"></a>
+</p>
+
+<p align="center">一个以 <b>LX Music</b> 为外壳、以 <b>Folia</b> 的 AI 能力为内核的本地音乐播放器</p>
+
+<p align="center"><a href="./README.en.md">English</a> | 简体中文</p>
+
+---
+
+## v0.4.0 · 真实界面
+
+> 下面每一张都是 Windows 桌面版「泛音」的**实际运行截图**，不是设计稿、不是概念图。
+> 点开「沉浸歌词」以后，视觉、歌词、封面、播放控制和设置，**都在同一个画面里**。
+
+![绘光 · 光柱与逐字歌词](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/01-hero-lumiere.jpg)
+
+### 这一版做了什么
+
+| 更新 | 说明 |
+| --- | --- |
+| **Folia 视觉引擎进应用** | 商籁 / 凝彩 / 流光 / 心象 / 云阶 / 浮名 / 倾诉 / 回环 / 莫奈 / 时计 / 群唱 / 镜台 / 静止 / 绘光 / 花火，共 **15 种歌词视觉**，右侧面板点一下就切，不再另开窗口 |
+| **6 种背景** | 通用 / 莫奈 / 漫游 / 隐现 / 嵌入 / 空。莫奈支持封面或自定义图片、半屏渐变或全屏叠色、自适应铺满 |
+| **歌词实时同步** | 逐字时间戳、前奏与间奏保留当前行、宿主时间轴偏移全部对齐。15 种模式实测无空白、无错位、无裁切 |
+| **搜索联想回归** | 输入即出大词库联想（本地历史 + 热搜 + 在线补充），空输入聚焦显示搜索记忆 |
+| **入口合并** | 封面墙、侧栏、播放页统一进同一个沉浸歌词画面；WebGL2 已启用，3D / 着色器样式可用 |
+
+### 一个画面里切换 15 种歌词视觉
+
+右侧「Folia 视觉效果」面板直接选模式，歌词与画面同时变，不用再打开第二个界面。
+
+![15 种视觉效果切换面板](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/03-modes-panel.jpg)
+
+| 云阶 · 阶梯逐字 | 花火 · 粒子与胶片 |
+| :---: | :---: |
+| ![云阶](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/05-cloud-steps.jpg) | ![花火](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/06-hanabi.jpg) |
+
+| 莫奈 · 左栏歌词完整可见 | 凝彩 · 大字排版 |
+| :---: | :---: |
+| ![莫奈](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/07-monet-lyrics.jpg) | ![凝彩](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/02-interface-tempera.jpg) |
+
+### 6 种背景，都在同一个面板里
+
+![6 种背景设置面板](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/04-background-panel.jpg)
+
+通用背景走封面取色 + 几何氛围层；莫奈可以把整幅画面拆成两种印象派处理，也能换成自己上传的图片。
+
+![通用背景 · 封面取色](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/08-common-bg.jpg)
+
+### 主界面与搜索联想
+
+搜索框输入「爱如」即时给出 10 条联想，本地词库、热搜与在线补充一起工作。
+
+![搜索联想](https://raw.githubusercontent.com/huimou612/overtone/master/docs/screenshots/09-search-suggest.jpg)
+
+### 下载
+
+- Windows 安装包：[GitHub Releases · v0.4.0](https://github.com/huimou612/overtone/releases/tag/v0.4.0)
+- 技术细节、构建参数与回滚清单：[FOLIA-INAPP.md](./FOLIA-INAPP.md)
+
+> v0.4.0 是一次重大更新：Folia 视觉引擎完整进应用，同时修掉歌词实时同步、背景渲染、窗口适配与 WebGL 启用问题。
+
+---
+
+## 这是什么
+
+泛音（Overtone）是一个**二次开发作品**。它把两个项目的长处缝在一起：
+
+| 来源 | 贡献的部分 |
+| --- | --- |
+| [LX Music](https://github.com/lyswhut/lx-music-desktop)（Apache-2.0） | 桌面端外壳：Electron + Vue 3 框架、播放器内核、播放列表、音源（自定义源）加载、桌面歌词窗口、数据同步、开放 API、主题系统 |
+| [Folia](https://github.com/chthollyphile/folia-major)（AGPL-3.0） | AI 能力：AI 歌词分词（逐词边界）、AI 凭据安全存储、音源分离（HTDemucs） |
+
+也就是说：**操作习惯与 LX Music 一致，但多了「听懂歌词」和「拆开音轨」这两件事。**
+
+> 为什么是这两个许可证能合到一起？因为 Apache-2.0 允许并入 AGPL-3.0（反向不行）。
+> 详细说明见 [NOTICE](./NOTICE)。
+
+---
+
+## 功能
+
+### 继承自 LX Music（已完成）
+
+- 播放器与列表体系：播放列表、收藏、临时列表、列表同步
+- 桌面歌词窗口（横/竖排、逐字歌词）
+- 数据同步服务客户端
+- 开放 API（本地 HTTP 服务，供第三方调用）
+- 主题系统、托盘、全局快捷键
+- Windows / macOS / Linux 三平台打包
+
+> ⚠️ **在线播放只走「自定义源」机制**：本仓库不含任何音乐平台的接口实现
+> （连搜索接口也没有，见下方「在线播放怎么用」）。想听在线歌曲，请自行导入源。
+
+### 泛音自研（已完成）
+
+- **AI 歌词分词** —— 用大模型把整行歌词切成词，为逐字高亮提供边界。结果写回本地库，重装不丢
+- **AI 凭据管理** —— 用 Electron `safeStorage`（Windows DPAPI / macOS Keychain / Linux libsecret）加密存储 API Key，界面只拿得到「配没配」
+- **音源分离** —— HTDemucs，跑本地 Python sidecar，把一首歌拆成人声与伴奏并各导出一个文件
+- **个性化外壳** —— 可定制的入场动画、视频壁纸（模糊 / 遮罩）、经典 / 个性双档外观、跟随封面取色
+- **封面墙 + Lattice 歌词**（v0.2）—— 海报墙（悬停放大 / 单击播放 / 双击进歌词）、全屏逐字歌词、
+  右侧四页签面板（封面 / 音效 / 列表 / 时间线）、可缩放控制条、粒子与变色背景
+
+前两项与第三项的入口都在侧栏的**工作台**（看状态、开能力）；播放详情页底部另有一行常驻
+工具按钮（分词 · 分离），不必再右键歌词。分词与分离全程在本机完成，音频不上传。
+
+---
+
+## v0.2 新增：封面墙与 Lattice 歌词
+
+这一版的主要工作，是把 [Folia](https://github.com/chthollyphile/folia-major) 那种「看着封面听歌」的体验，
+接进 [LX Music](https://github.com/lyswhut/lx-music-desktop) 的桌面外壳里 —— 操作习惯仍然是 LX，
+但听歌的界面换成了海报墙 + 全屏歌词。
+
+> 灵感来源：[落雪音乐（LX Music）](https://github.com/lyswhut/lx-music-desktop) 的播放器内核与外壳、
+> [Folia](https://github.com/chthollyphile/folia-major) 的海报墙 / 全屏歌词 / 时间线。
+
+### 封面墙
+
+- 侧栏点「封面墙」进入，当前列表铺成一整面海报墙
+- **鼠标悬停**：封面放大、白色描边、封面随鼠标轻微位移（视差）
+- **单击**：播放这一首
+- **双击**：播放并进入 Lattice 歌词界面
+- 顶栏可以拖动窗口；**鼠标靠近右上角**会浮出「最小化 / 最大化 / 关闭」
+
+### Lattice 歌词界面
+
+- 居中大字歌词，逐字填充（唱到的字亮、未唱的暗），上下各留上下文行
+- 背景：封面模糊铺底 + 缓慢变色的色调层 + 飘浮粒子
+- 右侧常驻面板，四个页签：
+
+  | 页签 | 内容 |
+  | --- | --- |
+  | 封面 | 专辑封面、歌名、歌手、专辑 |
+  | 音效 | 音效设置窗口（环境混响 / 均衡器 / 音调升降 / 3D 环绕）、音量、歌词类型、时间轴偏移 |
+  | 播放列表 | 播放队列（歌名 + 歌手，当前曲高亮，点一下即播） |
+  | 时间线 | 按时间排列的歌词，点某一句跳到该句；可切「全屏时间线」看大图 |
+
+- **底部控制条**：默认是一枚小胶囊（上一首 / 播放暂停 / 下一首 + 歌名），
+  鼠标移上去展开成完整控制条（可拖动进度、时间、面板开关、打开播放器）
+- 面板关掉后，右下角有圆形按钮可以随时重新打开
+- **时间轴偏移**：歌词对不上时按 `◀` / `▶` 每次 ±100ms 微调，点数值归零
+
+### 操作一览
+
+| 操作 | 效果 |
+| --- | --- |
+| 侧栏「封面墙」 | 进入海报墙 |
+| 单击封面 | 播放这首歌 |
+| 双击封面 | 播放并进入 Lattice 歌词界面 |
+| 鼠标靠近右上角 | 浮出窗口按钮（最小化 / 最大化 / 关闭） |
+| 鼠标移到底部小胶囊 | 展开完整控制条 |
+| 点击右侧四个图标 | 切换 封面 / 音效 / 播放列表 / 时间线 |
+| 点时间线里的某一句 | 跳到该句 |
+| `P` | 开合右侧面板 |
+| `ESC` | 逐级退出：时间线 → 面板 → 歌词界面 |
+| 面板右上角 `✕` | 只收起面板，不退出歌词界面 |
+
+---
+
+## 在线播放怎么用
+
+泛音内置了七个音乐平台的**搜索、榜单、分类歌单与热搜词**实现（酷我 / 酷狗 / QQ 音乐 /
+网易音乐 / 咪咕音乐等，代码随安装包分发），装上就能搜歌、看榜单。一个刚装好的泛音：
+
+- ✅ **搜索歌曲 / 歌手**，**浏览榜单、分类歌单、热搜词** —— 由内置实现直接请求平台公开接口
+- ✅ **能播本地音乐** —— 把文件夹拖进列表即可，由本机解码器直接播放
+- ⚠️ **在线取播放地址 / 取歌词需要你自己准备一个「自定义源」** —— 原因见下
+
+原因在技术上：各平台取地址的实现随源码分发，但它最终依赖一张「接口实现表」
+（`src/renderer/utils/musicSdk/api-source-info.ts`）。当设置里的音源指向一个
+**自定义源**时，取地址会直接交给**你自己导入的那个源**；搜索与榜单仍由内置实现负责。
+**内置搜索 + 你自己的源取流**，是当前默认可用的组合。
+
+1. 设置 → 基本设置 → **自定义源** → 导入（选一个源文件）
+2. 导入后在下拉里选中它，界面会提示该源是否可用
+3. 源从哪来**请自行判断** —— 本项目不提供、不托管、不推荐任何源
+
+「自定义源」是上游 LX Music 的开放机制：一个源就是一段声明了自己能力的脚本，泛音把它
+交给 `src/renderer-scripts/` 的沙箱执行，只接受它返回的**音频地址 / 歌词 / 封面**。
+地址的正确性与可用性由源负责，本项目无法校验；当然，它与本机解码器之间还有一个好处：
+音频始终在本机播放，不上传任何服务器。
+
+> ⚠️ **已知风险**：内置的平台接口实现含有各平台的请求协议与**签名算法**，并会向平台
+> 服务器发起搜索 / 榜单类请求。使用与分发前请自行评估所处法律环境 —— 详见
+> 下方「边界与约定」与文末补充协议第 1 条、第 6 条。
+>
+> 若封面来自平台 CDN（本机既有音乐数据里记着早先写入的封面地址），界面会照常加载那张图。
+
+---
+
+## 开发环境与运行
+
+### 技术栈
+
+- Electron 42+
+- Vue 3 + TypeScript
+- Webpack 多入口构建（`main` / `renderer` / `renderer-lyric` / `renderer-scripts`）
+
+### 环境要求
+
+- Node.js 18+
+- Python 3.8+（编译原生模块用）
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+> **坑：** 从国内镜像装 `electron` 时，包的 `scripts` 字段可能丢失，导致 Electron 二进制不会自动下载，
+> `node_modules/electron/dist` 不存在。补一句即可：
+>
+> ```bash
+> cd node_modules/electron
+> ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/" node install.js
+> cd ../..
+> ```
+
+### 启动开发模式
+
+```bash
+npm run dev
+```
+
+> **坑（Windows）：** 如果所在终端环境注入了 `ELECTRON_RUN_AS_NODE=1`，
+> Electron 会以纯 Node 模式启动，报
+> `TypeError: Not running in an Electron environment!`。
+> 启动前去掉这个变量即可：
+>
+> ```bash
+> env -u ELECTRON_RUN_AS_NODE npm run dev
+> ```
+
+开发模式会同时编译四个入口，**四个都编译成功才会拉起 Electron 窗口**。
+脚本在 `build-config/runner-dev.js`。
+
+### 构建
+
+```bash
+# Windows 安装包
+npm run pack:win:setup
+
+# 其他目标见 package.json 的 scripts
+```
+
+---
+
+## 数据存储目录
+
+- Linux：`$XDG_CONFIG_HOME/overtone` 或 `~/.config/overtone`
+- macOS：`~/Library/Application Support/overtone`
+- Windows：`%APPDATA%/overtone`
+
+实际的库文件与设置在 `<userData>/OvertoneData/` 下：
+`overtone.data.db`（SQLite）、各 `*.json`（设置、列表、自定义源）。
+
+> Windows 上若程序目录存在 `portable` 文件夹，则自动改用该文件夹作为数据目录。
+
+---
+
+## 目录结构
+
+```
+.
+├── src/
+│   ├── common/            # 主进程与渲染进程共享的代码（常量、IPC 契约名、工具）
+│   │   ├── ipcNames.ts    # IPC 契约的唯一来源，命名规则 `${模块名}_${事件名}`
+│   │   ├── mainIpc.ts     # 主进程侧 IPC 封装
+│   │   └── rendererIpc.ts # 渲染进程侧 IPC 封装
+│   ├── main/              # Electron 主进程
+│   │   ├── modules/       # 各功能模块（winMain / winLyric / sync / userApi / tray ...）
+│   │   └── worker/        # 数据库等重活
+│   ├── renderer/          # 主窗口（Vue 3，906 个组件）
+│   ├── renderer-lyric/    # 桌面歌词窗口
+│   └── renderer-scripts/  # 自定义源的沙箱运行环境
+├── build-config/          # 构建脚本（dev runner / electron-builder 配置）
+├── publish/               # 发版脚本与版本信息
+├── licenses/              # 安装程序与 AppImage 内嵌的许可协议
+└── doc/                   # 文档与截图
+```
+
+### 加一个新能力的标准三步
+
+这个项目的 IPC 是**契约驱动**的，加功能只需三步：
+
+1. **声明契约** —— 在 `src/common/ipcNames.ts` 里给模块加事件名：
+
+   ```ts
+   const modules = {
+     // ...
+     ai: {
+       segment_lyric: '',
+       get_ai_config: '',
+     },
+   }
+   ```
+
+2. **主进程实现** —— 在 `src/main/modules/` 下新建目录并在 `index.ts` 注册：
+
+   ```ts
+   import { mainHandle } from '@common/mainIpc'
+   import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
+
+   mainHandle(WIN_MAIN_RENDERER_EVENT_NAME.get_ai_config, async() => {
+     return getStore(STORE_NAMES.AI).get('config')
+   })
+   ```
+
+3. **渲染进程调用** —— 在页面里：
+
+   ```ts
+   import { rendererInvoke } from '@common/rendererIpc'
+   const result = await rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.segment_lyric, payload)
+   ```
+
+---
+
+## 贡献
+
+欢迎 PR。但请注意：
+
+- **不再新增内置平台源**。仓库里已有的七个平台实现是历史包袱（见下方「边界与约定」），
+  不构成继续添加同类实现的理由 —— 要接新平台，请做成「自定义源」，不要进内核。
+- **不要提交任何音频文件、歌词数据、专辑封面等版权素材**，也不要提交绕过平台
+  付费墙 / 版权保护的技术方案。
+
+---
+
+## 许可证
+
+本项目基于 [GNU Affero General Public License v3.0](./LICENSE) 发行。
+
+以下协议是对于 GNU AGPL v3.0 的补充，如有冲突，以以下协议为准。
+
+*词语约定：本协议中的「本项目」指 泛音（Overtone）桌面版项目，它基于 LX Music（洛雪音乐助手）与 Folia 二次开发而成；「使用者」指签署本协议的使用者；「官方音乐平台」指本项目内置接口所访问到的、以及使用者通过自行导入的「自定义源」所可能访问到的各个音乐平台（**本项目内置若干平台的搜索类接口，取音频链接由使用者自行导入的「自定义源」提供**）；「版权数据」指包括但不限于图像、音频、名字等在内的他人拥有所属版权的数据。*
+
+### 一、数据来源
+
+1.1 本项目的**代码内置了若干音乐平台的搜索、榜单、分类歌单类接口实现**（来自上游 LX Music，含其请求协议与签名逻辑），会因此向这些平台的服务器发起搜索、取榜单之类的请求；**取音频链接与歌词则由使用者自行导入的「自定义源」提供**。使用者自行导入的「自定义源」若访问了平台服务器，属于使用者自身的行为，因此本项目不对其数据的合法性、准确性负责。
+
+*另需说明的是**图片**：使用者本机既有的音乐数据里若记着某个平台 CDN 上的封面地址（早先版本抓取时写入的），界面会照常加载那张图，因而可能产生对平台 CDN 的图片请求 —— 本项目无从在加载前逐一改写使用者自己的数据。*
+
+1.2 本项目本身没有获取某个音频数据的能力，本项目使用的在线音频数据来源来自软件设置内「自定义源」设置所选择的「源」返回的在线链接。例如播放某首歌，本项目所做的只是将希望播放的歌曲名、艺术家等信息传递给「源」，若「源」返回了一个链接，则本项目将认为这就是该歌曲的音频数据而进行使用，至于这是不是正确的音频数据本项目无法校验其准确性，所以使用本项目的过程中可能会出现希望播放的音频与实际播放的音频不对应或者无法播放的问题。
+
+1.3 本项目的非官方平台数据（例如「我的列表」内列表）来自使用者本地系统或者使用者连接的同步服务，本项目不对这些数据的合法性、准确性负责。
+
+### 二、版权数据
+
+2.1 使用本项目的过程中可能会产生版权数据。对于这些版权数据，本项目不拥有它们的所有权。为了避免侵权，使用者务必在 **24 小时内** 清除使用本项目的过程中所产生的版权数据。
+
+### 三、音乐平台别名
+
+3.1 本项目内保留的平台别名（用于显示历史数据的来源）仅为对该平台的一个称呼，不包含恶意。如果官方音乐平台觉得不妥，可联系本项目更改或移除。
+
+### 四、资源使用
+
+4.1 本项目内使用的部分包括但不限于字体、图片等资源来源于互联网。如果出现侵权可联系本项目移除。
+
+### 五、免责声明
+
+5.1 由于使用本项目产生的包括由于本协议或由于使用或无法使用本项目而引起的任何性质的任何直接、间接、特殊、偶然或结果性损害（包括但不限于因商誉损失、停工、计算机故障或故障引起的损害赔偿，或任何及所有其他商业损害或损失）由使用者负责。
+
+### 六、使用限制
+
+6.1 本项目完全免费，且开源发布于 GitHub 面向全世界人用作对技术的学习交流。本项目不对项目内的技术可能存在违反当地法律法规的行为作保证。
+
+6.2 **禁止在违反当地法律法规的情况下使用本项目。** 对于使用者在明知或不知当地法律法规不允许的情况下使用本项目所造成的任何违法违规行为由使用者承担，本项目不承担由此造成的任何直接、间接、特殊、偶然或结果性责任。
+
+### 七、版权保护
+
+7.1 音乐平台不易，请尊重版权，支持正版。
+
+### 八、非商业性质
+
+8.1 本项目仅用于对技术可行性的探索及研究，不接受任何商业（包括但不限于广告等）合作及捐赠。
+
+### 九、开源与二次开发
+
+9.1 本项目基于 LX Music（Apache-2.0）与 Folia（AGPL-3.0）二次开发，整体以 GNU AGPL v3.0 发行。依据 AGPL v3.0 第 13 条，若你以网络服务形式提供本项目的修改版本，必须向所有通过网络与之交互的使用者提供对应完整源代码。
+
+9.2 你必须保留本项目的版权声明与来源声明，不得移除或篡改对 LX Music、Folia 及本项目上游贡献者的署名。
+
+### 十、接受协议
+
+10.1 若你使用了本项目，即代表你接受本协议。
+
+---
+
+## 边界与约定
+
+这一节说明本项目**做什么、不做什么**，以及为什么这么做。它不是一句「永不」，而是一份可以核对的现状说明 ——
+有出入时，以仓库里的代码为准。
+
+### 现在的事实（2026-10-22 修订）
+
+- **搜索 / 榜单 / 分类歌单**：仓库内置了上游 LX Music 的七个平台接口实现
+  （kw / kg / tx / wy / mg / bd / xm），其中包含各平台的请求协议与签名算法，
+  会向对应平台的服务器发起搜索、取榜单这类请求。
+- **音频地址**：本项目自己不解析、不破解任何平台的音频链接。播放时的音频地址由
+  **使用者自行导入的「自定义源」** 返回；本项目只负责把歌名、歌手交给源，拿回地址就播。
+- **歌词与封面**：同样来自「自定义源」，或使用者本机已有的数据。
+- **为什么保留这些接口**：它们是**搜索能力的唯一提供者**。阶段 5 曾按旧版「不内置任何平台音源接口」
+  的表述把七个平台整包删除、只留开放曲库 `ov`，结果搜索页只剩「开放曲库」，
+  界面上表现为「搜不出歌」。该删除已于 2026-10-16 撤销并恢复。
+
+### 我们仍然不做的事
+
+1. **不把版权素材放进仓库** —— 仓库里没有一首音频、一句歌词、一张封面。
+2. **不提供绕过付费墙或版权保护的技术方案** —— 不做破解、不做会员绕过、不做去水印。
+3. **不新增平台接口实现** —— 想接新平台（netease / qq / kugou / migu / kuwo / 波点等），
+   请做成「自定义源」，放进 `src/renderer-scripts/` 的沙箱里跑，不要进内核。
+4. **不做商业分发** —— 见文末补充协议第八条。
+
+### 风险归属
+
+仓库里既然含有平台接口调用与签名算法，**分发、部署或使用本项目的后果由你自己承担**：
+请自行评估所处法律环境，遵守当地法律法规。详见文末补充协议第 1 条、第 6 条。
+
+音乐平台不易，请尊重版权、支持正版。
+
+---
+
+## 致谢
+
+泛音的整体灵感与实现基础来自这两个项目：
+
+- [LX Music（落雪音乐）](https://github.com/lyswhut/lx-music-desktop) —— 落雪无痕 (lyswhut) 及所有贡献者。
+  桌面外壳、播放器内核、列表与音源机制、桌面歌词、主题系统都来自这里。
+- [Folia](https://github.com/chthollyphile/folia-major) —— 冬霧 (chthollyphile) 及所有贡献者。
+  AI 能力之外，v0.2 的海报墙、全屏歌词、歌词时间线、灵动岛式控制条的交互与视觉也参考了它。
+
+没有这两个项目，就没有泛音。
+
+泛音由 [huimou612](https://github.com/huimou612) 开发与维护。
