@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="泛音 Overtone — 以 LX Music 为播放器外壳、融合 Folia 视觉与 AI 能力的桌面音乐软件。15 种歌词视觉、6 种背景、AI 逐字分词与本地音源分离。v0.4.0 已发布，AGPL-3.0 开源。">
+  <meta name="theme-color" content="#05070d">
+  <title>泛音 Overtone — 让歌词成为一整个画面</title>
+  <link rel="icon" type="image/png" href="assets/images/icon.png">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>
+    document.documentElement.classList.add('js');
+    // Three-scene particle hero only when motion is allowed (decided synchronously
+    // so the layout never jumps after JS boots).
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('hero-multi');
+    }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header" id="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top" aria-label="泛音 Overtone，回到首页">
+        <img class="brand__mark" src="assets/images/icon.png" alt="" width="30" height="30">
+        <span class="brand__text">泛音<span class="brand__en">OVERTONE</span></span>
+      </a>
+
+      <nav class="nav__menu" id="nav-menu" aria-label="主导航">
+        <ul class="nav__list">
+          <li><a class="nav__link is-active" href="#top">首页</a></li>
+          <li><a class="nav__link" href="#features">核心功能</a></li>
+          <li><a class="nav__link" href="#showcase">界面展示</a></li>
+          <li><a class="nav__link" href="#guide">使用指南</a></li>
+          <li><a class="nav__link" href="#developers">开发者</a></li>
+          <li>
+            <a class="nav__link nav__link--ghost" href="https://github.com/huimou612/overtone"
+               target="_blank" rel="noopener noreferrer" aria-label="在 GitHub 上查看泛音 Overtone 仓库">
+              GitHub
+              <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </li>
+        </ul>
+        <a class="btn btn--primary btn--sm nav__cta" href="https://pan.quark.cn/s/cb4287d938ee"
+           target="_blank" rel="noopener noreferrer">
+          直接下载
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <p class="nav__foot" aria-hidden="true">泛音 OVERTONE · v0.4.0 · AGPL-3.0</p>
+      </nav>
+
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false"
+              aria-controls="nav-menu" aria-label="打开菜单">
+        <span class="nav-toggle__line"></span>
+        <span class="nav-toggle__line"></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- ============ HERO / SCROLL-DRIVEN PARTICLE TYPE ============ -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero__viewport" id="particle-stage">
+        <div class="hero__bg" aria-hidden="true">
+          <div class="hero__grid"></div>
+          <div class="hero__glow hero__glow--a"></div>
+          <div class="hero__glow hero__glow--b"></div>
+        </div>
+        <canvas class="hero__canvas" id="particle-canvas" aria-hidden="true"></canvas>
+        <h1 class="hero__fallback" id="hero-title">泛音</h1>
+        <p class="hero__ghost" aria-hidden="true">OVERTONE</p>
+
+        <div class="hero__rail" aria-hidden="true">
+          <span class="hero__rail-num" id="hero-rail-num">01</span>
+          <span class="hero__rail-track"><i id="hero-rail-fill"></i></span>
+          <span class="hero__rail-total">03</span>
+        </div>
+
+        <a class="scroll-cue" id="scroll-cue" href="#about" aria-label="向下滚动，了解泛音">
+          <span>SCROLL</span>
+          <i aria-hidden="true"></i>
+        </a>
+
+        <div class="hero__scenes" id="hero-scenes">
+
+        <!-- 场景 01 · 泛音 -->
+        <div class="hero__scene is-active" data-scene="0" data-shape="cn">
+          <div class="container hero__inner">
+            <div class="hero__top">
+              <p class="eyebrow"><span class="eyebrow__dot"></span>OVERTONE · 桌面音乐软件</p>
+              <span class="version-badge">v0.4.0 · Folia 沉浸式视觉</span>
+            </div>
+            <div class="hero__bottom">
+              <div class="hero__copy">
+                <p class="hero__lede">
+                  让歌词成为一整个画面。<br>
+                  以 LX Music 为外壳，以 Folia 的视觉与 AI 能力为内核——
+                  15 种歌词视觉、6 种背景，都在同一个沉浸歌词画面里。
+                </p>
+                <div class="hero__actions">
+                  <a class="btn btn--primary btn--dl" href="https://pan.quark.cn/s/cb4287d938ee"
+                     target="_blank" rel="noopener noreferrer">
+                    直接下载
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </a>
+                  <button class="btn btn--pan" type="button" data-open-download>
+                    网盘下载
+                    <span class="btn__badge">国内</span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.5 11.5h7a2.6 2.6 0 0 0 .3-5.2A3.6 3.6 0 0 0 5 6.9a2.3 2.3 0 0 0-.5 4.6Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="hero__textlinks">
+                    <a href="#showcase">看看界面</a>
+                    <a href="https://github.com/huimou612/overtone" target="_blank" rel="noopener noreferrer">GitHub 仓库 <span aria-hidden="true">↗</span></a>
+                  </div>
+                </div>
+                <ul class="hero__meta">
+                  <li>Windows x64</li>
+                  <li>Electron 42 · Vue 3</li>
+                  <li>AGPL-3.0 开源</li>
+                </ul>
+              </div>
+
+              <div class="hero__controls">
+                <p class="hero__hint"><span class="hero__hint-dot" aria-hidden="true"></span>移动鼠标或手指，试试推开文字</p>
+                <div class="shapes" role="group" aria-label="粒子形态">
+                  <button class="shape is-active" type="button" data-shape="cn" aria-pressed="true">泛音</button>
+                  <button class="shape" type="button" data-shape="en" aria-pressed="false">OVERTONE</button>
+                  <button class="shape" type="button" data-shape="wave" aria-pressed="false">声波</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 场景 02 · OVERTONE -->
+        <div class="hero__scene" data-scene="1" data-shape="en">
+          <div class="container hero__inner">
+            <div class="hero__top">
+              <p class="eyebrow"><span class="eyebrow__dot"></span>02 / 03 · LYRICS REIMAGINED</p>
+            </div>
+            <div class="hero__bottom">
+              <div class="hero__copy">
+                <p class="hero__scene-title">一个画面，<br>装得下整首歌。</p>
+                <p class="hero__lede">
+                  15 种歌词视觉与 6 种背景，右侧面板点一下就切；
+                  逐字时间戳、前奏间奏、宿主时间轴偏移全部对齐。
+                </p>
+                <div class="hero__textlinks">
+                  <a href="#features">查看全部功能 →</a>
+                  <a href="#showcase">看真实截图 →</a>
+                </div>
+              </div>
+              <div class="hero__controls">
+                <p class="hero__hint"><span class="hero__hint-dot" aria-hidden="true"></span>继续向下，粒子会跟着变</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 场景 03 · 声波 -->
+        <div class="hero__scene" data-scene="2" data-shape="wave">
+          <div class="container hero__inner">
+            <div class="hero__top">
+              <p class="eyebrow"><span class="eyebrow__dot"></span>03 / 03 · LOCAL AI</p>
+            </div>
+            <div class="hero__bottom">
+              <div class="hero__copy">
+                <p class="hero__scene-title">听懂歌词，<br>也拆得开音轨。</p>
+                <p class="hero__lede">
+                  AI 逐字分词给出高亮边界，HTDemucs 把人声与伴奏各导出一份。
+                  两项都在本机完成，音频不上传。
+                </p>
+                <div class="hero__textlinks">
+                  <a href="#guide">怎么开始使用 →</a>
+                  <a href="#developers">看仓库结构 →</a>
+                </div>
+              </div>
+              <div class="hero__controls">
+                <p class="hero__hint"><span class="hero__hint-dot" aria-hidden="true"></span>往回滚，粒子会倒放回去</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SPEC STRIP ============ -->
+    <div class="spec-strip" aria-label="产品特征概览">
+      <div class="container spec-strip__inner">
+        <div class="spec"><span class="spec__k">VISUALS</span><span class="spec__v">15 种歌词视觉</span></div>
+        <div class="spec"><span class="spec__k">BACKDROP</span><span class="spec__v">6 种背景</span></div>
+        <div class="spec"><span class="spec__k">AI · LOCAL</span><span class="spec__v">逐字分词 · 音源分离</span></div>
+        <div class="spec"><span class="spec__k">OPEN SOURCE</span><span class="spec__v">AGPL-3.0</span></div>
+      </div>
+    </div>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="section about" id="about" aria-labelledby="about-title">
+      <div class="container about__grid">
+        <div class="section-label"><span class="section-label__num">01</span><span>关于泛音</span></div>
+        <div class="about__content">
+          <h2 class="display-2 reveal" id="about-title">
+            一个播放器外壳，<br>
+            一颗会看歌词的芯。
+          </h2>
+          <div class="about__cols">
+            <p class="lede reveal">
+              泛音（Overtone）是一个二次开发作品。它把两个开源项目的长处缝在一起，
+              操作习惯沿用 LX Music，听歌的界面则交给 Folia 的视觉与 AI 能力。
+            </p>
+            <p class="reveal">
+              点开「沉浸歌词」，歌词视觉、封面、播放控制与设置都收进同一个画面。
+              分词与音源分离全程在本机完成，音频不上传。它完全免费、开源，仅用于技术学习与交流，
+              不接受商业合作。
+            </p>
+          </div>
+
+          <div class="lineage reveal">
+            <div class="lineage__item">
+              <span class="lineage__tag">外壳 · Apache-2.0</span>
+              <strong>LX Music</strong>
+              <p>Electron + Vue 3 框架、播放器内核、播放列表、自定义源机制、桌面歌词窗口、数据同步、开放 API、主题系统</p>
+            </div>
+            <span class="lineage__plus" aria-hidden="true">+</span>
+            <div class="lineage__item">
+              <span class="lineage__tag">内核 · AGPL-3.0</span>
+              <strong>Folia</strong>
+              <p>海报墙 / 全屏歌词 / 时间线的交互与视觉，AI 歌词分词（逐词边界）、AI 凭据安全存储、音源分离（HTDemucs）</p>
+            </div>
+          </div>
+
+          <dl class="about__facts">
+            <div class="fact reveal"><dt>是什么</dt><dd>桌面音乐软件，以歌词视觉与本地 AI 能力为核心。</dd></div>
+            <div class="fact reveal" style="--delay:.08s"><dt>解决什么</dt><dd>让歌词、封面、控制与设置回到同一个沉浸画面。</dd></div>
+            <div class="fact reveal" style="--delay:.16s"><dt>适合谁</dt><dd>在意歌词呈现、想练唱或扒伴奏、希望本地播放的人。</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="section features" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <header class="section-head">
+          <div class="section-label"><span class="section-label__num">02</span><span>核心功能</span></div>
+          <div class="section-head__main">
+            <h2 class="display-2 reveal" id="features-title">
+              一个画面，<br>
+              装得下整首歌。
+            </h2>
+            <p class="section-head__lede reveal">
+              v0.4.0 把 Folia 视觉引擎完整带进桌面应用。右侧面板点一下就切换，
+              不用再打开第二个窗口。
+            </p>
+          </div>
+        </header>
+
+        <article class="feature-wide reveal">
+          <div class="feature-wide__copy">
+            <span class="feature__num">01</span>
+            <h3>15 种歌词视觉</h3>
+            <p>
+              商籁 / 凝彩 / 流光 / 心象 / 云阶 / 浮名 / 倾诉 / 回环 / 莫奈 / 时计 /
+              群唱 / 镜台 / 静止 / 绘光 / 花火。歌词与画面同时变化，逐字时间戳、
+              前奏与间奏保留当前行、宿主时间轴偏移全部对齐。
+            </p>
+            <p class="feature__note">右侧「Folia 视觉效果」面板直接切换 · 实测无空白 / 错位 / 裁切</p>
+          </div>
+          <div class="visual-list" aria-label="15 种歌词视觉名称">
+            <span>商籁</span><span>凝彩</span><span>流光</span><span>心象</span><span>云阶</span>
+            <span>浮名</span><span>倾诉</span><span>回环</span><span>莫奈</span><span>时计</span>
+            <span>群唱</span><span>镜台</span><span>静止</span><span>绘光</span><span>花火</span>
+          </div>
+        </article>
+
+        <article class="feature-wide feature-wide--split reveal">
+          <div class="feature-wide__copy">
+            <span class="feature__num">02</span>
+            <h3>6 种背景</h3>
+            <p>
+              通用 / 莫奈 / 漫游 / 隐现 / 嵌入 / 空，都在同一个面板里。
+              通用背景走封面取色 + 几何氛围层；莫奈支持封面或自定义图片、
+              半屏渐变或全屏叠色、自适应铺满。
+            </p>
+            <p class="feature__note">WebGL2 已启用 · 3D / 着色器样式可用 · 不支持时优雅降级为文字样式</p>
+          </div>
+          <div class="backdrop-list" aria-label="6 种背景名称">
+            <span>通用</span><span>莫奈</span><span>漫游</span><span>隐现</span><span>嵌入</span><span>空</span>
+          </div>
+        </article>
+
+        <div class="feature-grid">
+          <article class="fcard reveal">
+            <span class="fcard__num">03</span>
+            <h3>AI 逐字分词</h3>
+            <p>用大模型把整行歌词切成词，为逐字高亮提供边界。结果写回本地库，重装不丢。</p>
+            <span class="fcard__tag">本机完成 · 结果持久化</span>
+          </article>
+          <article class="fcard reveal" style="--delay:.06s">
+            <span class="fcard__num">04</span>
+            <h3>音源分离</h3>
+            <p>HTDemucs 跑在本地 Python sidecar，把一首歌拆成人声与伴奏，各导出一个文件。</p>
+            <span class="fcard__tag">音频不上传</span>
+          </article>
+          <article class="fcard reveal" style="--delay:.12s">
+            <span class="fcard__num">05</span>
+            <h3>凭据安全存储</h3>
+            <p>API Key 交给 Electron safeStorage 加密（DPAPI / Keychain / libsecret），界面只显示「配没配」。</p>
+            <span class="fcard__tag">不落明文</span>
+          </article>
+          <article class="fcard reveal" style="--delay:.18s">
+            <span class="fcard__num">06</span>
+            <h3>搜索与播放</h3>
+            <p>输入即出大词库联想（本地历史 + 热搜 + 在线补充）；本地音乐拖进列表即可播。</p>
+            <span class="fcard__tag">本地词库 · 自定义源</span>
+          </article>
+        </div>
+
+        <p class="feature__disclaimer reveal">
+          在线播放只走「自定义源」机制：本项目不提供、不托管、不推荐任何源，音频地址由使用者自行导入的源返回。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ SHOWCASE (REAL SCREENSHOTS) ============ -->
+    <section class="section showcase" id="showcase" aria-labelledby="showcase-title">
+      <div class="container">
+        <header class="section-head section-head--split">
+          <div>
+            <div class="section-label"><span class="section-label__num">03</span><span>界面展示</span></div>
+            <h2 class="display-2 reveal" id="showcase-title">
+              都是真实运行截图。
+            </h2>
+          </div>
+          <p class="section-head__lede reveal">
+            以下图片为 Windows 桌面版「泛音」v0.4.0 的实际运行截图，不是设计稿。
+            点开「沉浸歌词」以后，视觉、歌词、封面、播放控制与设置都在同一个画面里。
+          </p>
+        </header>
+
+        <div class="gallery__filters" role="group" aria-label="截图分类">
+          <button class="filter is-active" type="button" data-filter="all" aria-pressed="true">全部 <span>9</span></button>
+          <button class="filter" type="button" data-filter="visual" aria-pressed="false">歌词视觉 <span>6</span></button>
+          <button class="filter" type="button" data-filter="backdrop" aria-pressed="false">背景 <span>2</span></button>
+          <button class="filter" type="button" data-filter="main" aria-pressed="false">主界面 <span>1</span></button>
+        </div>
+
+        <div class="gallery reveal" id="gallery">
+          <figure class="shot" data-cat="visual">
+            <button class="shot__open" type="button" data-index="0" aria-label="放大查看：绘光">
+              <img src="assets/images/v040-01.jpeg" alt="泛音沉浸歌词界面「绘光」视觉：光柱扫过逐字歌词，右侧为视觉样式面板，底部为播放控制条" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>绘光</strong><span>光柱扫过逐字歌词 · v0.4.0 主视觉</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="visual">
+            <button class="shot__open" type="button" data-index="1" aria-label="放大查看：15 种视觉效果面板">
+              <img src="assets/images/v040-02.jpeg" alt="泛音右侧面板展示 15 种歌词视觉效果切换入口" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>15 种视觉效果</strong><span>右侧面板点一下就切，视觉与歌词同画面变化</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="visual">
+            <button class="shot__open" type="button" data-index="2" aria-label="放大查看：云阶">
+              <img src="assets/images/v040-03.jpeg" alt="泛音「云阶」歌词视觉：阶梯式逐字排版" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>云阶</strong><span>阶梯式逐字排版，行与行之间保留呼吸感</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="visual">
+            <button class="shot__open" type="button" data-index="3" aria-label="放大查看：花火">
+              <img src="assets/images/v040-04.jpeg" alt="泛音「花火」歌词视觉：粒子、烟花与胶片条叠在星空底上" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>花火</strong><span>粒子、烟花与胶片条叠在星空底上</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="visual">
+            <button class="shot__open" type="button" data-index="4" aria-label="放大查看：凝彩">
+              <img src="assets/images/v040-05.jpeg" alt="泛音「凝彩」歌词视觉：大字排版与完整封面、样式面板、播放条" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>凝彩</strong><span>大字排版 + 完整封面、面板与播放条</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="visual">
+            <button class="shot__open" type="button" data-index="5" aria-label="放大查看：莫奈">
+              <img src="assets/images/v040-06.jpeg" alt="泛音「莫奈」歌词视觉：左栏歌词完整可见，窗口自适应铺满" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>莫奈</strong><span>左栏歌词完整可见，窗口自适应铺满后不再裁切</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="backdrop">
+            <button class="shot__open" type="button" data-index="6" aria-label="放大查看：6 种背景">
+              <img src="assets/images/v040-07.jpeg" alt="泛音背景面板列出通用、莫奈、漫游、隐现、嵌入、空六种背景" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>6 种背景</strong><span>通用 / 莫奈 / 漫游 / 隐现 / 嵌入 / 空，同一个面板</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="backdrop">
+            <button class="shot__open" type="button" data-index="7" aria-label="放大查看：通用背景">
+              <img src="assets/images/v040-08.jpeg" alt="泛音通用背景：封面取色加几何氛围层" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>通用背景</strong><span>封面取色 + 几何氛围层，纯 DOM 最轻量</span></figcaption>
+          </figure>
+          <figure class="shot" data-cat="main">
+            <button class="shot__open" type="button" data-index="8" aria-label="放大查看：搜索联想与主界面">
+              <img src="assets/images/v040-09.jpeg" alt="泛音主界面与搜索联想：输入「爱如」即时给出 10 条词库联想" width="1280" height="828" loading="lazy" decoding="async">
+              <span class="shot__zoom" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 2.5v9M2.5 7h9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            </button>
+            <figcaption><strong>搜索联想</strong><span>输入「爱如」即时给出 10 条词库联想</span></figcaption>
+          </figure>
+        </div>
+
+        <p class="gallery__caption">图片来自 v0.4.0 实际运行截图 · 点击可放大查看 · 最终效果以发布版本为准</p>
+      </div>
+    </section>
+
+    <!-- lightbox -->
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="截图放大查看" hidden>
+      <div class="lightbox__backdrop" data-close></div>
+      <div class="lightbox__inner">
+        <button class="lightbox__close" type="button" data-close aria-label="关闭">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="lightbox__nav lightbox__nav--prev" type="button" data-prev aria-label="上一张">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4 6 10l6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <img class="lightbox__img" id="lightbox-img" src="" alt="">
+        <button class="lightbox__nav lightbox__nav--next" type="button" data-next aria-label="下一张">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="lightbox__bar">
+          <strong id="lightbox-title"></strong>
+          <span id="lightbox-desc"></span>
+          <span class="lightbox__count" id="lightbox-count"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 获取方式弹窗 ============ -->
+    <div class="getbox" id="getbox" role="dialog" aria-modal="true" aria-labelledby="getbox-title" hidden>
+      <div class="getbox__backdrop" data-get-close></div>
+      <div class="getbox__panel" role="document">
+        <div class="getbox__head">
+          <div>
+            <span class="getbox__eyebrow">GET OVERTONE · v0.4.0</span>
+            <h2 id="getbox-title">选择下载方式</h2>
+          </div>
+          <button class="getbox__close" type="button" data-get-close aria-label="关闭">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <p class="getbox__note">Windows x64 安装包 <code>overtone-v0.4.0-x64-Setup.exe</code> · 覆盖安装，用户数据保留</p>
+
+        <!-- 渠道 A：GitHub（真实可用） -->
+        <a class="way" href="https://github.com/huimou612/overtone/releases/tag/v0.4.0"
+           target="_blank" rel="noopener noreferrer">
+          <span class="way__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2.5a9.5 9.5 0 0 0-3 18.5c.5.1.7-.2.7-.5v-1.7c-2.7.6-3.3-1.3-3.3-1.3-.4-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.5-1.1-4.5-4.9 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.8-2.3 4.6-4.5 4.9.3.3.6.9.6 1.9v2.8c0 .3.2.6.7.5A9.5 9.5 0 0 0 12 2.5Z" fill="currentColor"/></svg>
+          </span>
+          <span class="way__body">
+            <strong>GitHub 下载 <span class="way__tag">全平台</span></strong>
+            <span>Windows / macOS / Linux 安装包、SHA512 校验值与自动更新文件</span>
+          </span>
+          <span class="way__go" aria-hidden="true">↗</span>
+        </a>
+
+        <!-- 渠道 B：国内网盘（链接由下方配置注入） -->
+        <div class="way-group">
+          <div class="way-group__head">
+            <span class="way-group__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M6 18.5h12a3.4 3.4 0 0 0 .4-6.8A5 5 0 0 0 9 11.2a3.6 3.6 0 0 0-3 7.3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </span>
+            <div>
+              <strong>网盘下载 <span class="way__tag way__tag--cn">国内网络</span></strong>
+              <span>适合 GitHub 打不开的网络环境</span>
+            </div>
+          </div>
+
+          <div class="pan-links" id="pan-links">
+            <!-- 由 main.js 的 DOWNLOAD 配置注入，未填写时显示占位说明 -->
+          </div>
+
+          <div class="pan-code" id="pan-code" hidden>
+            <span>提取码</span>
+            <code id="pan-code-value"></code>
+            <button class="pan-code__copy" type="button" id="pan-copy" aria-label="复制提取码">复制</button>
+          </div>
+        </div>
+
+        <div class="getbox__foot">
+          <span>项目完全免费、开源（AGPL-3.0），不接受商业合作及捐赠。请从上述渠道获取安装包。</span>
+          <a href="#download" data-get-close>查看全部版本</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PHILOSOPHY ============ -->
+    <section class="section philosophy" id="philosophy" aria-labelledby="philosophy-title">
+      <div class="philosophy__bg" aria-hidden="true"></div>
+      <div class="container">
+        <div class="section-label"><span class="section-label__num">04</span><span>设计理念</span></div>
+        <h2 class="sr-only" id="philosophy-title">设计理念</h2>
+        <blockquote class="philosophy__quote reveal">
+          歌词不是字幕，<br>
+          是这首歌的另一种画面。
+        </blockquote>
+        <div class="principles">
+          <article class="principle reveal">
+            <span class="principle__time">01</span>
+            <h3>一个画面</h3>
+            <p>视觉、歌词、封面、控制与设置收在一起，不用来回切窗口。</p>
+          </article>
+          <article class="principle reveal" style="--delay:.08s">
+            <span class="principle__time">02</span>
+            <h3>交给节奏</h3>
+            <p>逐字时间戳与宿主时间轴对齐，唱到哪里，亮到哪里。</p>
+          </article>
+          <article class="principle reveal" style="--delay:.16s">
+            <span class="principle__time">03</span>
+            <h3>留在本机</h3>
+            <p>分词、分离、播放都在本地完成，音频不出这台电脑。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GUIDE ============ -->
+    <section class="section guide" id="guide" aria-labelledby="guide-title">
+      <div class="container guide__grid">
+        <div class="guide__intro">
+          <div class="section-label"><span class="section-label__num">05</span><span>使用指南</span></div>
+          <h2 class="display-2 reveal" id="guide-title">四步，<br>听到第一句逐字歌词。</h2>
+          <p class="reveal">
+            安装后默认能播本地音乐。在线播放需要你自己导入「自定义源」——
+            这是上游 LX Music 的开放机制，本项目不提供、不托管任何源。
+          </p>
+          <div class="guide__links reveal">
+            <a href="https://github.com/huimou612/overtone#readme" target="_blank" rel="noopener noreferrer">
+              完整 README
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="https://github.com/huimou612/overtone/blob/master/FAQ.md" target="_blank" rel="noopener noreferrer">
+              FAQ
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step__num">01</span>
+            <div class="step__body">
+              <h3>安装</h3>
+              <p>从 Releases 下载 <code>overtone-v0.4.0-x64-Setup.exe</code>，覆盖安装即可，用户数据保留。macOS / Linux 包为历史版本提供且未签名。</p>
+            </div>
+          </li>
+          <li class="step reveal" style="--delay:.06s">
+            <span class="step__num">02</span>
+            <div class="step__body">
+              <h3>准备音乐</h3>
+              <p>把本地文件夹拖进列表即可播放。想听在线内容：设置 → 基本设置 → 自定义源 → 导入并选中。</p>
+            </div>
+          </li>
+          <li class="step reveal" style="--delay:.12s">
+            <span class="step__num">03</span>
+            <div class="step__body">
+              <h3>打开沉浸歌词</h3>
+              <p>点播放页的「沉浸歌词」进入同一画面，右侧面板切 15 种视觉与 6 种背景；按 <kbd>P</kbd> 开合面板，<kbd>ESC</kbd> 逐级退出，<kbd>◀</kbd> <kbd>▶</kbd> 每次 ±100ms 微调时间轴偏移。</p>
+            </div>
+          </li>
+          <li class="step reveal" style="--delay:.18s">
+            <span class="step__num">04</span>
+            <div class="step__body">
+              <h3>按需开启 AI</h3>
+              <p>在侧栏「工作台」看状态、开能力：音源分离需先下载 HTDemucs 模型（约 200 MB），AI 分词需填你自己的 API Key。两项都在本机完成。</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ DOWNLOAD ============ -->
+    <section class="section download" id="download" aria-labelledby="download-title">
+      <div class="container">
+        <header class="section-head section-head--split">
+          <div>
+            <div class="section-label"><span class="section-label__num">06</span><span>版本与下载</span></div>
+            <h2 class="display-2 reveal" id="download-title">拿去听，或者拿去读。</h2>
+          </div>
+          <p class="section-head__lede reveal">
+            每个版本都在 GitHub Releases 发布。安装包与 <code>latest.yml</code> 的 SHA512 校验值一并附上。
+          </p>
+        </header>
+
+        <div class="get-tip reveal">
+          <div class="get-tip__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3.2a2 2 0 0 1 2 2c0 .8-.2 1.2-.2 1.8 0 1 .8 1.8 1.8 1.8h.4a2 2 0 0 1 0 4h-.4c-1 0-1.8.8-1.8 1.8 0 .7.2 1.1.2 1.9a2 2 0 0 1-4 0c0-.8.2-1.2.2-1.9 0-1-.8-1.8-1.8-1.8h-.4a2 2 0 0 1 0-4h.4c1 0 1.8-.8 1.8-1.8 0-.6-.2-1-.2-1.8a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="20.5" r=".9" fill="currentColor"/></svg>
+          </div>
+          <div class="get-tip__body">
+            <strong>获取方式</strong>
+            <ul>
+              <li><b>GitHub：</b>Latest Release，提供 Windows / macOS / Linux 全平台安装包与校验值。</li>
+              <li><b>网盘：</b><button class="get-tip__link" type="button" data-open-download>夸克网盘 · 百度云</button>（提取码在各网盘下方），适合国内网络，主要提供 Windows 与 Apple silicon 正式版安装包。</li>
+            </ul>
+            <p>下载按钮打不开、或是国内网络访问 GitHub 慢时，点上面的网盘入口即可。</p>
+          </div>
+          <button class="btn btn--ghost btn--sm get-tip__cta" type="button" data-open-download>获取方式</button>
+        </div>
+
+        <div class="releases">
+          <article class="release release--latest reveal">
+            <div class="release__head">
+              <span class="release__tag">LATEST · 2026-10-25</span>
+              <span class="release__ver">v0.4.0</span>
+            </div>
+            <h3>Folia 沉浸式视觉</h3>
+            <p>15 种歌词视觉、6 种背景、歌词实时同步修复、搜索联想回归、入口合并与 WebGL2 启用。</p>
+            <ul class="release__list">
+              <li>Windows x64：<code>overtone-v0.4.0-x64-Setup.exe</code></li>
+              <li>覆盖安装，用户数据保留 · 自动更新依赖 <code>latest.yml</code></li>
+              <li>干净构建：dist 43.1 MB / 2031 文件，四套 webpack <code>warnings=0</code></li>
+            </ul>
+            <div class="release__actions">
+              <a class="btn btn--primary" href="https://pan.quark.cn/s/cb4287d938ee" target="_blank" rel="noopener noreferrer">
+                直接下载
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+              <button class="btn btn--ghost" type="button" data-open-download>
+                网盘下载
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5h7a2.6 2.6 0 0 0 .3-5.2A3.6 3.6 0 0 0 5 6.9a2.3 2.3 0 0 0-.5 4.6Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <div class="release__history reveal" style="--delay:.08s">
+            <a class="hist" href="https://github.com/huimou612/overtone/releases/tag/v0.3.0" target="_blank" rel="noopener noreferrer">
+              <span class="hist__ver">v0.3.0</span>
+              <span class="hist__body"><strong>沉浸式歌词视觉控制台</strong><span>字重 / 行距 / 背景深度 / 次要色真实控件，罗马音字幕，WebGL 优雅降级</span></span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="hist" href="https://github.com/huimou612/overtone/releases/tag/v0.2.0" target="_blank" rel="noopener noreferrer">
+              <span class="hist__ver">v0.2.0</span>
+              <span class="hist__body"><strong>封面墙 + Lattice 歌词</strong><span>海报墙、全屏逐字歌词、四页签面板、时间线弹窗</span></span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="hist" href="https://github.com/huimou612/overtone/releases/tag/v0.1.0" target="_blank" rel="noopener noreferrer">
+              <span class="hist__ver">v0.1.0</span>
+              <span class="hist__body"><strong>首个公开版本</strong><span>以 LX Music v2.12.6 为基线，品牌化改造与许可证切换</span></span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="hist" href="https://github.com/huimou612/overtone/blob/master/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+              <span class="hist__ver">LOG</span>
+              <span class="hist__body"><strong>完整变更日志</strong><span>CHANGELOG.md · 遵循 Keep a Changelog 与语义化版本</span></span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DEVELOPERS / REPO ============ -->
+    <section class="section developers" id="developers" aria-labelledby="developers-title">
+      <div class="container">
+        <header class="section-head section-head--split">
+          <div>
+            <div class="section-label"><span class="section-label__num">07</span><span>开发者</span></div>
+            <h2 class="display-2 reveal" id="developers-title">仓库里，是怎么搭起来的。</h2>
+          </div>
+          <p class="section-head__lede reveal">
+            桌面端基于 Electron 42 + Vue 3 + TypeScript，Webpack 多入口构建；
+            本站是与桌面端分开维护的零依赖静态页面。
+          </p>
+        </header>
+
+        <div class="dev__grid">
+          <div class="terminal reveal" aria-label="泛音桌面端技术信息">
+            <div class="terminal__bar">
+              <span class="terminal__dots"><i></i><i></i><i></i></span>
+              <span>overtone · stack</span>
+            </div>
+            <pre class="terminal__body"><code><span class="t-prompt">$</span> overtone --stack
+
+<span class="t-key">shell</span>    electron 42+
+<span class="t-key">ui</span>       vue 3 · typescript
+<span class="t-key">build</span>    webpack · 4 entries
+<span class="t-key">entries</span>  main / renderer
+           renderer-lyric
+           renderer-scripts
+<span class="t-key">runtime</span>  node 18+ · python 3.8+
+<span class="t-key">data</span>     sqlite · overtone.data.db
+<span class="t-key">base</span>     lx-music + folia
+<span class="t-key">license</span>  agpl-3.0
+<span class="t-key">status</span>   <span class="t-ok">v0.4.0 released</span></code></pre>
+          </div>
+
+          <div class="dev__right reveal" style="--delay:.08s">
+            <div class="dev__structure">
+              <h3>目录结构</h3>
+              <ul>
+                <li><code>src/common/</code><span>IPC 契约唯一来源 <code>ipcNames.ts</code></span></li>
+                <li><code>src/main/</code><span>Electron 主进程模块与数据库 worker</span></li>
+                <li><code>src/renderer/</code><span>主窗口 Vue 3 组件</span></li>
+                <li><code>src/renderer-lyric/</code><span>桌面歌词窗口</span></li>
+                <li><code>src/renderer-scripts/</code><span>自定义源沙箱</span></li>
+                <li><code>build-config/</code><span>dev runner 与打包配置</span></li>
+                <li><code>docs/</code><span>文档与真实界面截图</span></li>
+              </ul>
+            </div>
+            <div class="dev__commands">
+              <h3>本地跑起来</h3>
+              <pre><code><span class="t-prompt">$</span> npm install
+<span class="t-prompt">$</span> npm run dev
+<span class="t-prompt">$</span> npm run pack:win:setup</code></pre>
+              <p>开发模式会同时编译四个入口，全部成功后才拉起 Electron 窗口。Windows 下若注入了 <code>ELECTRON_RUN_AS_NODE=1</code>，启动前需先去掉。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dev__links reveal">
+          <a class="dev-link" href="https://github.com/huimou612/overtone" target="_blank" rel="noopener noreferrer">
+            <span class="dev-link__body"><strong>GitHub 仓库</strong><span>源码与提交记录</span></span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="dev-link" href="https://github.com/huimou612/overtone/issues" target="_blank" rel="noopener noreferrer">
+            <span class="dev-link__body"><strong>问题反馈</strong><span>Issues · 欢迎 PR</span></span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="dev-link" href="https://github.com/huimou612/overtone/blob/master/FOLIA-INAPP.md" target="_blank" rel="noopener noreferrer">
+            <span class="dev-link__body"><strong>FOLIA-INAPP.md</strong><span>技术细节、构建参数与回滚清单</span></span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="dev-link" href="https://github.com/huimou612/overtone/blob/master/LICENSE" target="_blank" rel="noopener noreferrer">
+            <span class="dev-link__body"><strong>开源许可</strong><span>GNU AGPL-3.0 + 补充协议</span></span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OPEN SOURCE / CONTACT ============ -->
+    <section class="section opensource" id="opensource" aria-labelledby="opensource-title">
+      <div class="container">
+        <div class="section-label"><span class="section-label__num">08</span><span>开源与联系</span></div>
+        <h2 class="display-2 reveal" id="opensource-title">没有这两个项目，就没有泛音。</h2>
+
+        <div class="credits reveal">
+          <a class="credit" href="https://github.com/lyswhut/lx-music-desktop" target="_blank" rel="noopener noreferrer">
+            <span class="credit__tag">Apache-2.0</span>
+            <strong>LX Music</strong>
+            <p>落雪无痕（lyswhut）及所有贡献者 · 播放器内核、列表与音源机制、桌面歌词、主题系统</p>
+            <span class="credit__go" aria-hidden="true">↗</span>
+          </a>
+          <a class="credit" href="https://github.com/chthollyphile/folia-major" target="_blank" rel="noopener noreferrer">
+            <span class="credit__tag">AGPL-3.0</span>
+            <strong>Folia</strong>
+            <p>冬霧（chthollyphile）及所有贡献者 · AI 能力与海报墙 / 全屏歌词 / 时间线的交互与视觉</p>
+            <span class="credit__go" aria-hidden="true">↗</span>
+          </a>
+        </div>
+
+        <div class="contact reveal" style="--delay:.08s">
+          <div class="contact__intro">
+            <h3>联系与反馈</h3>
+            <p>项目由 <a href="https://github.com/huimou612" target="_blank" rel="noopener noreferrer">huimou612</a> 开发与维护。反馈问题、提功能建议或贡献代码，欢迎走 GitHub；也可以直接发邮件。</p>
+          </div>
+          <div class="contact__links">
+            <a class="btn btn--primary contact__mail" href="mailto:2027463893@qq.com">
+              2027463893@qq.com
+              <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 4.5h11v7h-11zM2.5 4.5 8 9l5.5-4.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="btn btn--ghost" href="https://github.com/huimou612/overtone/issues" target="_blank" rel="noopener noreferrer">提交 Issue</a>
+            <a class="btn btn--ghost" href="https://github.com/huimou612/overtone/pulls" target="_blank" rel="noopener noreferrer">发起 PR</a>
+            <a class="btn btn--ghost" href="https://github.com/huimou612" target="_blank" rel="noopener noreferrer">作者主页</a>
+          </div>
+        </div>
+
+        <div class="license-note reveal">
+          <p>整体以 <strong>GNU AGPL v3.0</strong> 发行（Apache-2.0 允许并入 AGPL-3.0，反向不行）。依据第 13 条，以网络服务形式提供修改版本时，须向使用者提供对应完整源代码；须保留对 LX Music、Folia 及上游贡献者的署名。本项目完全免费，仅用于技术探索与研究，不接受任何商业合作及捐赠。</p>
+          <p class="license-note__small">仓库内置若干平台搜索类接口实现，会向对应平台发起搜索 / 榜单类请求；取音频链接由使用者自行导入的「自定义源」提供。分发、部署或使用的后果请自行评估所处法律环境。请尊重版权，支持正版。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer" aria-labelledby="footer-title">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <img class="footer__mark" src="assets/images/icon.png" alt="" width="34" height="34">
+          <h2 id="footer-title">泛音<span>OVERTONE</span></h2>
+          <p>以 LX Music 为外壳，以 Folia 的视觉与 AI 能力为内核。<br>让歌词成为一整个画面。</p>
+          <span class="footer__version">v0.4.0 · 2026-10-25</span>
+        </div>
+
+        <nav class="footer__nav" aria-label="页脚导航">
+          <div class="footer__col">
+            <h3>页面</h3>
+            <ul>
+              <li><a href="#top">首页</a></li>
+              <li><a href="#features">核心功能</a></li>
+              <li><a href="#showcase">界面展示</a></li>
+              <li><a href="#philosophy">设计理念</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h3>使用</h3>
+            <ul>
+              <li><a href="#guide">使用指南</a></li>
+              <li><a href="#download">版本与下载</a></li>
+              <li><a href="#developers">开发者</a></li>
+              <li><a href="#opensource">开源与联系</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h3>项目</h3>
+            <ul>
+              <li><a href="https://github.com/huimou612/overtone" target="_blank" rel="noopener noreferrer">GitHub 仓库</a></li>
+              <li><a href="https://github.com/huimou612/overtone/releases" target="_blank" rel="noopener noreferrer">Releases</a></li>
+              <li><a href="https://github.com/huimou612/overtone/issues" target="_blank" rel="noopener noreferrer">Issues</a></li>
+              <li><a href="https://github.com/huimou612/overtone/blob/master/LICENSE" target="_blank" rel="noopener noreferrer">AGPL-3.0</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+
+      <div class="footer__bottom">
+        <p>© 2026 泛音 Overtone · huimou612 · 基于 GNU AGPL-3.0 发行</p>
+        <p class="footer__fineprint">界面截图来自 v0.4.0 实际运行画面；本站为产品介绍页面，与桌面端分开维护。请尊重版权，支持正版。</p>
+      </div>
+    </div>
+  </footer>
+
+  <button class="to-top" id="to-top" type="button" aria-label="回到顶部">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="noise" aria-hidden="true"></div>
+  <script src="assets/main.js" defer></script>
+</body>
+</html>
