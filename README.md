@@ -11,6 +11,16 @@
 <p align="center">一个以 <b>LX Music</b> 为外壳、以 <b>Folia</b> 的 AI 能力为内核的本地音乐播放器</p>
 
 <p align="center"><a href="./README.en.md">English</a> | 简体中文</p>
+<p align="center">
+  <a href="https://overtone-68q.pages.dev/"><b>官方网站 · 功能介绍与真实界面</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://github.com/huimou612/overtone/releases/download/v0.4.0/overtone-v0.4.0-x64-Setup.exe"><b>下载 v0.4.0 · Windows x64 安装包</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://github.com/huimou612/overtone/releases/tag/v0.4.0">全部版本与校验值</a>
+  &nbsp;|&nbsp;
+  <a href="https://pan.quark.cn/s/cb4287d938ee">国内网盘备用</a>
+</p>
+
 
 ---
 
