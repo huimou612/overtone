@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>页面未找到 — 泛音 Overtone</title>
+  <style>
+    :root {
+      --bg: #05070d;
+      --text: #e9eef9;
+      --muted: #939fb6;
+      --dim: #74819a;
+      --line: rgba(146, 174, 226, .13);
+      --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --font: "MiSans", "HarmonyOS Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: var(--font); line-height: 1.8;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 32px 20px; text-align: center;
+    }
+    .wrap { max-width: 520px; width: 100%; }
+    .mark {
+      width: 46px; height: 46px; margin: 0 auto 30px;
+      border: 1px solid rgba(143, 180, 255, .4); border-radius: 12px;
+      position: relative;
+    }
+    .mark::before, .mark::after {
+      content: ""; position: absolute; left: 10px; right: 10px; height: 2px;
+      border-radius: 2px; background: linear-gradient(100deg, #8fd8ff, #6f8dff, #a78bfa);
+    }
+    .mark::before { top: 17px; }
+    .mark::after { top: 25px; right: 18px; opacity: .55; }
+    .code {
+      font: 400 10px/1 var(--mono); letter-spacing: .22em; color: var(--dim);
+      margin-bottom: 20px;
+    }
+    h1 { margin: 0 0 16px; font-size: clamp(26px, 6vw, 36px); font-weight: 300; letter-spacing: .02em; }
+    p { margin: 0 0 34px; font-size: 14px; line-height: 2; color: var(--muted); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 22px;
+      border: 1px solid transparent; border-radius: 8px; font-size: 14px;
+      text-decoration: none; color: #fff;
+      background: linear-gradient(100deg, #6f9dff, #7f7cf6);
+      box-shadow: 0 10px 30px -12px rgba(91, 140, 255, .75);
+      transition: transform .2s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn svg { width: 15px; height: 15px; }
+    .links { display: flex; gap: 22px; justify-content: center; margin-top: 34px; flex-wrap: wrap; }
+    .links a {
+      font: 400 10px/1 var(--mono); letter-spacing: .08em; color: var(--dim);
+      text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 5px;
+    }
+    .links a:hover { color: var(--text); }
+    .fine { margin-top: 48px; font: 400 9px/1.8 var(--mono); letter-spacing: .06em; color: var(--dim); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mark" aria-hidden="true"></div>
+    <p class="code">404 / NOT FOUND</p>
+    <h1>这一句不在这里。</h1>
+    <p>你访问的地址不存在，或者已经挪走了。<br>回到首页，继续看泛音的歌词画面。</p>
+    <a class="btn" href="/">
+      返回首页
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <div class="links">
+      <a href="https://github.com/huimou612/overtone" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
+      <a href="https://github.com/huimou612/overtone/releases" target="_blank" rel="noopener noreferrer">Releases</a>
+    </div>
+    <p class="fine">泛音 Overtone · v0.4.0 · AGPL-3.0</p>
+  </div>
+</body>
+</html>

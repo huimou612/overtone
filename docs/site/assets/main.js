@@ -13,6 +13,9 @@
      留空时页面显示「待补充」，不会生成假链接。
      ========================================================= */
   var DOWNLOAD = {
+    // GitHub 安装包直链：页面「GitHub 直链」按钮 / 弹窗渠道 A 使用
+    direct: 'https://github.com/huimou612/overtone/releases/download/v0.4.0/overtone-v0.4.0-x64-Setup.exe',
+    // Release 页：全平台包、SHA512 校验值与历史版本
     github: 'https://github.com/huimou612/overtone/releases/tag/v0.4.0',
     // 「直接下载」按钮默认跳转的国内渠道（安装包已放进夸克网盘）
     primary: 'https://pan.quark.cn/s/cb4287d938ee',
